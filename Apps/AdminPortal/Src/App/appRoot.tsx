@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Navigate, NavLink, Route, Routes, useParams } from 'react-router-dom';
+import { Navigate, NavLink, Route, Routes, useLocation, useParams } from 'react-router-dom';
 import type { AppPermission } from '@nodeadmin/shared-types';
 import { ManagementOverviewPanel } from '@/Components/Business/managementOverviewPanel';
 import { MessagePanel } from '@/Components/Business/messagePanel';
@@ -11,6 +11,7 @@ import { ModuleErrorBoundary } from './moduleErrorBoundary';
 import { RequirePermission } from './requirePermission';
 
 interface NavItem {
+  icon: string;
   key: string;
   label: string;
   path: string;
@@ -18,17 +19,38 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { key: 'overview', label: 'Overview', path: '/overview', permission: 'overview:view' },
-  { key: 'im', label: 'IM Operations', path: '/im', permission: 'im:view' },
-  { key: 'tenant', label: 'Tenants', path: '/tenant', permission: 'tenant:view' },
-  { key: 'release', label: 'Release', path: '/release', permission: 'release:view' },
-  { key: 'settings', label: 'Settings', path: '/settings', permission: 'settings:view' },
+  { icon: '📊', key: 'overview', label: 'Overview', path: '/overview', permission: 'overview:view' },
+  { icon: '💬', key: 'im', label: 'IM Operations', path: '/im', permission: 'im:view' },
+  { icon: '👥', key: 'tenant', label: 'Tenants', path: '/tenant', permission: 'tenant:view' },
+  { icon: '🚀', key: 'release', label: 'Release', path: '/release', permission: 'release:view' },
+  { icon: '⚙', key: 'settings', label: 'Settings', path: '/settings', permission: 'settings:view' },
 ];
 
-function toNavLinkClassName(isActive: boolean): string {
+function isNavItemActive(pathname: string, navPath: string): boolean {
+  return pathname === navPath || pathname.startsWith(`${navPath}/`);
+}
+
+function resolveCurrentPageTitle(pathname: string): string {
+  if (pathname === '/') {
+    return 'Overview';
+  }
+
+  const matchedNavItem = navItems.find((navItem) => isNavItemActive(pathname, navItem.path));
+  return matchedNavItem?.label ?? 'Node Admin';
+}
+
+function toSidebarClassName(sidebarCollapsed: boolean): string {
   return [
-    'inline-flex h-10 items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors',
-    isActive ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground hover:bg-muted/80',
+    'flex shrink-0 flex-col border-r bg-[hsl(var(--sidebar))] text-[hsl(var(--sidebar-foreground))] transition-all duration-200',
+    sidebarCollapsed ? 'w-16' : 'w-60',
+  ].join(' ');
+}
+
+function toSidebarNavLinkClassName(isActive: boolean, sidebarCollapsed: boolean): string {
+  return [
+    'flex h-10 items-center rounded-md text-sm font-medium transition-colors',
+    sidebarCollapsed ? 'justify-center px-2' : 'gap-3 px-3',
+    isActive ? 'bg-accent text-accent-foreground' : 'hover:bg-[hsl(var(--sidebar-accent))]',
   ].join(' ');
 }
 
@@ -56,8 +78,11 @@ function readRolesFromEnv(): string[] {
 }
 
 export function AppRoot(): JSX.Element {
+  const location = useLocation();
+  const sidebarCollapsed = useUiStore((state) => state.sidebarCollapsed);
   const theme = useUiStore((state) => state.theme);
   const setTheme = useUiStore((state) => state.setTheme);
+  const toggleSidebar = useUiStore((state) => state.toggleSidebar);
   const setPermissionsFromRoles = usePermissionStore((state) => state.setPermissionsFromRoles);
   const hasPermission = usePermissionStore((state) => state.hasPermission);
 
@@ -70,100 +95,129 @@ export function AppRoot(): JSX.Element {
   }, [setPermissionsFromRoles]);
 
   const visibleNavItems = navItems.filter((item) => hasPermission(item.permission));
+  const currentPageTitle = resolveCurrentPageTitle(location.pathname);
 
   return (
-    <main className="min-h-screen bg-background p-6 text-foreground">
-      <div className="mx-auto mb-6 flex max-w-5xl items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">Node Admin Console</h1>
-          <p className="text-sm text-muted-foreground">AdminPortal powered by React Router, Tailwind and Zustand</p>
-
-          <nav className="mt-4 flex flex-wrap gap-2">
-            {visibleNavItems.map((navItem) => (
-              <NavLink className={({ isActive }) => toNavLinkClassName(isActive)} key={navItem.key} to={navItem.path}>
-                {navItem.label}
-              </NavLink>
-            ))}
-          </nav>
+    <div className="flex h-screen overflow-hidden bg-background text-foreground">
+      <aside className={toSidebarClassName(sidebarCollapsed)}>
+        <div className="flex h-14 items-center border-b px-3">
+          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-xs font-semibold text-primary-foreground">
+            NA
+          </div>
+          {!sidebarCollapsed ? <span className="ml-3 text-sm font-semibold">Node Admin</span> : null}
         </div>
 
-        <button
-          className="rounded-md border border-border bg-card px-3 py-2 text-sm"
-          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-          type="button"
-        >
-          {theme === 'dark' ? 'Switch To Light' : 'Switch To Dark'}
-        </button>
-      </div>
+        <nav className="flex-1 space-y-1 p-2">
+          {visibleNavItems.map((navItem) => (
+            <NavLink
+              className={({ isActive }) => toSidebarNavLinkClassName(isActive, sidebarCollapsed)}
+              key={navItem.key}
+              to={navItem.path}
+            >
+              <span className="text-base leading-none">{navItem.icon}</span>
+              {!sidebarCollapsed ? <span className="truncate">{navItem.label}</span> : null}
+            </NavLink>
+          ))}
+        </nav>
 
-      <div className="mx-auto max-w-5xl">
-        <Routes>
-          <Route element={<Navigate replace to="/overview" />} path="/" />
-          <Route
-            element={
-              <RouteModule>
-                <RequirePermission permission="overview:view">
-                  <ManagementOverviewPanel />
-                </RequirePermission>
-              </RouteModule>
-            }
-            path="/overview"
-          />
-          <Route
-            element={
-              <RouteModule>
-                <RequirePermission permission="im:view">
-                  <MessagePanel />
-                </RequirePermission>
-              </RouteModule>
-            }
-            path="/im"
-          />
-          <Route
-            element={
-              <RouteModule>
-                <RequirePermission permission="im:view">
-                  <ImConversationRoute />
-                </RequirePermission>
-              </RouteModule>
-            }
-            path="/im/:convId"
-          />
-          <Route
-            element={
-              <RouteModule>
-                <RequirePermission permission="tenant:view">
-                  <TenantControlPanel />
-                </RequirePermission>
-              </RouteModule>
-            }
-            path="/tenant"
-          />
-          <Route
-            element={
-              <RouteModule>
-                <RequirePermission permission="release:view">
-                  <ReleaseControlPanel />
-                </RequirePermission>
-              </RouteModule>
-            }
-            path="/release"
-          />
-          <Route
-            element={
-              <RouteModule>
-                <RequirePermission permission="settings:view">
-                  <section className="rounded-md border border-border bg-card p-4 text-sm text-muted-foreground">
-                    Settings module is reserved for platform administrators.
-                  </section>
-                </RequirePermission>
-              </RouteModule>
-            }
-            path="/settings"
-          />
-          <Route element={<Navigate replace to="/overview" />} path="*" />
-        </Routes>
+        <div className="border-t p-2">
+          <p className="mb-2 text-center text-xs text-muted-foreground">v0.1.0</p>
+          <button
+            className="flex h-9 w-full items-center justify-center rounded-md border border-border bg-card text-sm transition-colors hover:bg-accent"
+            onClick={toggleSidebar}
+            type="button"
+          >
+            {sidebarCollapsed ? '»' : '«'}
+          </button>
+        </div>
+      </aside>
+
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <header className="flex h-14 items-center justify-between border-b bg-card px-6">
+          <h1 className="text-base font-semibold">{currentPageTitle}</h1>
+          <div className="flex items-center gap-3">
+            <button
+              className="flex h-9 w-9 items-center justify-center rounded-md border border-border bg-card text-base transition-colors hover:bg-accent"
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              type="button"
+            >
+              {theme === 'dark' ? '☀' : '🌙'}
+            </button>
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-medium text-primary-foreground">
+              A
+            </div>
+          </div>
+        </header>
+
+        <main className="flex-1 overflow-y-auto p-6">
+          <Routes>
+            <Route element={<Navigate replace to="/overview" />} path="/" />
+            <Route
+              element={
+                <RouteModule>
+                  <RequirePermission permission="overview:view">
+                    <ManagementOverviewPanel />
+                  </RequirePermission>
+                </RouteModule>
+              }
+              path="/overview"
+            />
+            <Route
+              element={
+                <RouteModule>
+                  <RequirePermission permission="im:view">
+                    <MessagePanel />
+                  </RequirePermission>
+                </RouteModule>
+              }
+              path="/im"
+            />
+            <Route
+              element={
+                <RouteModule>
+                  <RequirePermission permission="im:view">
+                    <ImConversationRoute />
+                  </RequirePermission>
+                </RouteModule>
+              }
+              path="/im/:convId"
+            />
+            <Route
+              element={
+                <RouteModule>
+                  <RequirePermission permission="tenant:view">
+                    <TenantControlPanel />
+                  </RequirePermission>
+                </RouteModule>
+              }
+              path="/tenant"
+            />
+            <Route
+              element={
+                <RouteModule>
+                  <RequirePermission permission="release:view">
+                    <ReleaseControlPanel />
+                  </RequirePermission>
+                </RouteModule>
+              }
+              path="/release"
+            />
+            <Route
+              element={
+                <RouteModule>
+                  <RequirePermission permission="settings:view">
+                    <section className="rounded-md border border-border bg-card p-4 text-sm text-muted-foreground">
+                      Settings module is reserved for platform administrators.
+                    </section>
+                  </RequirePermission>
+                </RouteModule>
+              }
+              path="/settings"
+            />
+            <Route element={<Navigate replace to="/overview" />} path="*" />
+          </Routes>
+        </main>
       </div>
-    </main>
+    </div>
   );
 }

@@ -1,5 +1,4 @@
 import { useQuery } from '@tanstack/react-query';
-import { Badge } from '@/Components/Ui/badge';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/Components/Ui/card';
 import { useApiClient } from '@/Hooks/useApiClient';
 
@@ -20,29 +19,64 @@ export function ReleaseControlPanel(): JSX.Element {
   });
 
   const releaseChecks = releaseQuery.data?.checks ?? [];
+  const totalChecks = releaseChecks.length;
+  const completedChecks = releaseChecks.filter((releaseCheck) => releaseCheck.done).length;
+  const completionPercent = totalChecks > 0 ? Math.round((completedChecks / totalChecks) * 100) : 0;
 
   return (
     <Card className="p-4">
-      <CardHeader className="mb-3 p-0">
-        <CardTitle className="text-base">Release Controls</CardTitle>
-        <CardDescription>MVP release gates and current checkpoint status.</CardDescription>
+      <CardHeader className="mb-4 flex-col gap-3 p-0 sm:flex-row sm:items-start sm:justify-between sm:space-y-0">
+        <div className="space-y-1.5">
+          <CardTitle className="text-base">Release Controls</CardTitle>
+          <CardDescription>MVP release gates and current checkpoint status.</CardDescription>
+        </div>
+        <div className="w-full max-w-48 space-y-1">
+          <p className="text-xs text-muted-foreground sm:text-right">
+            {completedChecks}/{totalChecks} completed
+          </p>
+          <div className="h-2 rounded-full bg-muted">
+            <div className="h-2 rounded-full bg-primary transition-all" style={{ width: `${completionPercent}%` }} />
+          </div>
+        </div>
       </CardHeader>
 
-      {releaseQuery.isLoading ? <p className="mb-3 text-sm text-muted-foreground">Loading release checks...</p> : null}
-      {releaseQuery.isError ? <p className="mb-3 text-sm text-destructive">Failed to load release checks.</p> : null}
-
       <ul className="space-y-2">
-        {releaseChecks.map((releaseCheck) => (
-          <li
-            className="flex items-center justify-between rounded-md border border-border px-3 py-2"
-            key={releaseCheck.title}
-          >
-            <span className="text-sm">{releaseCheck.title}</span>
-            <Badge variant={releaseCheck.done ? 'default' : 'secondary'}>
-              {releaseCheck.done ? 'done' : 'pending'}
-            </Badge>
-          </li>
-        ))}
+        {releaseQuery.isLoading
+          ? Array.from({ length: 4 }).map((_, index) => (
+              <li
+                className="flex items-center justify-between rounded-md border border-border px-3 py-2"
+                key={`release-skeleton-${index}`}
+              >
+                <div className="h-4 w-full animate-pulse rounded bg-muted" />
+              </li>
+            ))
+          : null}
+
+        {releaseQuery.isError ? (
+          <li className="rounded-md border border-border px-3 py-2 text-sm text-destructive">Failed to load release checks.</li>
+        ) : null}
+
+        {!releaseQuery.isLoading && !releaseQuery.isError && releaseChecks.length === 0 ? (
+          <li className="rounded-md border border-border px-3 py-2 text-sm text-muted-foreground">No release checks found.</li>
+        ) : null}
+
+        {!releaseQuery.isLoading && !releaseQuery.isError
+          ? releaseChecks.map((releaseCheck) => (
+              <li
+                className="flex items-center justify-between rounded-md border border-border px-3 py-2"
+                key={releaseCheck.title}
+              >
+                <div className="flex items-center gap-2">
+                  <span className={releaseCheck.done ? 'text-green-600' : 'text-muted-foreground'}>
+                    {releaseCheck.done ? '\u2713' : '\u25CB'}
+                  </span>
+                  <span className={releaseCheck.done ? 'text-sm text-foreground' : 'text-sm text-muted-foreground'}>
+                    {releaseCheck.title}
+                  </span>
+                </div>
+              </li>
+            ))
+          : null}
       </ul>
     </Card>
   );
