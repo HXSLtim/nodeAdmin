@@ -1,0 +1,18 @@
+groups:
+  - name: nodeadmin-coreapi
+    rules:
+      - alert: CoreApiMetricsMissing
+        expr: up{job="core-api-otel"} == 0
+        for: 2m
+        labels:
+          severity: P0
+        annotations:
+          summary: 'CoreApi metrics endpoint is unavailable'
+
+      - alert: HighOutboxRetry
+        expr: increase(im_messages_appended_total[5m]) == 0
+        for: 10m
+        labels:
+          severity: P2
+        annotations:
+          summary: 'IM message append count has stalled for 10 minutes'

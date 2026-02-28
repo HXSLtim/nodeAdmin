@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Format Check
+        run: npm run format:check
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit Test
+        run: npm run test:core-api
+
+      - name: Build
+        run: npm run build
+
+      - name: Start Infra (Kafka Profile)
+        run: npm run infra:up:kafka
+
+      - name: Apply Migrations
+        run: npm run db:migrate -w core-api
+
+      - name: M2 Acceptance
+        run: npm run m2:acceptance:auto
+
+      - name: Shutdown Infra
+        if: always()
+        run: npm run infra:down

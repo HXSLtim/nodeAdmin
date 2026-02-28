@@ -9,6 +9,42 @@
   "scripts": {
     "build": "npm run build -w core-api && npm run build -w admin-portal",
     "dev:api": "npm run dev -w core-api",
-    "dev:web": "npm run dev -w admin-portal"
+    "dev:web": "npm run dev -w admin-portal",
+    "format:check": "prettier --check \"Apps/**/*.{ts,tsx,js,cjs,mjs,css,html}\" \"Scripts/**/*.cjs\" \"*.cjs\"",
+    "infra:down": "docker compose down",
+    "infra:up:kafka": "docker compose --profile kafka up -d",
+    "infra:up:monitoring": "docker compose --profile monitoring up -d",
+    "infra:up:tls": "npm run tls:cert:generate && docker compose --profile tls up -d",
+    "infra:up": "docker compose up -d",
+    "lint": "eslint \"Apps/**/*.{ts,tsx}\" --max-warnings=0",
+    "m1:acceptance": "node Scripts/m1Acceptance.cjs",
+    "m1:acceptance:auto": "node Scripts/runM1AcceptanceWithApi.cjs",
+    "m2:acceptance": "node Scripts/m2Acceptance.cjs",
+    "m2:acceptance:auto": "node Scripts/runM2AcceptanceWithApi.cjs",
+    "backup:pg": "node Scripts/postgresBackup.cjs",
+    "restore:pg": "node Scripts/postgresRestore.cjs",
+    "partition:check": "node Scripts/partitionRehearsalCheck.cjs",
+    "reliability:regression": "node Scripts/reliabilityRegression.cjs",
+    "smoke:outbox": "node Scripts/smokeOutboxKafka.cjs",
+    "smoke:pgbouncer": "node Scripts/pgbouncerLoadCheck.cjs",
+    "smoke:tls": "node Scripts/smokeTlsTermination.cjs",
+    "smoke:im": "node Scripts/smokeImFlow.cjs",
+    "test:core-api": "vitest run",
+    "load:k6": "docker compose --profile loadtest run --rm k6",
+    "load:k6:smoke": "docker compose --profile loadtest run --rm k6 --tag scenario=api_smoke --env K6_SCENARIO=smoke",
+    "load:k6:spike": "docker compose --profile loadtest run --rm k6 --tag scenario=api_spike --env K6_SCENARIO=spike",
+    "load:k6:stress": "docker compose --profile loadtest run --rm k6 --tag scenario=api_stress --env K6_SCENARIO=stress",
+    "tls:cert:generate": "node Scripts/generateDevTlsCert.cjs",
+    "test:e2e:web": "npm run test:e2e -w admin-portal"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.56.1",
+    "@typescript-eslint/parser": "^8.56.1",
+    "eslint": "^9.39.3",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "prettier": "^3.8.1",
+    "prettier-plugin-tailwindcss": "^0.7.2",
+    "vitest": "^4.0.18"
   }
 }
