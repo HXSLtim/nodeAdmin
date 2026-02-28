@@ -1,0 +1,14 @@
+{
+  "name": "nodeAdmin",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "Apps/*",
+    "Packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build -w Apps/CoreApi && npm run build -w Apps/AdminPortal",
+    "dev:api": "npm run dev -w Apps/CoreApi",
+    "dev:web": "npm run dev -w Apps/AdminPortal"
+  }
+}
