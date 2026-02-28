@@ -1,46 +1,117 @@
-# MVP 团队执行 TODO
+# MVP Team Execution Board (8 Weeks)
 
-## 1. 目标
+> Team charter: `Docs/Delivery/implementationTeamCharter.md`  
+> Task source baseline: `Docs/Delivery/brainstormingResults.md`
 
-- 在当前代码骨架基础上完成首版可用发布。
-- 以“可演示、可回归、可上线”为最低标准。
+Status legend:
+- `[ ]` Not started
+- `[-]` In progress
+- `[x]` Completed
 
-## 2. 角色与任务分配
+## Phase 1 (Week 1-2) Survival Baseline
 
-### 产品负责人
+### Backend
+- [x] JWT access/refresh token chain with secure defaults
+- [x] `WsTenantGuard` identity extraction from JWT only
+- [x] Runtime config loading and validation (`@nestjs/config`)
+- [x] Structured logging baseline
+- [x] IM gateway/service/repository split
+- [x] Unified error model and exception filter
+- [x] Strict CORS origin whitelist
 
-- 完成 MVP 功能清单冻结。
-- 定义验收标准和演示脚本。
+### Frontend
+- [x] React Router based layout routing
+- [x] Module level `ErrorBoundary` integration
+- [x] `html lang="zh-CN"` baseline
+- [x] Core UI primitives (`Input/Card/Badge/Table/Toast`)
+- [x] Tailwind token system and theme variables
+- [x] Removed hardcoded identity from IM payloads
 
-### 后端负责人（CoreApi）
+### Quality and Platform
+- [x] ESLint + Prettier quality gate
+- [x] P0 smoke scripts for IM/infra flow
+- [x] Basic health checks and logs available
 
-- 完成会话加入与消息发送协议文档。
-- 增加消息幂等去重（`messageId`）处理。
-- 增加错误码与统一异常结构。
+## Phase 2 (Week 3-4) Persistence Foundation
 
-### 前端负责人（AdminPortal）
+### Backend
+- [x] Drizzle + PostgreSQL schema landed
+- [x] SQL migration scripts repeatable and idempotent
+- [x] RLS baseline + explicit tenant query constraints (`WHERE tenant_id = ?`)
+- [x] PgBouncer integrated and stress script passing
+- [x] Redis + Socket.IO adapter integrated
 
-- 完成消息输入交互（回车发送、禁用态）。
-- 增加连接状态与重连提示。
-- 完成基础主题变量整理。
+### Frontend
+- [x] Zustand stores (`Auth/Socket/Message/UI`) in place
+- [x] TanStack Query + API client integrated
+- [x] IM socket logic extracted into reusable hook
+- [x] Overview/Tenant/Release panels use real API data
+- [x] Theme toggle and tokenized styling validated
 
-### 测试负责人
+### Quality and Platform
+- [x] Docker Compose one-click base environment
+- [x] Core unit tests for store and guard
+- [x] M1 acceptance scripts and auto-runner completed
 
-- 覆盖核心链路：连接、入会话、发消息、断线重连。
-- 输出冒烟测试脚本与缺陷清单。
+## Phase 3 (Week 5-6) Reliability Enhancement
 
-### SRE / 发布负责人
+### Backend
+- [x] Outbox + polling publisher implemented
+- [x] Kafka topic publish + DLQ fallback strategy integrated
+- [x] OpenTelemetry integration (`metrics/trace` bootstrap)
+- [x] Graceful shutdown for HTTP + WebSocket + Redis clients
+- [x] WebSocket rate limiting online
+- [x] TLS termination available and smoke-verified (`nginx:3443`)
 
-- 准备环境变量模板与部署说明。
-- 准备健康检查与最小监控项。
+### Frontend
+- [x] Virtualized message list rendering
+- [x] Conversation list + unread badge usable
+- [x] Message type expansion (`text/image/file/system`)
+- [x] Permission framework for route/page/button controls
 
-## 3. 里程碑
+### Quality and Platform
+- [x] k6 load script delivered (`Scripts/k6ImLoad.js`)
+- [x] Reliability regression script delivered (`duplicate/idempotency`)
+- [x] M2 acceptance gate and auto-runner completed
 
-- D1：接口与页面联通。
-- D2：冒烟测试通过。
-- D3：预发布演示通过。
-- D4：MVP 正式发布。
+## Phase 4 (Week 7-8) Enterprise Capabilities
 
-## 4. 最近更新时间
+### Backend
+- [x] Audit log recording and query endpoint
+- [x] Security headers (HSTS/CSP and baseline headers)
+- [x] Message XSS sanitization on server side
+- [x] Partition rehearsal migration and verification script
+- [x] Shared types package integrated (`@nodeadmin/shared-types`)
 
-- 2026-02-28
+### Frontend
+- [x] Offline message queue and reconnect sync
+- [x] Typing indicator end-to-end (`typing` event flow)
+- [x] Playwright E2E smoke case landed and passing
+- [x] Build chunk optimization (`manualChunks`)
+
+### Quality and Platform
+- [x] Grafana + Prometheus + Alertmanager stack profile
+- [x] PostgreSQL backup/restore automation scripts
+- [x] Disaster recovery drill record documented
+- [x] CI/CD workflow with M2 gate (`.github/workflows/ci.yml`)
+
+## Quick Commands
+- `npm run format:check`
+- `npm run lint`
+- `npm run test:core-api`
+- `npm run build`
+- `npm run infra:up`
+- `npm run infra:up:kafka`
+- `npm run infra:up:tls`
+- `npm run infra:up:monitoring`
+- `npm run m1:acceptance:auto`
+- `npm run m2:acceptance:auto`
+- `npm run smoke:im`
+- `npm run smoke:outbox`
+- `npm run smoke:pgbouncer`
+- `npm run smoke:tls`
+- `npm run reliability:regression`
+- `npm run partition:check`
+- `npm run backup:pg`
+
+Last updated: 2026-03-01

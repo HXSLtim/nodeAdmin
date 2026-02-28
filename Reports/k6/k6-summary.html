@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>k6 Summary</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 24px; background: #0f172a; color: #e2e8f0; }
+    h1 { font-size: 20px; margin-bottom: 16px; }
+    pre { background: #1e293b; padding: 16px; border-radius: 8px; overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <h1>k6 Load Test Summary</h1>
+  <pre>     ✓ health status 200
+     ✓ token status 201
+     ✓ token has accessToken
+     ✓ overview status 200
+     ✓ tenants status 200
+     ✓ release checks status 200
+     ✓ conversations status 200
+     ✓ permissions status 200
+     ✓ audit logs status 200
+
+   ✗ api_console_duration...........: avg=95.242272 min=6.488766   med=62.202637 max=249.869859  p(90)=213.725286 p(95)=227.468446
+   ✓ api_errors.....................: 0       0/s
+   ✓ api_token_duration.............: avg=86.92392  min=5.529126   med=69.105738 max=1227.461128 p(90)=138.275208 p(95)=156.19412 
+     checks.........................: 100.00% ✓ 368861      ✗ 0     
+     data_received..................: 237 MB  2.0 MB/s
+     data_sent......................: 41 MB   340 kB/s
+     http_req_blocked...............: avg=6.38µs    min=646ns      med=2.9µs     max=34.7ms      p(90)=5.24µs     p(95)=6.21µs    
+     http_req_connecting............: avg=2.78µs    min=0s         med=0s        max=34.64ms     p(90)=0s         p(95)=0s        
+   ✓ http_req_duration..............: avg=46.97ms   min=627.74µs   med=50.59ms   max=1.22s       p(90)=73.63ms    p(95)=111.16ms  
+       { expected_response:true }...: avg=46.97ms   min=627.74µs   med=50.59ms   max=1.22s       p(90)=73.63ms    p(95)=111.16ms  
+   ✓ http_req_failed................: 0.00%   ✓ 0           ✗ 309379
+     http_req_receiving.............: avg=54.27µs   min=-1370868ns med=44.16µs   max=4.75ms      p(90)=91.3µs     p(95)=115.1µs   
+     http_req_sending...............: avg=11.81µs   min=2.32µs     med=8.9µs     max=2.25ms      p(90)=17.89µs    p(95)=27.73µs   
+     http_req_tls_handshaking.......: avg=0s        min=0s         med=0s        max=0s          p(90)=0s         p(95)=0s        
+     http_req_waiting...............: avg=46.9ms    min=564.97µs   med=50.54ms   max=1.22s       p(90)=73.55ms    p(95)=111.1ms   
+     http_reqs......................: 309379  2577.631659/s
+     iteration_duration.............: avg=82.8ms    min=721.73µs   med=58.27ms   max=2.9s        p(90)=186.17ms   p(95)=222.48ms  
+     iterations.....................: 248337  2069.052241/s
+     vus............................: 1       min=1         max=359 
+     vus_max........................: 434     min=434       max=434 </pre>
+</body>
+</html>

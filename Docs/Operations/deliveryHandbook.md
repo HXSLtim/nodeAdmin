@@ -1,40 +1,38 @@
-# 交付与文档使用手册
+# Delivery Handbook
 
-## 1. 适用范围
+## Recommended Reading Order
+1. `Docs/platformSpec.md`
+2. `Docs/Architecture/architectureBaseline.md`
+3. `Docs/Delivery/roadmapPlan.md`
+4. `Docs/Governance/decisionLog.md`
 
-- 适用于 Node 中台 + IM 项目从启动到稳定运营的全流程。
+## Daily Operations
+- Update implementation changes in docs before changing process expectations.
+- Keep acceptance checklists current after adding scripts or quality gates.
+- Record major architecture or scope decisions in `decisionLog.md`.
 
-## 2. 文档使用顺序
+## Delivery Command Set
+- Quality:
+  - `npm run format:check`
+  - `npm run lint`
+  - `npm run test:core-api`
+  - `npm run build`
+- Infra:
+  - `npm run infra:up`
+  - `npm run infra:up:kafka`
+  - `npm run infra:up:tls`
+  - `npm run infra:up:monitoring`
+- Acceptance:
+  - `npm run m1:acceptance:auto`
+  - `npm run m2:acceptance:auto`
+- Reliability:
+  - `npm run smoke:outbox`
+  - `npm run reliability:regression`
+  - `npm run smoke:tls`
 
-1. 先读：`Docs/platformSpec.md`
-2. 再读：`Docs/Architecture/architectureBaseline.md`
-3. 再读：`Docs/Delivery/roadmapPlan.md`
-4. 执行中随时查：`Docs/Governance/decisionLog.md`
+## LAN Access Notes
+- CoreApi listens on `0.0.0.0:3001`
+- AdminPortal dev server listens on `0.0.0.0:5173`
+- Ensure `FRONTEND_ORIGINS` includes both localhost and LAN origin
 
-## 3. 日常执行动作
-
-- 每次方案变更：先改文档再改实现计划。
-- 每周例会前：更新里程碑状态与风险列表。
-- 每次评审后：同步更新决策日志与路线图。
-
-## 4. 质量门禁
-
-- 关键文档必须有最近更新时间。
-- 路线图行动项必须可量化验收。
-- 决策日志必须可追溯到具体会议或评审。
-
-## 5. 新成员入场清单
-
-- 30 分钟内完成文档阅读路径。
-- 当天完成本周目标与 owner 对齐。
-- 第一周至少参与一次脑暴评审会。
-
-## 6. 维护责任
-
-- 架构负责人：维护架构基线。
-- 交付负责人：维护路线图与会议机制。
-- 项目负责人：维护治理规范与文档一致性。
-
-## 7. 最近更新时间
-
-- 2026-02-28
+Last updated: 2026-03-01
