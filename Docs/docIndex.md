@@ -9,6 +9,8 @@
 - 决策日志：`Docs/Governance/decisionLog.md`
 - 路线规划：`Docs/Delivery/roadmapPlan.md`
 - 脑暴机制：`Docs/Delivery/brainstormingWorkshop.md`
+- 团队 TODO：`Docs/Delivery/mvpTeamTodo.md`
+- 发布清单：`Docs/Delivery/mvpReleaseChecklist.md`
 - 交付手册：`Docs/Operations/deliveryHandbook.md`
 - 交付总览：`Docs/Operations/deliverySummary.md`
 

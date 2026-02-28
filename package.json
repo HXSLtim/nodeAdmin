@@ -7,8 +7,8 @@
     "Packages/*"
   ],
   "scripts": {
-    "build": "npm run build -w Apps/CoreApi && npm run build -w Apps/AdminPortal",
-    "dev:api": "npm run dev -w Apps/CoreApi",
-    "dev:web": "npm run dev -w Apps/AdminPortal"
+    "build": "npm run build -w core-api && npm run build -w admin-portal",
+    "dev:api": "npm run dev -w core-api",
+    "dev:web": "npm run dev -w admin-portal"
   }
 }
