@@ -16,4 +16,18 @@ export class ImPresenceService {
       userId: context.userId,
     };
   }
+
+  createLeftEvent(context: SocketContext): {
+    conversationId: string;
+    event: 'left';
+    tenantId: string;
+    userId: string;
+  } {
+    return {
+      conversationId: context.conversationId,
+      event: 'left',
+      tenantId: context.tenantId,
+      userId: context.userId,
+    };
+  }
 }

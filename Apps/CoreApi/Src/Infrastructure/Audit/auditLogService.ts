@@ -114,9 +114,9 @@ export class AuditLogService implements OnModuleDestroy {
     });
   }
 
-  async listByTenant(tenantId: string, limit: number): Promise<StoredAuditLog[]> {
+  async listByTenant(tenantId: string, limit: number, offset: number = 0): Promise<StoredAuditLog[]> {
     if (!this.pool) {
-      return this.fallbackRows.slice(0, limit).filter((row) => row.tenantId === tenantId);
+      return this.fallbackRows.slice(offset, offset + limit).filter((row) => row.tenantId === tenantId);
     }
 
     return this.runWithTenant(tenantId, async (client) => {
@@ -134,9 +134,10 @@ export class AuditLogService implements OnModuleDestroy {
           FROM audit_logs
           WHERE tenant_id = $1
           ORDER BY created_at DESC
-          LIMIT $2;
+          LIMIT $2
+          OFFSET $3;
         `,
-        [tenantId, limit],
+        [tenantId, limit, offset],
       );
 
       return result.rows.map((row) => ({

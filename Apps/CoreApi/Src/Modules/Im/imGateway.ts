@@ -81,7 +81,15 @@ export class ImGateway implements OnGatewayConnection, OnGatewayDisconnect, OnGa
   }
 
   handleDisconnect(client: Socket): void {
+    // Capture context before removing so we can broadcast the leave event.
+    const context = this.conversationService.getContext(client.id);
     this.conversationService.removeConnection(client.id);
+
+    if (context) {
+      const roomKey = this.conversationService.toRoomKey(context.tenantId, context.conversationId);
+      // Notify remaining room members that this user has left.
+      this.server.to(roomKey).emit('presenceChanged', this.presenceService.createLeftEvent(context));
+    }
   }
 
   async onModuleDestroy(): Promise<void> {

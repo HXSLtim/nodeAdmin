@@ -108,11 +108,9 @@ export class ConsoleController {
 
     const parsedOffset = Number(offsetRaw);
     const offset = Number.isInteger(parsedOffset) && parsedOffset >= 0 ? parsedOffset : 0;
-    // TODO: pass offset to repository when pagination is implemented
-    void offset;
 
     return {
-      rows: await this.auditLogService.listByTenant(tenantId, Math.min(limit, 200)),
+      rows: await this.auditLogService.listByTenant(tenantId, Math.min(limit, 200), offset),
     };
   }
 }
