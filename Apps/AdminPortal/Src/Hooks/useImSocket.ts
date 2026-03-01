@@ -28,6 +28,13 @@ export interface ImTypingEvent {
   userId: string;
 }
 
+export interface ImPresenceEvent {
+  conversationId: string;
+  event: 'joined' | 'left';
+  tenantId: string;
+  userId: string;
+}
+
 interface UseImSocketOptions {
   accessToken: string | null;
   conversationId: string;
@@ -35,6 +42,7 @@ interface UseImSocketOptions {
   onConversationHistory: (history: ImSocketMessage[]) => void;
   onMessageReceived: (message: ImSocketMessage) => void;
   onTypingChanged?: (event: ImTypingEvent) => void;
+  onPresenceChanged?: (event: ImPresenceEvent) => void;
   socketUrl: string;
 }
 
@@ -49,6 +57,7 @@ export function useImSocket(options: UseImSocketOptions): {
     onConversationHistory,
     onMessageReceived,
     onTypingChanged,
+    onPresenceChanged,
     socketUrl,
   } = options;
   const socketRef = useRef<Socket | null>(null);
@@ -99,10 +108,16 @@ export function useImSocket(options: UseImSocketOptions): {
     if (onTypingChanged) {
       socket.on('typingChanged', onTypingChanged);
     }
+    if (onPresenceChanged) {
+      socket.on('presenceChanged', onPresenceChanged);
+    }
 
     return () => {
       if (onTypingChanged) {
         socket.off('typingChanged', onTypingChanged);
+      }
+      if (onPresenceChanged) {
+        socket.off('presenceChanged', onPresenceChanged);
       }
       socket.disconnect();
       socketRef.current = null;
@@ -115,6 +130,7 @@ export function useImSocket(options: UseImSocketOptions): {
     onMessageReceived,
     onTypingChanged,
     socketUrl,
+    onPresenceChanged,
   ]);
 
   const emitTyping = useCallback((payload: { conversationId: string; isTyping: boolean }) => {
