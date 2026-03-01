@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { NavLink } from 'react-router-dom';
@@ -5,7 +6,13 @@ import type { ImMessageType } from '@nodeadmin/shared-types';
 import { Badge } from '@/Components/Ui/badge';
 import { Button } from '@/Components/Ui/button';
 import { Input } from '@/Components/Ui/input';
-import { ImSendMessagePayload, ImSocketMessage, ImTypingEvent, useImSocket } from '@/Hooks/useImSocket';
+import {
+  ImSendMessagePayload,
+  ImSocketMessage,
+  ImTypingEvent,
+  useImSocket,
+  type ImPresenceEvent,
+} from '@/Hooks/useImSocket';
 import { useApiClient } from '@/Hooks/useApiClient';
 import { useAuthStore } from '@/Stores/useAuthStore';
 import { useMessageStore } from '@/Stores/useMessageStore';
@@ -140,6 +147,7 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
   const [stickToBottom, setStickToBottom] = useState(true);
   const [typingUsers, setTypingUsers] = useState<TypingMap>({});
   const [offlineQueueCount, setOfflineQueueCount] = useState(0);
+  const [presenceMembers, setPresenceMembers] = React.useState<Set<string>>(new Set());
 
   const messageViewportRef = useRef<HTMLDivElement | null>(null);
   const typingIdleTimerRef = useRef<number | null>(null);
@@ -336,12 +344,25 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
     [imConfig],
   );
 
+  const handlePresenceChanged = React.useCallback((event: ImPresenceEvent) => {
+    setPresenceMembers((prev) => {
+      const next = new Set(prev);
+      if (event.event === 'joined') {
+        next.add(event.userId);
+      } else if (event.event === 'left') {
+        next.delete(event.userId);
+      }
+      return next;
+    });
+  }, []);
+
   const { emitTyping, emitWithAck } = useImSocket({
     accessToken,
     conversationId: imConfig?.conversationId ?? '',
     onConnectionStateChange: setConnectionState,
     onConversationHistory: handleConversationHistory,
     onMessageReceived: handleMessageReceived,
+    onPresenceChanged: handlePresenceChanged,
     onTypingChanged: handleTypingChanged,
     socketUrl,
   });
@@ -563,7 +584,10 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
 
       <div className="flex min-w-0 flex-1 flex-col gap-4">
         <header className="flex items-center justify-between">
-          <h2 className="text-base font-semibold">IM Conversation</h2>
+          <div>
+            <h2 className="text-base font-semibold">IM Conversation</h2>
+            <div className="text-sm text-gray-500">在线: {presenceMembers.size} 人</div>
+          </div>
           <div className="flex items-center gap-2">
             {offlineQueueCount > 0 ? <Badge variant="secondary">offline queue: {offlineQueueCount}</Badge> : null}
             <Badge variant={connectionState === 'connected' ? 'default' : 'secondary'}>{connectionLabel}</Badge>

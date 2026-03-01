@@ -1,9 +1,20 @@
 import { BadRequestException, Controller, Get, Query } from '@nestjs/common';
 import { AuditLogService } from '../../Infrastructure/Audit/auditLogService';
+import { ConversationRepository } from '../../Infrastructure/Database/conversationRepository.js';
+
+interface ConversationListResponse {
+  conversationId: string;
+  title: string;
+  lastMessageAt: string | null;
+  unreadCount: number;
+}
 
 @Controller('console')
 export class ConsoleController {
-  constructor(private readonly auditLogService: AuditLogService) {}
+  constructor(
+    private readonly auditLogService: AuditLogService,
+    private readonly conversationRepository: ConversationRepository,
+  ) {}
 
   @Get('overview')
   getOverview() {
@@ -43,30 +54,15 @@ export class ConsoleController {
   }
 
   @Get('conversations')
-  getConversations() {
-    return {
-      _note: 'static placeholder – replace with DB query in Phase 2',
-      rows: [
-        {
-          id: 'conversation-mvp',
-          name: 'MVP Delivery Group',
-          lastMessagePreview: 'Today we completed JWT and SQL migration baseline.',
-          unreadCount: 3,
-        },
-        {
-          id: 'conversation-release',
-          name: 'Release Coordination Group',
-          lastMessagePreview: 'Please confirm PgBouncer stress check results.',
-          unreadCount: 1,
-        },
-        {
-          id: 'conversation-support',
-          name: 'Support and Inspection Group',
-          lastMessagePreview: 'Nightly check passed with no alerts.',
-          unreadCount: 0,
-        },
-      ],
-    };
+  async getConversations(@Query('tenantId') tenantId = 'tenant-demo'): Promise<ConversationListResponse[]> {
+    const rows = await this.conversationRepository.listByTenant(tenantId, 50);
+
+    return rows.map((row) => ({
+      conversationId: row.conversationId,
+      title: row.title,
+      lastMessageAt: row.lastMessageAt?.toISOString() ?? null,
+      unreadCount: 0, // TODO: implement unread count in Phase 2
+    }));
   }
 
   @Get('permissions')
