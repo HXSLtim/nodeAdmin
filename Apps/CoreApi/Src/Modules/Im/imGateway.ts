@@ -15,6 +15,8 @@ import { createClient, RedisClientType } from 'redis';
 import { Server, Socket } from 'socket.io';
 import { runtimeConfig } from '../../App/runtimeConfig';
 import { AuditLogService } from '../../Infrastructure/Audit/auditLogService';
+import { CircuitBreaker } from '../../Infrastructure/Resilience/circuitBreaker';
+import { DegradationManager, DegradationFeature } from '../../Infrastructure/Resilience/degradationManager';
 import { AuthIdentity } from '../Auth/authIdentity';
 import { JoinConversationDto } from './dto/joinConversationDto';
 import { SendMessageDto } from './dto/sendMessageDto';
@@ -31,8 +33,8 @@ import { ImPresenceService } from './services/imPresenceService';
   },
   maxHttpBufferSize: ImMessageService.maxMessageBytes,
   perMessageDeflate: false,
-  pingInterval: 30000,
-  pingTimeout: 25000,
+  pingInterval: runtimeConfig.socketio.pingInterval,
+  pingTimeout: runtimeConfig.socketio.pingTimeout,
   transports: ['websocket'],
 })
 export class ImGateway implements OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit, OnModuleDestroy {
@@ -40,6 +42,19 @@ export class ImGateway implements OnGatewayConnection, OnGatewayDisconnect, OnGa
 
   private redisPubClient: RedisClientType | null = null;
   private redisSubClient: RedisClientType | null = null;
+  private redisPubPool: RedisClientType[] = [];
+  private redisSubPool: RedisClientType[] = [];
+  private static readonly REDIS_POOL_SIZE = 10;
+
+  private readonly redisCircuitBreaker = new CircuitBreaker({
+    failureThreshold: 5,
+    halfOpenMaxAttempts: 3,
+    name: 'redis-adapter',
+    successThreshold: 2,
+    timeout: 30000,
+  });
+
+  private readonly degradationManager = new DegradationManager();
 
   @WebSocketServer()
   private server!: Server;
@@ -53,22 +68,57 @@ export class ImGateway implements OnGatewayConnection, OnGatewayDisconnect, OnGa
 
   async afterInit(server: Server): Promise<void> {
     if (!runtimeConfig.redis.url) {
+      this.logger.warn('Redis URL not configured, running in single-node mode');
       return;
     }
 
     try {
-      this.redisPubClient = createClient({
-        url: runtimeConfig.redis.url,
+      await this.redisCircuitBreaker.execute(async () => {
+        const redisConfig = {
+          url: runtimeConfig.redis.url || undefined,
+          socket: {
+            connectTimeout: runtimeConfig.redis.connectTimeout,
+            keepAlive: true,
+            noDelay: true,
+            reconnectStrategy: (retries: number) => {
+              if (retries > runtimeConfig.redis.maxRetries) {
+                return new Error('Max Redis reconnection retries reached');
+              }
+              return Math.min(retries * 100, 3000);
+            },
+          },
+          commandsQueueMaxLength: runtimeConfig.redis.commandsQueueMaxLength,
+          enableOfflineQueue: true,
+          maxRetriesPerRequest: 3,
+          pingInterval: runtimeConfig.redis.pingInterval,
+        };
+
+        this.redisPubClient = createClient(redisConfig);
+        this.redisSubClient = this.redisPubClient.duplicate();
+
+        await this.redisPubClient.connect();
+        await this.redisSubClient.connect();
+
+        for (let i = 0; i < ImGateway.REDIS_POOL_SIZE; i++) {
+          const pubClient = createClient(redisConfig);
+          const subClient = pubClient.duplicate();
+          await pubClient.connect();
+          await subClient.connect();
+          this.redisPubPool.push(pubClient as any);
+          this.redisSubPool.push(subClient as any);
+        }
+
+        server.adapter(createAdapter(this.redisPubClient as any, this.redisSubClient as any));
+        this.logger.log(
+          `Socket.IO Redis adapter connected with pool size ${ImGateway.REDIS_POOL_SIZE}: ${runtimeConfig.redis.url}`,
+        );
       });
-      this.redisSubClient = this.redisPubClient.duplicate();
-
-      await this.redisPubClient.connect();
-      await this.redisSubClient.connect();
-
-      server.adapter(createAdapter(this.redisPubClient, this.redisSubClient));
-      this.logger.log(`Socket.IO Redis adapter connected: ${runtimeConfig.redis.url}`);
     } catch (error) {
-      this.logger.error(`Failed to initialize Socket.IO Redis adapter: ${String(error)}`);
+      this.degradationManager.degrade(
+        DegradationFeature.REDIS_ADAPTER,
+        `Redis connection failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      this.logger.error(`Failed to initialize Socket.IO Redis adapter, degrading to single-node mode: ${String(error)}`);
       await this.closeRedisClients();
     }
   }
@@ -251,6 +301,16 @@ export class ImGateway implements OnGatewayConnection, OnGatewayDisconnect, OnGa
       await this.redisSubClient.quit();
       this.redisSubClient = null;
     }
+
+    for (const client of this.redisPubPool) {
+      await client.quit();
+    }
+    this.redisPubPool = [];
+
+    for (const client of this.redisSubPool) {
+      await client.quit();
+    }
+    this.redisSubPool = [];
   }
 
   private async closeSocketServer(): Promise<void> {

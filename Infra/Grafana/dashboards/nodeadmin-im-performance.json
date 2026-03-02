@@ -1,0 +1,512 @@
+{
+  "__inputs": [],
+  "__requires": [],
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisLabel": "Latency (ms)",
+            "axisPlacement": "auto",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "id": 1,
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true, "calcs": ["mean", "max", "lastNotNull"] },
+        "tooltip": { "mode": "multi", "sort": "none" }
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, rate(im_e2e_message_latency_ms_bucket[5m]))",
+          "legendFormat": "P50 E2E Latency",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.95, rate(im_e2e_message_latency_ms_bucket[5m]))",
+          "legendFormat": "P95 E2E Latency",
+          "refId": "B"
+        },
+        {
+          "expr": "histogram_quantile(0.99, rate(im_e2e_message_latency_ms_bucket[5m]))",
+          "legendFormat": "P99 E2E Latency",
+          "refId": "C"
+        }
+      ],
+      "title": "End-to-End Message Latency",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisLabel": "Messages/sec",
+            "axisPlacement": "auto",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2
+          },
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "id": 2,
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true, "calcs": ["mean", "max", "lastNotNull"] },
+        "tooltip": { "mode": "multi", "sort": "none" }
+      },
+      "targets": [
+        {
+          "expr": "rate(im_messages_appended_total[5m])",
+          "legendFormat": "Append Rate",
+          "refId": "A"
+        },
+        {
+          "expr": "rate(im_e2e_message_success_total[5m])",
+          "legendFormat": "Success Rate",
+          "refId": "B"
+        },
+        {
+          "expr": "rate(im_e2e_message_failure_total[5m])",
+          "legendFormat": "Failure Rate",
+          "refId": "C"
+        },
+        {
+          "expr": "rate(im_message_delivery_rate_total[5m])",
+          "legendFormat": "Delivery Rate",
+          "refId": "D"
+        }
+      ],
+      "title": "Message Throughput",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.01 },
+              { "color": "red", "value": 0.05 }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 8 },
+      "id": 3,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["lastNotNull"],
+          "fields": ""
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "targets": [
+        {
+          "expr": "rate(im_e2e_message_failure_total[5m]) / (rate(im_e2e_message_success_total[5m]) + rate(im_e2e_message_failure_total[5m]))",
+          "refId": "A"
+        }
+      ],
+      "title": "Message Failure Rate",
+      "type": "gauge"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 5 },
+              { "color": "red", "value": 10 }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 8 },
+      "id": 4,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["lastNotNull"],
+          "fields": ""
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "targets": [
+        {
+          "expr": "increase(im_e2e_message_loss_total[5m])",
+          "refId": "A"
+        }
+      ],
+      "title": "Message Loss (5m)",
+      "type": "gauge"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisLabel": "Connections",
+            "axisPlacement": "auto",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 8 },
+      "id": 5,
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "none" }
+      },
+      "targets": [
+        {
+          "expr": "im_active_connections",
+          "legendFormat": "Active Connections",
+          "refId": "A"
+        }
+      ],
+      "title": "Active WebSocket Connections",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.05 },
+              { "color": "red", "value": 0.1 }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 8 },
+      "id": 6,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["lastNotNull"],
+          "fields": ""
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "targets": [
+        {
+          "expr": "rate(im_trace_id_missing_total[5m]) / rate(im_trace_id_propagation_total[5m])",
+          "refId": "A"
+        }
+      ],
+      "title": "TraceId Missing Rate",
+      "type": "gauge"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisLabel": "Latency (ms)",
+            "axisPlacement": "auto",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "id": 7,
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true, "calcs": ["mean", "max", "lastNotNull"] },
+        "tooltip": { "mode": "multi", "sort": "none" }
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, rate(im_message_append_ms_bucket[5m]))",
+          "legendFormat": "P50 Append",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.95, rate(im_message_append_ms_bucket[5m]))",
+          "legendFormat": "P95 Append",
+          "refId": "B"
+        },
+        {
+          "expr": "histogram_quantile(0.99, rate(im_message_append_ms_bucket[5m]))",
+          "legendFormat": "P99 Append",
+          "refId": "C"
+        }
+      ],
+      "title": "Message Append Latency",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisLabel": "Latency (ms)",
+            "axisPlacement": "auto",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "id": 8,
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true, "calcs": ["mean", "max", "lastNotNull"] },
+        "tooltip": { "mode": "multi", "sort": "none" }
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, rate(im_message_db_write_ms_bucket[5m]))",
+          "legendFormat": "P50 DB Write",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.95, rate(im_message_db_write_ms_bucket[5m]))",
+          "legendFormat": "P95 DB Write",
+          "refId": "B"
+        },
+        {
+          "expr": "histogram_quantile(0.99, rate(im_message_db_write_ms_bucket[5m]))",
+          "legendFormat": "P99 DB Write",
+          "refId": "C"
+        }
+      ],
+      "title": "Database Write Latency",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisLabel": "Latency (ms)",
+            "axisPlacement": "auto",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+      "id": 9,
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true, "calcs": ["mean", "max", "lastNotNull"] },
+        "tooltip": { "mode": "multi", "sort": "none" }
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, rate(im_message_persist_queue_wait_ms_bucket[5m]))",
+          "legendFormat": "P50 Queue Wait",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.95, rate(im_message_persist_queue_wait_ms_bucket[5m]))",
+          "legendFormat": "P95 Queue Wait",
+          "refId": "B"
+        },
+        {
+          "expr": "histogram_quantile(0.99, rate(im_message_persist_queue_wait_ms_bucket[5m]))",
+          "legendFormat": "P99 Queue Wait",
+          "refId": "C"
+        }
+      ],
+      "title": "Persist Queue Wait Time",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisLabel": "Latency (ms)",
+            "axisPlacement": "auto",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
+      "id": 10,
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true, "calcs": ["mean", "max", "lastNotNull"] },
+        "tooltip": { "mode": "multi", "sort": "none" }
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, rate(im_ws_connection_duration_ms_bucket[5m]))",
+          "legendFormat": "P50 WS Connect",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.95, rate(im_ws_connection_duration_ms_bucket[5m]))",
+          "legendFormat": "P95 WS Connect",
+          "refId": "B"
+        },
+        {
+          "expr": "histogram_quantile(0.99, rate(im_ws_connection_duration_ms_bucket[5m]))",
+          "legendFormat": "P99 WS Connect",
+          "refId": "C"
+        }
+      ],
+      "title": "WebSocket Connection Latency",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisLabel": "Count",
+            "axisPlacement": "auto",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 28 },
+      "id": 11,
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true, "calcs": ["mean", "max", "lastNotNull"] },
+        "tooltip": { "mode": "multi", "sort": "none" }
+      },
+      "targets": [
+        {
+          "expr": "rate(im_ws_connection_success_total[5m])",
+          "legendFormat": "Success Rate",
+          "refId": "A"
+        },
+        {
+          "expr": "rate(im_ws_connection_failure_total[5m])",
+          "legendFormat": "Failure Rate",
+          "refId": "B"
+        }
+      ],
+      "title": "WebSocket Connection Success/Failure",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisLabel": "Count",
+            "axisPlacement": "auto",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 28 },
+      "id": 12,
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true, "calcs": ["mean", "max", "lastNotNull"] },
+        "tooltip": { "mode": "multi", "sort": "none" }
+      },
+      "targets": [
+        {
+          "expr": "rate(im_trace_id_propagation_total[5m])",
+          "legendFormat": "TraceId Propagated",
+          "refId": "A"
+        },
+        {
+          "expr": "rate(im_trace_id_missing_total[5m])",
+          "legendFormat": "TraceId Missing",
+          "refId": "B"
+        }
+      ],
+      "title": "TraceId Propagation",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 39,
+  "style": "dark",
+  "tags": ["nodeadmin", "im", "performance"],
+  "templating": { "list": [] },
+  "time": { "from": "now-30m", "to": "now" },
+  "timepicker": {},
+  "timezone": "",
+  "title": "NodeAdmin IM Performance",
+  "version": 1,
+  "weekStart": ""
+}

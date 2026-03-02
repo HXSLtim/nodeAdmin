@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { ConversationRepository } from '../../Infrastructure/Database/conversationRepository.js';
-import { DatabaseService } from '../../Infrastructure/Database/databaseService.js';
+import { ConversationRepository } from '../../Infrastructure/Database/conversationRepository';
+import { DatabaseService } from '../../Infrastructure/Database/databaseService';
 import { InfrastructureModule } from '../../Infrastructure/infrastructureModule';
 import { ConsoleController, MetricsController } from './consoleController';
 

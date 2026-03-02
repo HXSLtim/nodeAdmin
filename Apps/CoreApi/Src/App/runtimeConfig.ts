@@ -21,6 +21,11 @@ interface RuntimeConfig {
   };
   redis: {
     url: string | null;
+    connectTimeout: number;
+    commandTimeout: number;
+    pingInterval: number;
+    commandsQueueMaxLength: number;
+    maxRetries: number;
   };
   security: {
     csp: string;
@@ -35,6 +40,22 @@ interface RuntimeConfig {
   port: number;
   rateLimit: {
     wsMessagesPerSecond: number;
+  };
+  socketio: {
+    pingInterval: number;
+    pingTimeout: number;
+  };
+  database: {
+    connectionTimeoutMillis: number;
+    idleTimeoutMillis: number;
+    statementTimeoutMillis: number;
+  };
+  fastify: {
+    connectionTimeout: number;
+    keepAliveTimeout: number;
+    requestTimeout: number;
+    bodyLimit: number;
+    maxParamLength: number;
   };
 }
 
@@ -134,6 +155,11 @@ export const runtimeConfig: RuntimeConfig = {
   },
   redis: {
     url: process.env.REDIS_URL?.trim() || null,
+    connectTimeout: readPositiveInt('REDIS_CONNECT_TIMEOUT', 10000),
+    commandTimeout: readPositiveInt('REDIS_COMMAND_TIMEOUT', 5000),
+    pingInterval: readPositiveInt('REDIS_PING_INTERVAL', 15000),
+    commandsQueueMaxLength: readPositiveInt('REDIS_COMMANDS_QUEUE_MAX_LENGTH', 1000),
+    maxRetries: readPositiveInt('REDIS_MAX_RETRIES', 10),
   },
   security: {
     csp:
@@ -146,5 +172,21 @@ export const runtimeConfig: RuntimeConfig = {
     metricsPort: readPositiveInt('OTEL_METRICS_PORT', 9464),
     otlpEndpoint: process.env.OTEL_EXPORTER_OTLP_ENDPOINT?.trim() || null,
     serviceName: process.env.OTEL_SERVICE_NAME?.trim() || 'core-api',
+  },
+  socketio: {
+    pingInterval: readPositiveInt('SOCKETIO_PING_INTERVAL', 25000),
+    pingTimeout: readPositiveInt('SOCKETIO_PING_TIMEOUT', 60000),
+  },
+  database: {
+    connectionTimeoutMillis: readPositiveInt('PG_CONNECTION_TIMEOUT', 15000),
+    idleTimeoutMillis: readPositiveInt('PG_IDLE_TIMEOUT', 300000),
+    statementTimeoutMillis: readPositiveInt('PG_STATEMENT_TIMEOUT', 30000),
+  },
+  fastify: {
+    connectionTimeout: readPositiveInt('FASTIFY_CONNECTION_TIMEOUT', 60000),
+    keepAliveTimeout: readPositiveInt('FASTIFY_KEEP_ALIVE_TIMEOUT', 65000),
+    requestTimeout: readPositiveInt('FASTIFY_REQUEST_TIMEOUT', 30000),
+    bodyLimit: readPositiveInt('FASTIFY_BODY_LIMIT', 10485760),
+    maxParamLength: readPositiveInt('FASTIFY_MAX_PARAM_LENGTH', 500),
   },
 };

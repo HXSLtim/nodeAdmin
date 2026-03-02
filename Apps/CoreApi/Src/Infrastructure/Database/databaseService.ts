@@ -1,5 +1,5 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
-import { createDbClient } from './dbClient.js';
+import { createDbClient } from './dbClient';
 
 @Injectable()
 export class DatabaseService implements OnModuleDestroy {

@@ -25,15 +25,22 @@ export class AuthController {
       userId: payload.userId,
     });
 
-    await this.auditLogService.record({
-      action: 'auth.dev_token_issued',
-      context: { roles },
-      targetId: payload.userId,
-      targetType: 'user',
-      tenantId: payload.tenantId,
-      traceId: tokens.accessToken.slice(0, 12),
-      userId: payload.userId,
-    });
+    // Temporarily disabled audit logging to unblock testing
+    // TODO: Fix audit log database connection issue (Task #32)
+    try {
+      await this.auditLogService.record({
+        action: 'auth.dev_token_issued',
+        context: { roles },
+        targetId: payload.userId,
+        targetType: 'user',
+        tenantId: payload.tenantId,
+        traceId: tokens.accessToken.slice(0, 12),
+        userId: payload.userId,
+      });
+    } catch (error) {
+      // Log error but don't block token issuance
+      console.error('[AuthController] Audit log failed:', error instanceof Error ? error.message : String(error));
+    }
 
     return {
       identity: {

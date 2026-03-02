@@ -1,7 +1,7 @@
 import { BadRequestException, Controller, Get, Query } from '@nestjs/common';
 import { monitorEventLoopDelay } from 'node:perf_hooks';
 import { AuditLogService } from '../../Infrastructure/Audit/auditLogService';
-import { ConversationRepository } from '../../Infrastructure/Database/conversationRepository.js';
+import { ConversationRepository } from '../../Infrastructure/Database/conversationRepository';
 
 const eventLoopLagHistogram = monitorEventLoopDelay({
   resolution: 20,

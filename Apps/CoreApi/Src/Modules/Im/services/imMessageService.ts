@@ -7,6 +7,7 @@ import { AppendResult, PendingMessage, StoredMessage } from '../../../Infrastruc
 import { ImMessageRepository } from '../../../Infrastructure/Database/imMessageRepository';
 import { AuthIdentity } from '../../Auth/authIdentity';
 import { SendMessageDto } from '../dto/sendMessageDto';
+import { BackpressureController } from '../../../Infrastructure/Resilience/backpressureController';
 
 interface RateLimitWindow {
   count: number;
@@ -28,9 +29,9 @@ interface PersistQueueEntry {
 @Injectable()
 export class ImMessageService implements OnModuleInit, OnModuleDestroy {
   static readonly maxMessageBytes = 1024 * 1024;
-  private static readonly persistBatchFlushIntervalMs = 100;
-  private static readonly persistBatchSize = 100;
-  private static readonly persistConcurrency = 6;
+  private static readonly persistBatchFlushIntervalMs = 50;
+  private static readonly persistBatchSize = 200;
+  private static readonly persistConcurrency = 20;
   private static readonly persistMaxRetry = 3;
   private static readonly persistRetryDelayMs = 50;
   private static readonly maxPersistQueueLength = 50000;
@@ -86,6 +87,13 @@ export class ImMessageService implements OnModuleInit, OnModuleDestroy {
   private readonly cachedResultByStream = new Map<string, Map<string, CachedAppendResult>>();
   private readonly queue: PersistQueueEntry[] = [];
   private readonly streamTouchedAtMs = new Map<string, number>();
+  private readonly backpressure = new BackpressureController({
+    maxConcurrent: 1000,
+    maxQueueSize: ImMessageService.maxPersistQueueLength,
+    name: 'im-message-persist',
+    rejectThreshold: 45000,
+    warnThreshold: ImMessageService.queueWarnThreshold,
+  });
 
   private flushIntervalHandle: NodeJS.Timeout | null = null;
   private flushInProgress = false;
@@ -147,6 +155,13 @@ export class ImMessageService implements OnModuleInit, OnModuleDestroy {
           'im.message.receiveAtMs': startAt,
           'im.message.queueSize': this.queue.length,
         });
+
+        const backpressureStatus = this.backpressure.checkCapacity(this.queue.length);
+        if (backpressureStatus.shouldReject) {
+          throw new WsException(
+            `System overloaded (queue at ${backpressureStatus.utilizationPercent.toFixed(1)}% capacity). Please retry later.`,
+          );
+        }
 
         const cachedResult = this.getCachedAppendResult(streamKey, payload.messageId, now);
         if (cachedResult) {

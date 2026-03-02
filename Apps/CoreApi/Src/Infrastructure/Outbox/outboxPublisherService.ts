@@ -38,27 +38,42 @@ export class OutboxPublisherService implements OnModuleInit, OnModuleDestroy {
       return;
     }
 
-    this.pool = new Pool({
-      connectionString: databaseUrl,
-      max: 10,
-    });
+    try {
+      this.pool = new Pool({
+        connectionString: databaseUrl,
+        max: 10,
+        connectionTimeoutMillis: runtimeConfig.database.connectionTimeoutMillis,
+        idleTimeoutMillis: runtimeConfig.database.idleTimeoutMillis,
+      });
 
-    const kafka = new Kafka({
-      brokers: runtimeConfig.kafka.brokers,
-      clientId: runtimeConfig.kafka.clientId,
-    });
-    this.producer = kafka.producer();
-    await this.producer.connect();
+      const kafka = new Kafka({
+        brokers: runtimeConfig.kafka.brokers,
+        clientId: runtimeConfig.kafka.clientId,
+      });
+      this.producer = kafka.producer();
+      await this.producer.connect();
 
-    await this.publishBatch();
+      await this.publishBatch();
 
-    this.intervalHandle = setInterval(() => {
-      void this.publishBatch();
-    }, runtimeConfig.outbox.pollIntervalMs);
+      this.intervalHandle = setInterval(() => {
+        void this.publishBatch();
+      }, runtimeConfig.outbox.pollIntervalMs);
 
-    this.logger.log(
-      `Outbox publisher enabled interval=${runtimeConfig.outbox.pollIntervalMs}ms batchSize=${runtimeConfig.outbox.batchSize} topic=${runtimeConfig.kafka.topic} dlq=${runtimeConfig.kafka.dlqTopic}.`,
-    );
+      this.logger.log(
+        `Outbox publisher enabled interval=${runtimeConfig.outbox.pollIntervalMs}ms batchSize=${runtimeConfig.outbox.batchSize} topic=${runtimeConfig.kafka.topic} dlq=${runtimeConfig.kafka.dlqTopic}.`,
+      );
+    } catch (error) {
+      this.logger.error('Failed to initialize Outbox publisher. Service will continue without outbox functionality.', error);
+      // Clean up resources if initialization failed
+      if (this.producer) {
+        await this.producer.disconnect().catch(() => {});
+        this.producer = null;
+      }
+      if (this.pool) {
+        await this.pool.end().catch(() => {});
+        this.pool = null;
+      }
+    }
   }
 
   async onModuleDestroy(): Promise<void> {

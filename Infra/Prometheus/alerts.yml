@@ -16,3 +16,182 @@ groups:
           severity: P2
         annotations:
           summary: 'IM message append count has stalled for 10 minutes'
+
+  - name: nodeadmin-im-performance
+    rules:
+      - alert: HighMessageLatency
+        expr: histogram_quantile(0.95, rate(im_message_append_ms_bucket[5m])) > 500
+        for: 5m
+        labels:
+          severity: P1
+        annotations:
+          summary: 'IM message append latency P95 exceeds 500ms'
+          description: 'P95 latency: {{ $value }}ms'
+
+      - alert: HighE2EMessageLatency
+        expr: histogram_quantile(0.95, rate(im_e2e_message_latency_ms_bucket[5m])) > 1000
+        for: 5m
+        labels:
+          severity: P1
+        annotations:
+          summary: 'IM end-to-end message latency P95 exceeds 1000ms'
+          description: 'P95 E2E latency: {{ $value }}ms'
+
+      - alert: MessageLossDetected
+        expr: rate(im_e2e_message_loss_total[5m]) > 0.01
+        for: 2m
+        labels:
+          severity: P0
+        annotations:
+          summary: 'IM message loss detected'
+          description: 'Message loss rate: {{ $value }} messages/sec'
+
+      - alert: HighMessageFailureRate
+        expr: rate(im_e2e_message_failure_total[5m]) / rate(im_e2e_message_success_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: P1
+        annotations:
+          summary: 'IM message failure rate exceeds 5%'
+          description: 'Failure rate: {{ $value | humanizePercentage }}'
+
+      - alert: WebSocketConnectionFailures
+        expr: rate(im_ws_connection_failure_total[5m]) > 1
+        for: 3m
+        labels:
+          severity: P1
+        annotations:
+          summary: 'High WebSocket connection failure rate'
+          description: 'Connection failures: {{ $value }} failures/sec'
+
+      - alert: HighPersistQueueWait
+        expr: histogram_quantile(0.95, rate(im_message_persist_queue_wait_ms_bucket[5m])) > 1000
+        for: 5m
+        labels:
+          severity: P2
+        annotations:
+          summary: 'IM persist queue wait time P95 exceeds 1000ms'
+          description: 'P95 queue wait: {{ $value }}ms'
+
+      - alert: TraceIdPropagationFailure
+        expr: rate(im_trace_id_missing_total[5m]) / rate(im_trace_id_propagation_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: P2
+        annotations:
+          summary: 'TraceId propagation failure rate exceeds 10%'
+          description: 'Missing traceId rate: {{ $value | humanizePercentage }}'
+
+      - alert: HighDatabaseWriteLatency
+        expr: histogram_quantile(0.95, rate(im_message_db_write_ms_bucket[5m])) > 200
+        for: 5m
+        labels:
+          severity: P1
+        annotations:
+          summary: 'IM database write latency P95 exceeds 200ms'
+          description: 'P95 DB write latency: {{ $value }}ms'
+
+  - name: nodeadmin-resilience
+    rules:
+      - alert: CircuitBreakerOpen
+        expr: circuit_breaker_state > 0
+        for: 1m
+        labels:
+          severity: P0
+        annotations:
+          summary: 'Circuit breaker is OPEN or HALF_OPEN'
+          description: 'Circuit breaker {{ $labels.name }} state: {{ $value }} (0=CLOSED, 1=OPEN, 2=HALF_OPEN)'
+
+      - alert: CircuitBreakerFrequentTrips
+        expr: rate(circuit_breaker_trips_total[5m]) > 0.1
+        for: 3m
+        labels:
+          severity: P1
+        annotations:
+          summary: 'Circuit breaker tripping frequently'
+          description: 'Circuit breaker {{ $labels.name }} trip rate: {{ $value }} trips/sec'
+
+      - alert: BackpressureActive
+        expr: rate(backpressure_rejections_total[5m]) > 10
+        for: 2m
+        labels:
+          severity: P1
+        annotations:
+          summary: 'Backpressure rejecting requests'
+          description: 'Backpressure {{ $labels.name }} rejection rate: {{ $value }} rejections/sec (reason: {{ $labels.reason }})'
+
+      - alert: BackpressureRedZone
+        expr: backpressure_zone >= 2
+        for: 5m
+        labels:
+          severity: P2
+        annotations:
+          summary: 'Backpressure in RED or BLACK zone'
+          description: 'Backpressure {{ $labels.name }} zone: {{ $value }} (0=GREEN, 1=YELLOW, 2=RED, 3=BLACK)'
+
+      - alert: DegradationActive
+        expr: degradation_active == 1
+        for: 5m
+        labels:
+          severity: P1
+        annotations:
+          summary: 'Feature degradation active'
+          description: 'Feature {{ $labels.feature }} is degraded'
+
+  - name: nodeadmin-pgbouncer
+    rules:
+      - alert: PgBouncerHighConnectionPoolUsage
+        expr: (pgbouncer_pools_server_active_connections / pgbouncer_pools_server_max_connections) > 0.8
+        for: 5m
+        labels:
+          severity: P1
+        annotations:
+          summary: 'PgBouncer connection pool usage exceeds 80%'
+          description: 'Pool {{ $labels.database }} usage: {{ $value | humanizePercentage }}'
+
+      - alert: PgBouncerClientWaiting
+        expr: pgbouncer_pools_client_waiting_connections > 10
+        for: 3m
+        labels:
+          severity: P1
+        annotations:
+          summary: 'PgBouncer has clients waiting for connections'
+          description: 'Pool {{ $labels.database }} has {{ $value }} clients waiting'
+
+      - alert: PgBouncerDown
+        expr: up{job="pgbouncer"} == 0
+        for: 1m
+        labels:
+          severity: P0
+        annotations:
+          summary: 'PgBouncer metrics endpoint is unavailable'
+          description: 'PgBouncer exporter is down or unreachable'
+
+      - alert: PgBouncerHighQueryWaitTime
+        expr: rate(pgbouncer_stats_queries_pooled_total[5m]) > 100
+        for: 5m
+        labels:
+          severity: P2
+        annotations:
+          summary: 'High number of queries waiting in PgBouncer pool'
+          description: 'Database {{ $labels.database }}: {{ $value }} queries/sec waiting'
+
+  - name: nodeadmin-backup
+    rules:
+      - alert: PostgreSQLBackupStale
+        expr: time() - postgres_backup_timestamp_seconds > 86400 * 2
+        for: 1h
+        labels:
+          severity: P1
+        annotations:
+          summary: 'PostgreSQL backup is stale'
+          description: 'No successful backup in the last 2 days. Last backup: {{ $value | humanizeDuration }} ago'
+
+      - alert: PostgreSQLBackupFailed
+        expr: postgres_backup_success == 0
+        for: 5m
+        labels:
+          severity: P0
+        annotations:
+          summary: 'PostgreSQL backup failed'
+          description: 'Last backup attempt failed. Check backup logs immediately.'

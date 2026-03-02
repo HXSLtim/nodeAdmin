@@ -10,6 +10,14 @@ services:
       - '55432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./Infra/Docker/postgres/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+      - ./Infra/Docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    command:
+      - postgres
+      - -c
+      - config_file=/etc/postgresql/postgresql.conf
+      - -c
+      - max_connections=200
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U nodeadmin -d nodeadmin']
       interval: 10s
@@ -22,18 +30,27 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    environment:
-      DB_HOST: postgres
-      DB_NAME: nodeadmin
-      DB_PORT: 5432
-      DB_USER: nodeadmin
-      DB_PASSWORD: nodeadmin
-      AUTH_TYPE: plain
-      MAX_CLIENT_CONN: 200
-      DEFAULT_POOL_SIZE: 20
-      POOL_MODE: transaction
+    volumes:
+      - ./Infra/Docker/pgbouncer/pgbouncer.ini:/etc/pgbouncer/pgbouncer.ini:ro
+      - ./Infra/Docker/pgbouncer/userlist.txt:/etc/pgbouncer/userlist.txt:ro
     ports:
       - '6432:5432'
+
+  pgbouncer-exporter:
+    image: prometheuscommunity/pgbouncer-exporter:v0.7.0
+    profiles:
+      - monitoring
+    container_name: nodeadmin-pgbouncer-exporter
+    depends_on:
+      - pgbouncer
+    environment:
+      PGBOUNCER_EXPORTER_HOST: pgbouncer
+      PGBOUNCER_EXPORTER_PORT: 5432
+      PGBOUNCER_USER: nodeadmin
+      PGBOUNCER_PASS: nodeadmin
+      DATABASE_URL: 'postgresql://nodeadmin:nodeadmin@pgbouncer:5432/pgbouncer?sslmode=disable'
+    ports:
+      - '9127:9127'
 
   redis:
     image: redis:7.2-alpine
@@ -42,7 +59,13 @@ services:
       - '56379:6379'
     volumes:
       - redis_data:/data
-    command: ['redis-server', '--appendonly', 'yes']
+      - ./Infra/Docker/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    command: ['redis-server', '/usr/local/etc/redis/redis.conf']
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 3s
+      retries: 3
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.7.1
@@ -135,7 +158,10 @@ services:
       - ./Reports/k6:/reports
     environment:
       CORE_API_BASE_URL: 'http://host.docker.internal:3001'
+      WS_BASE_URL: 'ws://host.docker.internal:3001'
       SMOKE_TENANT_ID: 'tenant-demo'
+      K6_PROMETHEUS_RW_SERVER_URL: 'http://prometheus:9090/api/v1/write'
+      K6_PROMETHEUS_RW_TREND_AS_NATIVE_HISTOGRAM: 'true'
     extra_hosts:
       - 'host.docker.internal:host-gateway'
     entrypoint: ['k6', 'run', '/scripts/k6ImLoad.js']

@@ -54,6 +54,9 @@ export class AuditLogService implements OnModuleDestroy {
     this.pool = new Pool({
       connectionString: this.databaseUrl,
       max: 10,
+      idleTimeoutMillis: 300000,
+      connectionTimeoutMillis: 15000,
+      statement_timeout: 30000,
     });
   }
 

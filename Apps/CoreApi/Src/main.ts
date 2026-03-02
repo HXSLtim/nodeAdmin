@@ -16,6 +16,11 @@ async function bootstrap(): Promise<void> {
       logger: {
         level: process.env.LOG_LEVEL?.trim() || 'info',
       },
+      connectionTimeout: runtimeConfig.fastify.connectionTimeout,
+      keepAliveTimeout: runtimeConfig.fastify.keepAliveTimeout,
+      requestTimeout: runtimeConfig.fastify.requestTimeout,
+      bodyLimit: runtimeConfig.fastify.bodyLimit,
+      maxParamLength: runtimeConfig.fastify.maxParamLength,
     }),
   );
   app.setGlobalPrefix('api/v1');

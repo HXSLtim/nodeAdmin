@@ -1,0 +1,34 @@
+{
+  "summary": {
+    "totalConnections": 5000,
+    "totalConnectionAttempts": 462224,
+    "successfulConnections": 0,
+    "failedConnections": 462224,
+    "connectionSuccessRate": 0,
+    "totalMessagesSent": 0,
+    "totalMessagesReceived": 0,
+    "messageLossRate": 0,
+    "errorRate": 1,
+    "shutdownReason": "scenario_completed"
+  },
+  "latency": {
+    "max": 0,
+    "p50": 0,
+    "p95": 0,
+    "p99": 0
+  },
+  "errors": [
+    {
+      "count": 438828,
+      "type": "connection_error"
+    },
+    {
+      "count": 22983,
+      "type": "join_timeout"
+    },
+    {
+      "count": 413,
+      "type": "connection_timeout"
+    }
+  ]
+}

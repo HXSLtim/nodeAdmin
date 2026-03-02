@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "type": "commonjs",
   "scripts": {
-    "dev": "ts-node-dev --respawn --transpile-only Src/main.ts",
+    "dev": "ts-node-dev --respawn --transpile-only -r dotenv/config Src/main.ts",
     "build": "tsc -p tsconfig.json",
     "db:generate": "echo SQL migrations are managed under Apps/CoreApi/drizzle/migrations",
     "db:migrate": "node ../../Scripts/applySqlMigration.cjs",

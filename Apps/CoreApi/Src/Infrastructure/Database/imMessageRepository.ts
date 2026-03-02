@@ -1,6 +1,7 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { Pool, PoolClient } from 'pg';
+import { runtimeConfig } from '../../App/runtimeConfig';
 import {
   AppendResult,
   InMemoryMessageStore,
@@ -38,9 +39,12 @@ export class ImMessageRepository implements OnModuleDestroy {
 
     this.pool = new Pool({
       connectionString: this.databaseUrl,
-      max: 100,
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 5000,
+      max: 500,
+      min: 50,
+      idleTimeoutMillis: runtimeConfig.database.idleTimeoutMillis,
+      connectionTimeoutMillis: runtimeConfig.database.connectionTimeoutMillis,
+      maxUses: 7500,
+      allowExitOnIdle: false,
     });
   }
 

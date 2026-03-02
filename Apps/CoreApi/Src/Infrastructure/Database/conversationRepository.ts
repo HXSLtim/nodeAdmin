@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { and, desc, eq, max, sql } from 'drizzle-orm';
-import { DatabaseService } from './databaseService.js';
-import { conversations, messages } from './schema.js';
+import { DatabaseService } from './databaseService';
+import { conversations, messages } from './schema';
 
 export interface ConversationRow {
   conversationId: string;
