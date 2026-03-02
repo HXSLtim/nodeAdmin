@@ -414,11 +414,15 @@ describe('Multi-Tenant Isolation (RLS)', () => {
       try {
         await client.query('BEGIN');
 
-        const result = await client.query(`SELECT id FROM conversations WHERE tenant_id = $1`, [TENANT_A]);
-
-        expect(result.rowCount).toBe(0);
+        // Query without tenant context should throw error (strict validation)
+        await expect(
+          client.query(`SELECT id FROM conversations WHERE tenant_id = $1`, [TENANT_A]),
+        ).rejects.toThrow('Tenant context');
 
         await client.query('ROLLBACK');
+      } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
       } finally {
         client.release();
       }
