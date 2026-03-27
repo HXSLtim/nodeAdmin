@@ -31,11 +31,7 @@ export class AuthController {
 
   @Post('login')
   async login(@Body() dto: LoginDto) {
-    const { userId, tokens } = await this.authService.login(
-      dto.email,
-      dto.password,
-      dto.tenantId
-    );
+    const { userId, tokens } = await this.authService.login(dto.email, dto.password, dto.tenantId);
 
     try {
       await this.auditLogService.record({

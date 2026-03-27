@@ -1,7 +1,7 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { WsException } from '@nestjs/websockets';
 import { Socket } from 'socket.io';
-import { AuthService } from '../../Auth/authService';
+import { AuthService } from '../../auth/authService';
 
 @Injectable()
 export class WsTenantGuard implements CanActivate {

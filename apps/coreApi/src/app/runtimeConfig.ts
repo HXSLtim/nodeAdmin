@@ -139,7 +139,7 @@ export const runtimeConfig: RuntimeConfig = {
   corsOrigins: readCsvEnv('FRONTEND_ORIGINS'),
   kafka: {
     brokers: readOptionalCsvEnv('KAFKA_BROKERS'),
-    clientId: process.env.KAFKA_CLIENT_ID?.trim() || 'core-api-outbox',
+    clientId: process.env.KAFKA_CLIENT_ID?.trim() || 'coreApi-outbox',
     dlqTopic: process.env.OUTBOX_DLQ_TOPIC?.trim() || 'im.events.dlq',
     topic: process.env.OUTBOX_TOPIC?.trim() || 'im.events',
   },
@@ -171,7 +171,7 @@ export const runtimeConfig: RuntimeConfig = {
     enabled: readBooleanEnv('OTEL_ENABLED', false),
     metricsPort: readPositiveInt('OTEL_METRICS_PORT', 9464),
     otlpEndpoint: process.env.OTEL_EXPORTER_OTLP_ENDPOINT?.trim() || null,
-    serviceName: process.env.OTEL_SERVICE_NAME?.trim() || 'core-api',
+    serviceName: process.env.OTEL_SERVICE_NAME?.trim() || 'coreApi',
   },
   socketio: {
     pingInterval: readPositiveInt('SOCKETIO_PING_INTERVAL', 25000),

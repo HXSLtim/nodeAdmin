@@ -7,9 +7,9 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run build -w core-api && npm run build -w admin-portal",
-    "dev:api": "npm run dev -w core-api",
-    "dev:web": "npm run dev -w admin-portal",
+    "build": "npm run build -w coreApi && npm run build -w adminPortal",
+    "dev:api": "npm run dev -w coreApi",
+    "dev:web": "npm run dev -w adminPortal",
     "format:check": "prettier --check \"apps/**/*.{ts,tsx,js,cjs,mjs,css,html}\" \"scripts/**/*.cjs\" \"*.cjs\"",
     "infra:down": "docker compose down",
     "infra:up:kafka": "docker compose --profile kafka up -d",
@@ -29,7 +29,7 @@
     "smoke:pgbouncer": "node scripts/pgbouncerLoadCheck.cjs",
     "smoke:tls": "node scripts/smokeTlsTermination.cjs",
     "smoke:im": "node scripts/smokeImFlow.cjs",
-    "test:core-api": "vitest run",
+    "test:coreApi": "vitest run",
     "load:k6": "docker compose --profile loadtest run --rm k6",
     "load:k6:smoke": "docker compose --profile loadtest run --rm k6 --tag scenario=api_smoke --env K6_SCENARIO=smoke",
     "load:k6:spike": "docker compose --profile loadtest run --rm k6 --tag scenario=api_spike --env K6_SCENARIO=spike",
@@ -41,7 +41,7 @@
     "load:websocket:5k": "node scripts/loadImWebSocket.cjs",
     "test:env:verify": "node scripts/verifyTestEnvironment.cjs",
     "tls:cert:generate": "node scripts/generateDevTlsCert.cjs",
-    "test:e2e:web": "npm run test:e2e -w admin-portal"
+    "test:e2e:web": "npm run test:e2e -w adminPortal"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

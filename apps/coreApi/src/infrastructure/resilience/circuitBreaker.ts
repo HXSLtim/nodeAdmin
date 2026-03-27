@@ -25,7 +25,7 @@ interface CircuitBreakerMetrics {
 }
 
 export class CircuitBreaker {
-  private static readonly meter = metrics.getMeter('core-api-resilience');
+  private static readonly meter = metrics.getMeter('coreApi-resilience');
   private static readonly stateGauge = CircuitBreaker.meter.createObservableGauge(
     'circuit_breaker_state',
     {

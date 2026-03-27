@@ -1,12 +1,12 @@
 {
-  "name": "core-api",
+  "name": "coreApi",
   "private": true,
   "version": "0.1.0",
   "type": "commonjs",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only -r dotenv/config src/main.ts",
     "build": "tsc -p tsconfig.json",
-    "db:generate": "echo SQL migrations are managed under apps/core-api/drizzle/migrations",
+    "db:generate": "echo SQL migrations are managed under apps/coreApi/drizzle/migrations",
     "db:migrate": "node ../../scripts/applySqlMigration.cjs",
     "start": "node dist/main.js"
   },

@@ -67,13 +67,24 @@ export class AuthService {
     const roles = this.normalizeRoles(input.roles);
 
     const accessToken = sign(
-      { jti: accessTokenJti, roles, sub: input.userId, tid: input.tenantId, type: 'access' } satisfies AccessTokenClaims,
+      {
+        jti: accessTokenJti,
+        roles,
+        sub: input.userId,
+        tid: input.tenantId,
+        type: 'access',
+      } satisfies AccessTokenClaims,
       runtimeConfig.auth.accessSecret,
       { expiresIn: runtimeConfig.auth.accessExpiresIn as StringValue }
     );
 
     const refreshToken = sign(
-      { jti: refreshTokenJti, sub: input.userId, tid: input.tenantId, type: 'refresh' } satisfies RefreshTokenClaims,
+      {
+        jti: refreshTokenJti,
+        sub: input.userId,
+        tid: input.tenantId,
+        type: 'refresh',
+      } satisfies RefreshTokenClaims,
       runtimeConfig.auth.refreshSecret,
       { expiresIn: runtimeConfig.auth.refreshExpiresIn as StringValue }
     );
@@ -109,7 +120,12 @@ export class AuthService {
     return { jti, roles, tenantId, userId };
   }
 
-  async register(email: string, password: string, tenantId: string, name?: string): Promise<{ userId: string; tokens: IssuedTokens }> {
+  async register(
+    email: string,
+    password: string,
+    tenantId: string,
+    name?: string
+  ): Promise<{ userId: string; tokens: IssuedTokens }> {
     if (!this.pool) throw new UnauthorizedException('Database not available.');
 
     const existing = await this.pool.query(
@@ -151,7 +167,11 @@ export class AuthService {
     return { userId, tokens };
   }
 
-  async login(email: string, password: string, tenantId: string): Promise<{ userId: string; tokens: IssuedTokens }> {
+  async login(
+    email: string,
+    password: string,
+    tenantId: string
+  ): Promise<{ userId: string; tokens: IssuedTokens }> {
     if (!this.pool) throw new UnauthorizedException('Database not available.');
 
     const result = await this.pool.query<UserRow>(

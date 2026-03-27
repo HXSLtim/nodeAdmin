@@ -9,7 +9,7 @@ import {
   StoredMessage,
 } from '../../../infrastructure/inMemoryMessageStore';
 import { ImMessageRepository } from '../../../infrastructure/database/imMessageRepository';
-import { AuthIdentity } from '../../Auth/authIdentity';
+import { AuthIdentity } from '../../auth/authIdentity';
 import { SendMessageDto } from '../dto/sendMessageDto';
 import { BackpressureController } from '../../../infrastructure/resilience/backpressureController';
 
@@ -45,8 +45,8 @@ export class ImMessageService implements OnModuleInit, OnModuleDestroy {
   private static readonly streamStateCleanupIntervalMs = 60 * 1000;
   private static readonly queueWarnThreshold = 5000;
   private static readonly queueWarnIntervalMs = 5000;
-  private static readonly meter = metrics.getMeter('core-api-im');
-  private static readonly tracer = trace.getTracer('core-api-im');
+  private static readonly meter = metrics.getMeter('coreApi-im');
+  private static readonly tracer = trace.getTracer('coreApi-im');
   private static readonly appendedCounter = ImMessageService.meter.createCounter(
     'im_messages_appended_total',
     {

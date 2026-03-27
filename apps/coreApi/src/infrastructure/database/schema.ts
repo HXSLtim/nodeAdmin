@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 
 import {
   bigint,
+  boolean,
   index,
   integer,
   pgTable,
@@ -121,107 +122,167 @@ export const auditLogs = pgTable(
 // ─── RBAC / Admin Platform Tables ────────────────────────────────
 
 export const tenants = pgTable('tenants', {
-  id: varchar('id', { length: 128 }).primaryKey().$defaultFn(() => randomUUID()),
+  id: varchar('id', { length: 128 })
+    .primaryKey()
+    .$defaultFn(() => randomUUID()),
   name: varchar('name', { length: 200 }).notNull(),
   slug: varchar('slug', { length: 100 }).notNull().unique(),
   logo: varchar('logo', { length: 500 }),
-  isActive: integer('is_active').$type<boolean>().default(1).notNull(),
+  isActive: boolean('is_active').default(true).notNull(),
   configJson: text('config_json'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
-export const users = pgTable('users', {
-  id: varchar('id', { length: 128 }).primaryKey().$defaultFn(() => randomUUID()),
-  tenantId: varchar('tenant_id', { length: 128 }).notNull(),
-  email: varchar('email', { length: 255 }).notNull(),
-  phone: varchar('phone', { length: 20 }),
-  passwordHash: varchar('password_hash', { length: 255 }).notNull(),
-  name: varchar('name', { length: 100 }),
-  avatar: varchar('avatar', { length: 500 }),
-  isActive: integer('is_active').$type<boolean>().default(1).notNull(),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
-}, (table) => ({
-  usersTenantEmailUnique: uniqueIndex('users_tenant_email_uniq').on(table.tenantId, table.email),
-  usersTenantIdx: index('users_tenant_idx').on(table.tenantId),
-}));
+export const users = pgTable(
+  'users',
+  {
+    id: varchar('id', { length: 128 })
+      .primaryKey()
+      .$defaultFn(() => randomUUID()),
+    tenantId: varchar('tenant_id', { length: 128 }).notNull(),
+    email: varchar('email', { length: 255 }).notNull(),
+    phone: varchar('phone', { length: 20 }),
+    passwordHash: varchar('password_hash', { length: 255 }).notNull(),
+    name: varchar('name', { length: 100 }),
+    avatar: varchar('avatar', { length: 500 }),
+    isActive: boolean('is_active').default(true).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    usersTenantEmailUnique: uniqueIndex('users_tenant_email_uniq').on(table.tenantId, table.email),
+    usersTenantIdx: index('users_tenant_idx').on(table.tenantId),
+  })
+);
 
-export const roles = pgTable('roles', {
-  id: varchar('id', { length: 128 }).primaryKey().$defaultFn(() => randomUUID()),
-  tenantId: varchar('tenant_id', { length: 128 }).notNull(),
-  name: varchar('name', { length: 100 }).notNull(),
-  description: text('description'),
-  isSystem: integer('is_system').$type<boolean>().default(0).notNull(),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
-}, (table) => ({
-  rolesTenantNameUnique: uniqueIndex('roles_tenant_name_uniq').on(table.tenantId, table.name),
-  rolesTenantIdx: index('roles_tenant_idx').on(table.tenantId),
-}));
+export const roles = pgTable(
+  'roles',
+  {
+    id: varchar('id', { length: 128 })
+      .primaryKey()
+      .$defaultFn(() => randomUUID()),
+    tenantId: varchar('tenant_id', { length: 128 }).notNull(),
+    name: varchar('name', { length: 100 }).notNull(),
+    description: text('description'),
+    isSystem: boolean('is_system').default(false).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    rolesTenantNameUnique: uniqueIndex('roles_tenant_name_uniq').on(table.tenantId, table.name),
+    rolesTenantIdx: index('roles_tenant_idx').on(table.tenantId),
+  })
+);
 
 export const permissions = pgTable('permissions', {
-  id: varchar('id', { length: 128 }).primaryKey().$defaultFn(() => randomUUID()),
+  id: varchar('id', { length: 128 })
+    .primaryKey()
+    .$defaultFn(() => randomUUID()),
   code: varchar('code', { length: 100 }).notNull().unique(),
   name: varchar('name', { length: 200 }).notNull(),
   module: varchar('module', { length: 50 }).notNull(),
   description: text('description'),
 });
 
-export const userRoles = pgTable('user_roles', {
-  userId: varchar('user_id', { length: 128 }).notNull().references(() => users.id),
-  roleId: varchar('role_id', { length: 128 }).notNull().references(() => roles.id),
-}, (table) => ({
-  pk: primaryKey({ columns: [table.userId, table.roleId], name: 'user_roles_pk' }),
-}));
+export const userRoles = pgTable(
+  'user_roles',
+  {
+    userId: varchar('user_id', { length: 128 })
+      .notNull()
+      .references(() => users.id),
+    roleId: varchar('role_id', { length: 128 })
+      .notNull()
+      .references(() => roles.id),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.userId, table.roleId], name: 'user_roles_pk' }),
+  })
+);
 
-export const rolePermissions = pgTable('role_permissions', {
-  roleId: varchar('role_id', { length: 128 }).notNull().references(() => roles.id),
-  permissionId: varchar('permission_id', { length: 128 }).notNull().references(() => permissions.id),
-}, (table) => ({
-  pk: primaryKey({ columns: [table.roleId, table.permissionId], name: 'role_permissions_pk' }),
-}));
+export const rolePermissions = pgTable(
+  'role_permissions',
+  {
+    roleId: varchar('role_id', { length: 128 })
+      .notNull()
+      .references(() => roles.id),
+    permissionId: varchar('permission_id', { length: 128 })
+      .notNull()
+      .references(() => permissions.id),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.roleId, table.permissionId], name: 'role_permissions_pk' }),
+  })
+);
 
-export const menus = pgTable('menus', {
-  id: varchar('id', { length: 128 }).primaryKey().$defaultFn(() => randomUUID()),
-  parentId: varchar('parent_id', { length: 128 }),
-  name: varchar('name', { length: 100 }).notNull(),
-  path: varchar('path', { length: 200 }),
-  icon: varchar('icon', { length: 100 }),
-  sortOrder: integer('sort_order').default(0).notNull(),
-  permissionCode: varchar('permission_code', { length: 100 }),
-  isVisible: integer('is_visible').$type<boolean>().default(1).notNull(),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-}, (table) => ({
-  menusParentIdx: index('menus_parent_idx').on(table.parentId),
-}));
+export const menus = pgTable(
+  'menus',
+  {
+    id: varchar('id', { length: 128 })
+      .primaryKey()
+      .$defaultFn(() => randomUUID()),
+    parentId: varchar('parent_id', { length: 128 }),
+    name: varchar('name', { length: 100 }).notNull(),
+    path: varchar('path', { length: 200 }),
+    icon: varchar('icon', { length: 100 }),
+    sortOrder: integer('sort_order').default(0).notNull(),
+    permissionCode: varchar('permission_code', { length: 100 }),
+    isVisible: boolean('is_visible').default(true).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    menusParentIdx: index('menus_parent_idx').on(table.parentId),
+  })
+);
 
-export const roleMenus = pgTable('role_menus', {
-  roleId: varchar('role_id', { length: 128 }).notNull().references(() => roles.id),
-  menuId: varchar('menu_id', { length: 128 }).notNull().references(() => menus.id),
-}, (table) => ({
-  pk: primaryKey({ columns: [table.roleId, table.menuId], name: 'role_menus_pk' }),
-}));
+export const roleMenus = pgTable(
+  'role_menus',
+  {
+    roleId: varchar('role_id', { length: 128 })
+      .notNull()
+      .references(() => roles.id),
+    menuId: varchar('menu_id', { length: 128 })
+      .notNull()
+      .references(() => menus.id),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.roleId, table.menuId], name: 'role_menus_pk' }),
+  })
+);
 
-export const oauthAccounts = pgTable('oauth_accounts', {
-  id: varchar('id', { length: 128 }).primaryKey().$defaultFn(() => randomUUID()),
-  userId: varchar('user_id', { length: 128 }).notNull().references(() => users.id),
-  provider: varchar('provider', { length: 50 }).notNull(),
-  providerId: varchar('provider_id', { length: 255 }).notNull(),
-  accessToken: text('access_token'),
-  refreshToken: text('refresh_token'),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-}, (table) => ({
-  oauthProviderUnique: uniqueIndex('oauth_provider_uniq').on(table.provider, table.providerId),
-}));
+export const oauthAccounts = pgTable(
+  'oauth_accounts',
+  {
+    id: varchar('id', { length: 128 })
+      .primaryKey()
+      .$defaultFn(() => randomUUID()),
+    userId: varchar('user_id', { length: 128 })
+      .notNull()
+      .references(() => users.id),
+    provider: varchar('provider', { length: 50 }).notNull(),
+    providerId: varchar('provider_id', { length: 255 }).notNull(),
+    accessToken: text('access_token'),
+    refreshToken: text('refresh_token'),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    oauthProviderUnique: uniqueIndex('oauth_provider_uniq').on(table.provider, table.providerId),
+  })
+);
 
-export const smsCodes = pgTable('sms_codes', {
-  id: varchar('id', { length: 128 }).primaryKey().$defaultFn(() => randomUUID()),
-  phone: varchar('phone', { length: 20 }).notNull(),
-  code: varchar('code', { length: 6 }).notNull(),
-  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
-  usedAt: timestamp('used_at', { withTimezone: true }),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-}, (table) => ({
-  smsPhoneIdx: index('sms_phone_idx').on(table.phone, table.createdAt),
-}));
+export const smsCodes = pgTable(
+  'sms_codes',
+  {
+    id: varchar('id', { length: 128 })
+      .primaryKey()
+      .$defaultFn(() => randomUUID()),
+    phone: varchar('phone', { length: 20 }).notNull(),
+    code: varchar('code', { length: 6 }).notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    usedAt: timestamp('used_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    smsPhoneIdx: index('sms_phone_idx').on(table.phone, table.createdAt),
+  })
+);

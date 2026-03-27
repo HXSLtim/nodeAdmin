@@ -12,7 +12,7 @@ async function run() {
     PORT: process.env.PORT || '3001',
   };
 
-  const apiProcess = cp.spawn(process.execPath, ['apps/core-api/Dist/main.js'], {
+  const apiProcess = cp.spawn(process.execPath, ['apps/coreApi/Dist/main.js'], {
     env,
     stdio: 'inherit',
   });

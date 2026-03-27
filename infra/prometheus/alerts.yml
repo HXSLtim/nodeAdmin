@@ -2,7 +2,7 @@ groups:
   - name: nodeadmin-coreapi
     rules:
       - alert: CoreApiMetricsMissing
-        expr: up{job="core-api-otel"} == 0
+        expr: up{job="coreApi-otel"} == 0
         for: 2m
         labels:
           severity: P0

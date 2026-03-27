@@ -11,7 +11,7 @@ alerting:
             - alertmanager:9093
 
 scrape_configs:
-  - job_name: 'core-api-otel'
+  - job_name: 'coreApi-otel'
     static_configs:
       - targets:
           - host.docker.internal:9464

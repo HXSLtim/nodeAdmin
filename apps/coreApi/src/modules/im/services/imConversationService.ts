@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ConnectionRegistry, SocketContext } from '../../../infrastructure/connectionRegistry';
 import { StoredMessage } from '../../../infrastructure/inMemoryMessageStore';
 import { ImMessageRepository } from '../../../infrastructure/database/imMessageRepository';
-import { AuthIdentity } from '../../Auth/authIdentity';
+import { AuthIdentity } from '../../auth/authIdentity';
 
 export interface JoinConversationResult {
   context: SocketContext;

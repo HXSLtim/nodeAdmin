@@ -1,7 +1,7 @@
 import { ExecutionContext } from '@nestjs/common';
 import { WsException } from '@nestjs/websockets';
 import { describe, expect, it, vi } from 'vitest';
-import { AuthService } from '../../Auth/authService';
+import { AuthService } from '../../auth/authService';
 import { WsTenantGuard } from './wsTenantGuard';
 
 function createExecutionContext(

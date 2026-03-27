@@ -25,7 +25,7 @@ export interface BackpressureStatus {
 }
 
 export class BackpressureController {
-  private static readonly meter = metrics.getMeter('core-api-resilience');
+  private static readonly meter = metrics.getMeter('coreApi-resilience');
   private static readonly rejectionsCounter = BackpressureController.meter.createCounter(
     'backpressure_rejections_total',
     {

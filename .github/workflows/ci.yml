@@ -30,7 +30,7 @@ jobs:
         run: npm run lint
 
       - name: Unit Test
-        run: npm run test:core-api
+        run: npm run test:coreApi
 
       - name: Build
         run: npm run build
@@ -39,7 +39,7 @@ jobs:
         run: npm run infra:up:kafka
 
       - name: Apply Migrations
-        run: npm run db:migrate -w core-api
+        run: npm run db:migrate -w coreApi
 
       - name: M2 Acceptance
         run: npm run m2:acceptance:auto

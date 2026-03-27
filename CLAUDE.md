@@ -26,7 +26,7 @@ npm run build            # Build both CoreApi (tsc → CommonJS) and AdminPortal
 ### Testing & Quality
 
 ```bash
-npm run test:core-api    # Run backend unit tests with Vitest
+npm run test:coreApi    # Run backend unit tests with Vitest
 npm run test:e2e:web     # Run Playwright E2E tests for AdminPortal
 npm run lint             # ESLint on all apps/**/*.{ts,tsx} — zero warnings allowed
 npm run format:check     # Prettier format check
@@ -62,8 +62,8 @@ npm run m2:acceptance:auto        # M2 milestone acceptance (auto-starts API)
 ### Monorepo Structure
 
 ```
-apps/core-api/        ← NestJS 11 + Fastify backend (CommonJS, port 3001)
-apps/admin-portal/    ← React 18 + Vite 6 frontend (ESM, port 5173)
+apps/coreApi/        ← NestJS 11 + Fastify backend (CommonJS, port 3001)
+apps/adminPortal/    ← React 18 + Vite 6 frontend (ESM, port 5173)
 packages/shared-types/ ← Shared TypeScript types/interfaces (ESM)
 infra/               ← Caddy, Nginx, Prometheus, Grafana configs
 scripts/             ← Operational and acceptance test scripts (CommonJS .cjs)

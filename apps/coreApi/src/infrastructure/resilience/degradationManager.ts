@@ -16,7 +16,7 @@ export interface DegradationStatus {
 }
 
 export class DegradationManager {
-  private static readonly meter = metrics.getMeter('core-api-resilience');
+  private static readonly meter = metrics.getMeter('coreApi-resilience');
   private static readonly degradationGauge = DegradationManager.meter.createObservableGauge(
     'degradation_active',
     {

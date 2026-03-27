@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { AuthModule } from '../Auth/authModule';
+import { AuthModule } from '../auth/authModule';
 import { ConnectionRegistry } from '../../infrastructure/connectionRegistry';
 import { InMemoryMessageStore } from '../../infrastructure/inMemoryMessageStore';
 import { ImMessageRepository } from '../../infrastructure/database/imMessageRepository';

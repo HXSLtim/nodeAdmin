@@ -20,7 +20,7 @@ import {
   DegradationManager,
   DegradationFeature,
 } from '../../infrastructure/resilience/degradationManager';
-import { AuthIdentity } from '../Auth/authIdentity';
+import { AuthIdentity } from '../auth/authIdentity';
 import { JoinConversationDto } from './dto/joinConversationDto';
 import { SendMessageDto } from './dto/sendMessageDto';
 import { TypingStatusDto } from './dto/typingStatusDto';
