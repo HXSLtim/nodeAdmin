@@ -6,7 +6,8 @@
 
 const { Client } = require('pg');
 
-const DATABASE_URL = process.env.DATABASE_URL || 'postgres://nodeadmin:nodeadmin@localhost:55432/nodeadmin';
+const DATABASE_URL =
+  process.env.DATABASE_URL || 'postgres://nodeadmin:nodeadmin@localhost:55432/nodeadmin';
 const TENANT_ID = 'tenant-demo';
 
 async function seedData() {
@@ -96,7 +97,7 @@ async function seedData() {
       [TENANT_ID]
     );
     console.log(`\n✓ Total conversations: ${convResult.rows.length}`);
-    convResult.rows.forEach(row => {
+    convResult.rows.forEach((row) => {
       console.log(`  - ${row.id}`);
     });
 
@@ -105,7 +106,7 @@ async function seedData() {
       [TENANT_ID]
     );
     console.log(`\n✓ Messages by conversation:`);
-    msgResult.rows.forEach(row => {
+    msgResult.rows.forEach((row) => {
       console.log(`  - ${row.conversation_id}: ${row.count} messages`);
     });
 

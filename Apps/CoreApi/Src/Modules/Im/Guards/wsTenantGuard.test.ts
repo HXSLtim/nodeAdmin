@@ -12,7 +12,7 @@ function createExecutionContext(
       headers: Record<string, unknown>;
     };
   },
-  data: Record<string, unknown>,
+  data: Record<string, unknown>
 ): ExecutionContext {
   return {
     switchToWs: () => ({

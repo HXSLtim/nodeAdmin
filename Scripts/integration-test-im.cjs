@@ -20,13 +20,15 @@ function httpRequest(options, body = null) {
     const protocol = options.protocol === 'https:' ? https : http;
     const req = protocol.request(options, (res) => {
       let data = '';
-      res.on('data', (chunk) => { data += chunk; });
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
       res.on('end', () => {
         try {
           resolve({
             status: res.statusCode,
             headers: res.headers,
-            body: data ? JSON.parse(data) : null
+            body: data ? JSON.parse(data) : null,
           });
         } catch (e) {
           resolve({ status: res.statusCode, headers: res.headers, body: data });
@@ -52,24 +54,27 @@ function logTest(name, expected, actual, pass, details = '') {
 
 // Helper: Wait
 function wait(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 // Test 1: Authentication
 async function testAuthentication() {
   console.log('\n=== TEST 1: Authentication ===');
   try {
-    const response = await httpRequest({
-      hostname: 'localhost',
-      port: 3001,
-      path: '/api/v1/auth/dev-token',
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' }
-    }, {
-      tenantId: 'tenant-demo',
-      userId: 'user-admin',
-      roles: ['tenant:admin', 'im:operator']
-    });
+    const response = await httpRequest(
+      {
+        hostname: 'localhost',
+        port: 3001,
+        path: '/api/v1/auth/dev-token',
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      },
+      {
+        tenantId: 'tenant-demo',
+        userId: 'user-admin',
+        roles: ['tenant:admin', 'im:operator'],
+      }
+    );
 
     const pass = response.status === 201 && response.body?.accessToken;
     logTest(
@@ -77,12 +82,20 @@ async function testAuthentication() {
       'HTTP 201 with accessToken',
       `HTTP ${response.status} ${response.body?.accessToken ? 'with token' : 'no token'}`,
       pass,
-      response.body?.accessToken ? `Token: ${response.body.accessToken.substring(0, 20)}...` : 'No token received'
+      response.body?.accessToken
+        ? `Token: ${response.body.accessToken.substring(0, 20)}...`
+        : 'No token received'
     );
 
     return pass ? response.body.accessToken : null;
   } catch (error) {
-    logTest('Authentication - Dev Token', 'HTTP 201', `Error: ${error.message}`, false, error.stack);
+    logTest(
+      'Authentication - Dev Token',
+      'HTTP 201',
+      `Error: ${error.message}`,
+      false,
+      error.stack
+    );
     return null;
   }
 }
@@ -95,7 +108,7 @@ async function testWebSocketConnection(token) {
       const socket = io(SOCKET_URL, {
         auth: { token },
         transports: ['websocket'],
-        reconnection: false
+        reconnection: false,
       });
 
       const timeout = setTimeout(() => {
@@ -131,7 +144,7 @@ async function testConversationAPI(token) {
       port: 3001,
       path: '/api/v1/console/conversations',
       method: 'GET',
-      headers: { 'Authorization': `Bearer ${token}` }
+      headers: { Authorization: `Bearer ${token}` },
     });
 
     const pass = response.status === 200 && Array.isArray(response.body);
@@ -154,22 +167,26 @@ async function testConversationAPI(token) {
 async function testCreateConversation(token) {
   console.log('\n=== TEST 4: Create Conversation ===');
   try {
-    const response = await httpRequest({
-      hostname: 'localhost',
-      port: 3001,
-      path: '/api/v1/console/conversations',
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
+    const response = await httpRequest(
+      {
+        hostname: 'localhost',
+        port: 3001,
+        path: '/api/v1/console/conversations',
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      },
+      {
+        name: `Integration Test Conv ${Date.now()}`,
+        type: 'group',
+        participantIds: ['user-admin', 'user-test'],
       }
-    }, {
-      name: `Integration Test Conv ${Date.now()}`,
-      type: 'group',
-      participantIds: ['user-admin', 'user-test']
-    });
+    );
 
-    const pass = (response.status === 201 || response.status === 200) && response.body?.conversationId;
+    const pass =
+      (response.status === 201 || response.status === 200) && response.body?.conversationId;
     logTest(
       'Create Conversation',
       'HTTP 201 with conversationId',
@@ -201,23 +218,27 @@ async function testSendMessage(socket, conversationId) {
       resolve(false);
     }, 5000);
 
-    socket.emit('im:message:send', {
-      conversationId,
-      messageId,
-      content: 'Integration test message',
-      contentType: 'text'
-    }, (ack) => {
-      clearTimeout(timeout);
-      const pass = ack && !ack.error;
-      logTest(
-        'Send Message',
-        'Acknowledgment received',
-        pass ? 'Acknowledged' : `Error: ${ack?.error || 'No ack'}`,
-        pass,
-        JSON.stringify(ack)
-      );
-      resolve(pass);
-    });
+    socket.emit(
+      'im:message:send',
+      {
+        conversationId,
+        messageId,
+        content: 'Integration test message',
+        contentType: 'text',
+      },
+      (ack) => {
+        clearTimeout(timeout);
+        const pass = ack && !ack.error;
+        logTest(
+          'Send Message',
+          'Acknowledgment received',
+          pass ? 'Acknowledged' : `Error: ${ack?.error || 'No ack'}`,
+          pass,
+          JSON.stringify(ack)
+        );
+        resolve(pass);
+      }
+    );
   });
 }
 
@@ -256,7 +277,7 @@ async function testReceiveMessage(socket, conversationId) {
       conversationId,
       messageId: `msg-receive-${Date.now()}`,
       content: 'Test receive message',
-      contentType: 'text'
+      contentType: 'text',
     });
   });
 }
@@ -266,7 +287,12 @@ async function testTypingIndicators(socket, conversationId) {
   console.log('\n=== TEST 7: Typing Indicators ===');
   return new Promise((resolve) => {
     if (!socket || !conversationId) {
-      logTest('Typing Indicators', 'Typing event received', 'Skipped - no socket or conversation', false);
+      logTest(
+        'Typing Indicators',
+        'Typing event received',
+        'Skipped - no socket or conversation',
+        false
+      );
       resolve(false);
       return;
     }
@@ -372,7 +398,7 @@ async function testOfflineQueue(token, conversationId) {
       const socket1 = io(SOCKET_URL, {
         auth: { token },
         transports: ['websocket'],
-        reconnection: false
+        reconnection: false,
       });
 
       await new Promise((res) => {
@@ -391,12 +417,17 @@ async function testOfflineQueue(token, conversationId) {
       const socket2 = io(SOCKET_URL, {
         auth: { token },
         transports: ['websocket'],
-        reconnection: false
+        reconnection: false,
       });
 
       const timeout = setTimeout(() => {
         socket2.close();
-        logTest('Offline Queue', 'Queued messages delivered on reconnect', 'Timeout after 5s', false);
+        logTest(
+          'Offline Queue',
+          'Queued messages delivered on reconnect',
+          'Timeout after 5s',
+          false
+        );
         resolve(false);
       }, 5000);
 
@@ -500,14 +531,13 @@ async function runTests() {
 
     // Cleanup
     if (socket) socket.close();
-
   } catch (error) {
     console.error('\n❌ Test suite error:', error);
   }
 
   printSummary();
 
-  const failedTests = testResults.filter(t => !t.pass).length;
+  const failedTests = testResults.filter((t) => !t.pass).length;
   process.exit(failedTests > 0 ? 1 : 0);
 }
 
@@ -516,8 +546,8 @@ function printSummary() {
   console.log('║                     TEST SUMMARY                           ║');
   console.log('╚════════════════════════════════════════════════════════════╝');
 
-  const passed = testResults.filter(t => t.pass).length;
-  const failed = testResults.filter(t => !t.pass).length;
+  const passed = testResults.filter((t) => t.pass).length;
+  const failed = testResults.filter((t) => !t.pass).length;
   const total = testResults.length;
 
   console.log(`\nTotal Tests: ${total}`);
@@ -527,11 +557,13 @@ function printSummary() {
 
   if (failed > 0) {
     console.log('\n❌ Failed Tests:');
-    testResults.filter(t => !t.pass).forEach(t => {
-      console.log(`  - ${t.name}`);
-      console.log(`    Expected: ${t.expected}`);
-      console.log(`    Actual: ${t.actual}`);
-    });
+    testResults
+      .filter((t) => !t.pass)
+      .forEach((t) => {
+        console.log(`  - ${t.name}`);
+        console.log(`    Expected: ${t.expected}`);
+        console.log(`    Actual: ${t.actual}`);
+      });
   }
 
   console.log(`\nCompleted at: ${new Date().toISOString()}`);

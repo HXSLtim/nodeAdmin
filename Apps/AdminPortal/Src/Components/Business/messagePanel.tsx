@@ -108,7 +108,12 @@ function renderMessageBody(message: ImSocketMessage): JSX.Element {
       <div className="space-y-1 text-sm">
         <p className="font-medium">{message.metadata?.fileName || 'Attached file'}</p>
         {message.metadata?.url ? (
-          <a className="text-primary underline" href={message.metadata.url} rel="noreferrer" target="_blank">
+          <a
+            className="text-primary underline"
+            href={message.metadata.url}
+            rel="noreferrer"
+            target="_blank"
+          >
             Open file
           </a>
         ) : null}
@@ -178,7 +183,9 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
   const permissionQuery = useQuery({
     enabled: roleQueryParam.length > 0,
     queryFn: () =>
-      apiClient.get<PermissionResponse>(`/api/v1/console/permissions?roles=${encodeURIComponent(roleQueryParam)}`),
+      apiClient.get<PermissionResponse>(
+        `/api/v1/console/permissions?roles=${encodeURIComponent(roleQueryParam)}`
+      ),
     queryKey: ['console-permissions', roleQueryParam],
   });
 
@@ -193,7 +200,8 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
 
   const imConfig = useMemo<RuntimeImConfig | null>(() => {
     try {
-      const resolvedConversationId = conversationIdOverride?.trim() || toRequiredEnvValue('VITE_IM_CONVERSATION_ID');
+      const resolvedConversationId =
+        conversationIdOverride?.trim() || toRequiredEnvValue('VITE_IM_CONVERSATION_ID');
       return {
         conversationId: resolvedConversationId,
         tenantId: toRequiredEnvValue('VITE_IM_TENANT_ID'),
@@ -237,7 +245,7 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
       localStorage.setItem(offlineQueueStorageKey, JSON.stringify(queue));
       setOfflineQueueCount(queue.length);
     },
-    [offlineQueueStorageKey],
+    [offlineQueueStorageKey]
   );
 
   const enqueueOfflinePayload = useCallback(
@@ -246,7 +254,7 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
       queue.push(payload);
       writeOfflineQueue(queue);
     },
-    [readOfflineQueue, writeOfflineQueue],
+    [readOfflineQueue, writeOfflineQueue]
   );
 
   useEffect(() => {
@@ -327,19 +335,23 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
     (history: ImSocketMessage[]) => {
       resetMessages(history);
     },
-    [resetMessages],
+    [resetMessages]
   );
 
   const handleMessageReceived = useCallback(
     (message: ImSocketMessage) => {
       upsertMessage(message);
     },
-    [upsertMessage],
+    [upsertMessage]
   );
 
   const handleTypingChanged = useCallback(
     (event: ImTypingEvent) => {
-      if (!imConfig || event.conversationId !== imConfig.conversationId || event.userId === imConfig.userId) {
+      if (
+        !imConfig ||
+        event.conversationId !== imConfig.conversationId ||
+        event.userId === imConfig.userId
+      ) {
         return;
       }
 
@@ -356,7 +368,7 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
         };
       });
     },
-    [imConfig],
+    [imConfig]
   );
 
   const handlePresenceChanged = React.useCallback((event: ImPresenceEvent) => {
@@ -394,7 +406,9 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
     const cleanupTimer = window.setInterval(() => {
       setTypingUsers((current) => {
         const now = Date.now();
-        const nextEntries = Object.entries(current).filter((entry) => now - entry[1] <= typingExpirationMs);
+        const nextEntries = Object.entries(current).filter(
+          (entry) => now - entry[1] <= typingExpirationMs
+        );
         return Object.fromEntries(nextEntries);
       });
     }, 1000);
@@ -549,12 +563,21 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
         ? t({ id: 'im.reconnecting' })
         : connectionState;
 
-  const sendLabel = sendState === 'retrying' ? 'sending retry...' : sendState === 'failed' ? 'send failed' : undefined;
+  const sendLabel =
+    sendState === 'retrying'
+      ? 'sending retry...'
+      : sendState === 'failed'
+        ? 'send failed'
+        : undefined;
   const typingUsersLabel = Object.keys(typingUsers).join(', ');
 
   const totalCount = messages.length;
-  const firstVisibleIndex = Math.max(0, Math.floor(scrollTop / virtualRowHeightPx) - virtualOverscan);
-  const visibleCount = Math.ceil((viewportHeight || 320) / virtualRowHeightPx) + virtualOverscan * 2;
+  const firstVisibleIndex = Math.max(
+    0,
+    Math.floor(scrollTop / virtualRowHeightPx) - virtualOverscan
+  );
+  const visibleCount =
+    Math.ceil((viewportHeight || 320) / virtualRowHeightPx) + virtualOverscan * 2;
   const lastVisibleIndex = Math.min(totalCount, firstVisibleIndex + visibleCount);
   const virtualItems = messages.slice(firstVisibleIndex, lastVisibleIndex);
   const topSpacerHeight = firstVisibleIndex * virtualRowHeightPx;
@@ -591,12 +614,16 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
           conversationPanelOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
           // Desktop: collapsible width
           'md:translate-x-0',
-          conversationPanelOpen ? 'md:w-72' : 'md:w-0 md:p-0 md:border-0',
+          conversationPanelOpen ? 'md:w-72' : 'md:w-0 md:p-0 md:border-0'
         )}
       >
         <h3 className="mb-2 text-sm font-semibold">{t({ id: 'im.conversations' })}</h3>
-        {conversationQuery.isLoading ? <p className="text-xs text-muted-foreground">{t({ id: 'im.loadingConversations' })}</p> : null}
-        {conversationQuery.isError ? <p className="text-xs text-destructive">{t({ id: 'im.loadConversationsFailed' })}</p> : null}
+        {conversationQuery.isLoading ? (
+          <p className="text-xs text-muted-foreground">{t({ id: 'im.loadingConversations' })}</p>
+        ) : null}
+        {conversationQuery.isError ? (
+          <p className="text-xs text-destructive">{t({ id: 'im.loadConversationsFailed' })}</p>
+        ) : null}
         <ul className="space-y-2">
           {(conversationQuery.data?.rows ?? []).map((conversation) => (
             <li key={conversation.id}>
@@ -604,7 +631,9 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
                 className={({ isActive }) =>
                   [
                     'block rounded-md border border-border px-3 py-2 text-xs',
-                    isActive ? 'bg-primary text-primary-foreground' : 'bg-card text-card-foreground',
+                    isActive
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-card text-card-foreground',
                   ].join(' ')
                 }
                 to={`/im/${conversation.id}`}
@@ -628,24 +657,42 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
               onClick={toggleConversationPanel}
               type="button"
             >
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+              >
                 <path d="M4 6h16M4 12h16M4 18h16" strokeLinecap="round" />
               </svg>
             </button>
             <div>
               <h2 className="text-base font-semibold">{t({ id: 'im.conversation' })}</h2>
-              <div className="text-sm text-gray-500">{t({ id: 'im.online' }, { count: presenceMembers.size })}</div>
+              <div className="text-sm text-gray-500">
+                {t({ id: 'im.online' }, { count: presenceMembers.size })}
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {offlineQueueCount > 0 ? <Badge variant="secondary">{t({ id: 'im.offlineQueue' }, { count: offlineQueueCount })}</Badge> : null}
-            <Badge variant={connectionState === 'connected' ? 'default' : 'secondary'}>{connectionLabel}</Badge>
+            {offlineQueueCount > 0 ? (
+              <Badge variant="secondary">
+                {t({ id: 'im.offlineQueue' }, { count: offlineQueueCount })}
+              </Badge>
+            ) : null}
+            <Badge variant={connectionState === 'connected' ? 'default' : 'secondary'}>
+              {connectionLabel}
+            </Badge>
           </div>
         </header>
 
         {bootError ? <p className="text-xs text-red-600">{bootError}</p> : null}
         {sendLabel ? <p className="text-xs text-muted-foreground">{sendLabel}</p> : null}
-        {typingUsersLabel ? <p className="text-xs text-muted-foreground">{t({ id: 'im.typing' }, { users: typingUsersLabel })}</p> : null}
+        {typingUsersLabel ? (
+          <p className="text-xs text-muted-foreground">
+            {t({ id: 'im.typing' }, { users: typingUsersLabel })}
+          </p>
+        ) : null}
 
         <div
           className="min-h-0 flex-1 overflow-y-auto rounded-md bg-muted p-3"

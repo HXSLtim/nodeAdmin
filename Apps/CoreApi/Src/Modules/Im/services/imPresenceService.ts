@@ -9,9 +9,11 @@ export class ImPresenceService {
   private readonly connectionGauge: ObservableGauge;
 
   constructor(private readonly connectionRegistry: ConnectionRegistry) {
-    this.connectionGauge = metrics.getMeter('im-presence').createObservableGauge('im.connections.by_tenant', {
-      description: 'Number of active WebSocket connections per tenant',
-    });
+    this.connectionGauge = metrics
+      .getMeter('im-presence')
+      .createObservableGauge('im.connections.by_tenant', {
+        description: 'Number of active WebSocket connections per tenant',
+      });
 
     this.connectionGauge.addCallback((observableResult) => {
       const staleTenantIds: string[] = [];

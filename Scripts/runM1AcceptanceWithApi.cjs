@@ -4,7 +4,8 @@ async function run() {
   const env = {
     ...process.env,
     AUTH_ENABLE_DEV_TOKEN_ISSUE: process.env.AUTH_ENABLE_DEV_TOKEN_ISSUE || 'true',
-    DATABASE_URL: process.env.DATABASE_URL || 'postgres://nodeadmin:nodeadmin@localhost:55432/nodeadmin',
+    DATABASE_URL:
+      process.env.DATABASE_URL || 'postgres://nodeadmin:nodeadmin@localhost:55432/nodeadmin',
     FRONTEND_ORIGINS: process.env.FRONTEND_ORIGINS || 'http://localhost:5173',
     JWT_ACCESS_SECRET: process.env.JWT_ACCESS_SECRET || 'dev-access-secret-please-change',
     JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET || 'dev-refresh-secret-please-change',

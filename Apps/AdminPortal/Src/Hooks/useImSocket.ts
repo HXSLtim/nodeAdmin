@@ -48,7 +48,10 @@ interface UseImSocketOptions {
 
 export function useImSocket(options: UseImSocketOptions): {
   emitTyping: (payload: { conversationId: string; isTyping: boolean }) => void;
-  emitWithAck: (payload: ImSendMessagePayload, timeoutMs: number) => Promise<ImSendMessageAck | null>;
+  emitWithAck: (
+    payload: ImSendMessagePayload,
+    timeoutMs: number
+  ) => Promise<ImSendMessageAck | null>;
 } {
   const {
     accessToken,
@@ -169,7 +172,7 @@ export function useImSocket(options: UseImSocketOptions): {
         });
       });
     },
-    [],
+    []
   );
 
   return {

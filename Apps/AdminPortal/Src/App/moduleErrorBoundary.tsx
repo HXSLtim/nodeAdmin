@@ -26,7 +26,10 @@ interface ModuleErrorBoundaryState {
   hasError: boolean;
 }
 
-export class ModuleErrorBoundary extends React.Component<ModuleErrorBoundaryProps, ModuleErrorBoundaryState> {
+export class ModuleErrorBoundary extends React.Component<
+  ModuleErrorBoundaryProps,
+  ModuleErrorBoundaryState
+> {
   constructor(props: ModuleErrorBoundaryProps) {
     super(props);
     this.state = {

@@ -7,7 +7,10 @@ import { Sidebar } from './sidebar';
 function readRolesFromEnv(): string[] {
   const rolesRaw = (import.meta.env.VITE_IM_ROLES as string | undefined)?.trim();
   if (!rolesRaw) return ['tenant:admin'];
-  const roles = rolesRaw.split(',').map((r) => r.trim()).filter((r) => r.length > 0);
+  const roles = rolesRaw
+    .split(',')
+    .map((r) => r.trim())
+    .filter((r) => r.length > 0);
   return roles.length > 0 ? roles : ['tenant:admin'];
 }
 

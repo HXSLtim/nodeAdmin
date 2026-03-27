@@ -8,7 +8,7 @@ import { AuthService } from './authService';
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
-    private readonly auditLogService: AuditLogService,
+    private readonly auditLogService: AuditLogService
   ) {}
 
   @Post('dev-token')
@@ -39,7 +39,10 @@ export class AuthController {
       });
     } catch (error) {
       // Log error but don't block token issuance
-      console.error('[AuthController] Audit log failed:', error instanceof Error ? error.message : String(error));
+      console.error(
+        '[AuthController] Audit log failed:',
+        error instanceof Error ? error.message : String(error)
+      );
     }
 
     return {

@@ -2,7 +2,9 @@ const cp = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const databaseUrl = (process.env.DATABASE_URL || 'postgres://nodeadmin:nodeadmin@localhost:55432/nodeadmin').trim();
+const databaseUrl = (
+  process.env.DATABASE_URL || 'postgres://nodeadmin:nodeadmin@localhost:55432/nodeadmin'
+).trim();
 const inputPath = (process.env.BACKUP_FILE || '').trim();
 const parsedDatabaseUrl = new URL(databaseUrl);
 
@@ -43,8 +45,8 @@ try {
         result: 'ok',
       },
       null,
-      2,
-    ),
+      2
+    )
   );
 } catch (error) {
   console.error('[postgresRestore] failed:', error);

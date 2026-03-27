@@ -22,7 +22,9 @@ export class MetricsController {
     const memUsage = process.memoryUsage();
     const cpuUsage = process.cpuUsage();
     const eventLoopLagMsRaw = eventLoopLagHistogram.mean / 1_000_000;
-    const eventLoopLagMs = Number.isFinite(eventLoopLagMsRaw) ? Number(eventLoopLagMsRaw.toFixed(3)) : 0;
+    const eventLoopLagMs = Number.isFinite(eventLoopLagMsRaw)
+      ? Number(eventLoopLagMsRaw.toFixed(3))
+      : 0;
 
     return {
       cpu: {
@@ -45,7 +47,7 @@ export class MetricsController {
 export class ConsoleController {
   constructor(
     private readonly auditLogService: AuditLogService,
-    private readonly conversationRepository: ConversationRepository,
+    private readonly conversationRepository: ConversationRepository
   ) {}
 
   @Get('overview')
@@ -65,8 +67,18 @@ export class ConsoleController {
   getTenants() {
     return {
       rows: [
-        { key: 'tenant-cn-001', name: 'East Region Business Unit', roleCount: 12, status: 'active' },
-        { key: 'tenant-cn-002', name: 'South Region Business Unit', roleCount: 9, status: 'active' },
+        {
+          key: 'tenant-cn-001',
+          name: 'East Region Business Unit',
+          roleCount: 12,
+          status: 'active',
+        },
+        {
+          key: 'tenant-cn-002',
+          name: 'South Region Business Unit',
+          roleCount: 9,
+          status: 'active',
+        },
         { key: 'tenant-cn-003', name: 'Overseas Business Unit', roleCount: 7, status: 'review' },
       ],
     };
@@ -86,7 +98,9 @@ export class ConsoleController {
   }
 
   @Get('conversations')
-  async getConversations(@Query('tenantId') tenantId = 'tenant-demo'): Promise<ConversationListResponse[]> {
+  async getConversations(
+    @Query('tenantId') tenantId = 'tenant-demo'
+  ): Promise<ConversationListResponse[]> {
     const rows = await this.conversationRepository.listByTenant(tenantId, 50);
 
     return rows.map((row) => ({
@@ -125,7 +139,7 @@ export class ConsoleController {
   async getAuditLogs(
     @Query('limit') limitRaw?: string,
     @Query('offset') offsetRaw?: string,
-    @Query('tenantId') tenantId?: string,
+    @Query('tenantId') tenantId?: string
   ): Promise<{ rows: Awaited<ReturnType<AuditLogService['listByTenant']>> }> {
     if (!tenantId || tenantId.trim().length === 0) {
       throw new BadRequestException('tenantId query parameter is required.');

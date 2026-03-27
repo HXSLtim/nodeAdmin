@@ -18,9 +18,12 @@ export const conversations = pgTable(
     tenantId: varchar('tenant_id', { length: 64 }).notNull(),
   },
   (table) => ({
-    conversationsTenantCreatedIdx: index('conversations_tenant_created_idx').on(table.tenantId, table.createdAt),
+    conversationsTenantCreatedIdx: index('conversations_tenant_created_idx').on(
+      table.tenantId,
+      table.createdAt
+    ),
     pk: primaryKey({ columns: [table.tenantId, table.id], name: 'conversations_pk' }),
-  }),
+  })
 );
 
 export const messages = pgTable(
@@ -41,20 +44,23 @@ export const messages = pgTable(
     messagesTenantConversationSequenceIdx: index('messages_tenant_conv_seq_idx').on(
       table.tenantId,
       table.conversationId,
-      table.sequenceId,
+      table.sequenceId
     ),
-    messagesTenantMessageIdUnique: uniqueIndex('messages_tenant_message_id_uniq').on(table.tenantId, table.messageId),
+    messagesTenantMessageIdUnique: uniqueIndex('messages_tenant_message_id_uniq').on(
+      table.tenantId,
+      table.messageId
+    ),
     messagesTenantUserCreatedIdx: index('messages_tenant_user_created_idx').on(
       table.tenantId,
       table.userId,
-      table.createdAt,
+      table.createdAt
     ),
     messagesConversationCreatedIdx: index('messages_conversation_created_idx').on(
       table.tenantId,
       table.conversationId,
-      table.createdAt,
+      table.createdAt
     ),
-  }),
+  })
 );
 
 export const outboxEvents = pgTable(
@@ -77,14 +83,14 @@ export const outboxEvents = pgTable(
     outboxPublishIdx: index('outbox_publish_idx').on(table.publishedAt),
     outboxEventsPublishedCreatedIdx: index('outbox_events_published_created_idx').on(
       table.publishedAt,
-      table.createdAt,
+      table.createdAt
     ),
     outboxEventsAggregateCreatedIdx: index('outbox_events_aggregate_created_idx').on(
       table.aggregateId,
-      table.createdAt,
+      table.createdAt
     ),
     pk: primaryKey({ columns: [table.id], name: 'outbox_events_pk' }),
-  }),
+  })
 );
 
 export const auditLogs = pgTable(
@@ -102,7 +108,10 @@ export const auditLogs = pgTable(
   },
   (table) => ({
     auditLogsCreatedIdx: index('audit_logs_created_idx').on(table.createdAt),
-    auditLogsTenantActionIdx: index('audit_logs_tenant_action_idx').on(table.tenantId, table.action),
+    auditLogsTenantActionIdx: index('audit_logs_tenant_action_idx').on(
+      table.tenantId,
+      table.action
+    ),
     pk: primaryKey({ columns: [table.id], name: 'audit_logs_pk' }),
-  }),
+  })
 );

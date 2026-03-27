@@ -6,7 +6,12 @@ export interface ToastProps extends React.HTMLAttributes<HTMLDivElement> {
   variant?: 'default' | 'destructive';
 }
 
-export function Toast({ className: customClassName, title, variant = 'default', ...props }: ToastProps): JSX.Element {
+export function Toast({
+  className: customClassName,
+  title,
+  variant = 'default',
+  ...props
+}: ToastProps): JSX.Element {
   return (
     <div
       className={className(
@@ -14,7 +19,7 @@ export function Toast({ className: customClassName, title, variant = 'default', 
         variant === 'destructive'
           ? 'border-destructive bg-destructive text-destructive-foreground'
           : 'border-border bg-card text-card-foreground',
-        customClassName,
+        customClassName
       )}
       {...props}
     >

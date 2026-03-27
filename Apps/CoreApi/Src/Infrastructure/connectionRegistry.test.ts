@@ -10,11 +10,7 @@ interface RegistryTestAccess {
   upsert(socketId: string, context: SocketContext): void;
 }
 
-function createContext(
-  tenantId: string,
-  conversationId: string,
-  userId = 'user-1',
-): SocketContext {
+function createContext(tenantId: string, conversationId: string, userId = 'user-1'): SocketContext {
   return {
     conversationId,
     tenantId,
@@ -56,11 +52,11 @@ describe('ConnectionRegistry', () => {
     registry.countByTenantId.set('tenant-x', maxConnectionsPerTenant);
 
     expect(() =>
-      registry.upsert('socket-z', createContext('tenant-x', 'conversation-z')),
+      registry.upsert('socket-z', createContext('tenant-x', 'conversation-z'))
     ).toThrowError(WsException);
 
     expect(() =>
-      registry.upsert('socket-z', createContext('tenant-x', 'conversation-z')),
+      registry.upsert('socket-z', createContext('tenant-x', 'conversation-z'))
     ).toThrowError(/limit/i);
   });
 

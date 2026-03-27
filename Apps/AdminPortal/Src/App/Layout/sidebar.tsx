@@ -37,9 +37,7 @@ export function Sidebar(): JSX.Element {
     return className(
       'flex h-10 items-center rounded-md text-sm font-medium transition-colors',
       sidebarCollapsed ? 'justify-center px-2' : 'gap-3 px-3',
-      isActive
-        ? 'bg-accent text-accent-foreground'
-        : 'hover:bg-[hsl(var(--sidebar-accent))]',
+      isActive ? 'bg-accent text-accent-foreground' : 'hover:bg-[hsl(var(--sidebar-accent))]'
     );
   }
 
@@ -62,15 +60,15 @@ export function Sidebar(): JSX.Element {
       <nav className="flex-1 space-y-1 p-2">
         {visibleNavItems.map((item) => (
           <NavLink
-            className={({ isActive }) => linkClass(isNavItemActive(location.pathname, item.path) || isActive)}
+            className={({ isActive }) =>
+              linkClass(isNavItemActive(location.pathname, item.path) || isActive)
+            }
             key={item.key}
             onClick={() => setMobileMenuOpen(false)}
             to={item.path}
           >
             <NavIcon name={item.icon} />
-            {!sidebarCollapsed ? (
-              <span className="truncate">{t({ id: item.labelId })}</span>
-            ) : null}
+            {!sidebarCollapsed ? <span className="truncate">{t({ id: item.labelId })}</span> : null}
           </NavLink>
         ))}
       </nav>
@@ -93,11 +91,7 @@ export function Sidebar(): JSX.Element {
     <>
       {/* Desktop sidebar */}
       <aside
-        className={className(
-          sidebarBase,
-          'hidden md:flex',
-          sidebarCollapsed ? 'w-16' : 'w-60',
-        )}
+        className={className(sidebarBase, 'hidden md:flex', sidebarCollapsed ? 'w-16' : 'w-60')}
       >
         {navContent}
       </aside>
@@ -113,7 +107,7 @@ export function Sidebar(): JSX.Element {
         className={className(
           sidebarBase,
           'fixed inset-y-0 left-0 z-40 w-72 md:hidden transition-transform duration-200',
-          mobileMenuOpen ? 'translate-x-0' : '-translate-x-full',
+          mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
         {navContent}

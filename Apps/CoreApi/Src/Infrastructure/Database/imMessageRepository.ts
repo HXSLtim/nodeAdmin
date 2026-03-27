@@ -68,7 +68,7 @@ export class ImMessageRepository implements OnModuleDestroy {
           VALUES ($1, $2)
           ON CONFLICT (tenant_id, id) DO NOTHING;
         `,
-        [message.tenantId, message.conversationId],
+        [message.tenantId, message.conversationId]
       );
 
       await client.query(
@@ -79,7 +79,7 @@ export class ImMessageRepository implements OnModuleDestroy {
             AND id = $2
           FOR UPDATE;
         `,
-        [message.tenantId, message.conversationId],
+        [message.tenantId, message.conversationId]
       );
 
       const metadataJson = message.metadata ? JSON.stringify(message.metadata) : null;
@@ -145,7 +145,7 @@ export class ImMessageRepository implements OnModuleDestroy {
           messageType,
           metadataJson,
           message.createdAt,
-        ],
+        ]
       );
 
       if (!insertResult.rowCount || insertResult.rowCount === 0) {
@@ -166,7 +166,7 @@ export class ImMessageRepository implements OnModuleDestroy {
               AND message_id = $2
             LIMIT 1;
           `,
-          [message.tenantId, message.messageId],
+          [message.tenantId, message.messageId]
         );
 
         if (!duplicateResult.rowCount || duplicateResult.rowCount === 0) {
@@ -192,7 +192,7 @@ export class ImMessageRepository implements OnModuleDestroy {
           storedMessage.conversationId,
           'im.message.sent',
           JSON.stringify(storedMessage),
-        ],
+        ]
       );
 
       return {
@@ -202,7 +202,11 @@ export class ImMessageRepository implements OnModuleDestroy {
     });
   }
 
-  async getLatest(tenantId: string, conversationId: string, limit: number): Promise<StoredMessage[]> {
+  async getLatest(
+    tenantId: string,
+    conversationId: string,
+    limit: number
+  ): Promise<StoredMessage[]> {
     if (!this.pool) {
       return this.inMemoryStore.getLatest(tenantId, conversationId, limit);
     }
@@ -226,14 +230,17 @@ export class ImMessageRepository implements OnModuleDestroy {
           ORDER BY sequence_id DESC
           LIMIT $3;
         `,
-        [tenantId, conversationId, limit],
+        [tenantId, conversationId, limit]
       );
 
       return result.rows.map((row) => this.toStoredMessage(row)).reverse();
     });
   }
 
-  private async runWithTenant<T>(tenantId: string, work: (client: PoolClient) => Promise<T>): Promise<T> {
+  private async runWithTenant<T>(
+    tenantId: string,
+    work: (client: PoolClient) => Promise<T>
+  ): Promise<T> {
     if (!this.pool) {
       throw new Error('Database pool is not initialized.');
     }

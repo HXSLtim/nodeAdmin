@@ -9,11 +9,35 @@ export interface NavItem {
 }
 
 export const navItems: NavItem[] = [
-  { icon: 'bar', key: 'overview', labelId: 'nav.overview', path: '/overview', permission: 'overview:view' },
+  {
+    icon: 'bar',
+    key: 'overview',
+    labelId: 'nav.overview',
+    path: '/overview',
+    permission: 'overview:view',
+  },
   { icon: 'chat', key: 'im', labelId: 'nav.im', path: '/im', permission: 'im:view' },
-  { icon: 'users', key: 'tenant', labelId: 'nav.tenants', path: '/tenant', permission: 'tenant:view' },
-  { icon: 'rocket', key: 'release', labelId: 'nav.release', path: '/release', permission: 'release:view' },
-  { icon: 'gear', key: 'settings', labelId: 'nav.settings', path: '/settings', permission: 'settings:view' },
+  {
+    icon: 'users',
+    key: 'tenant',
+    labelId: 'nav.tenants',
+    path: '/tenant',
+    permission: 'tenant:view',
+  },
+  {
+    icon: 'rocket',
+    key: 'release',
+    labelId: 'nav.release',
+    path: '/release',
+    permission: 'release:view',
+  },
+  {
+    icon: 'gear',
+    key: 'settings',
+    labelId: 'nav.settings',
+    path: '/settings',
+    permission: 'settings:view',
+  },
 ];
 
 export function isNavItemActive(pathname: string, navPath: string): boolean {

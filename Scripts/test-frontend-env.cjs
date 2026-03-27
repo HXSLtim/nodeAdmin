@@ -46,7 +46,7 @@ async function testFrontendEnv() {
     'VITE_IM_TENANT_ID',
     'VITE_IM_USER_ID',
     'VITE_IM_CONVERSATION_ID',
-    'VITE_IM_ROLES'
+    'VITE_IM_ROLES',
   ];
 
   const missingVars = [];
@@ -65,8 +65,8 @@ async function testFrontendEnv() {
   console.log('   ✓ All required environment variables are present\n');
 
   console.log('3. Environment configuration summary:');
-  const lines = envContent.split('\n').filter(line => line.trim() && !line.startsWith('#'));
-  lines.forEach(line => {
+  const lines = envContent.split('\n').filter((line) => line.trim() && !line.startsWith('#'));
+  lines.forEach((line) => {
     const [key, value] = line.split('=');
     if (key && value) {
       console.log(`   ${key}: ${value}`);
@@ -80,7 +80,7 @@ async function testFrontendEnv() {
   console.log('  - If error persists, try hard refresh (Ctrl+Shift+R)');
 }
 
-testFrontendEnv().catch(error => {
+testFrontendEnv().catch((error) => {
   console.error('Test failed:', error);
   process.exit(1);
 });

@@ -112,14 +112,20 @@ export class AuditLogService implements OnModuleDestroy {
           input.targetId ?? null,
           input.traceId,
           input.context ? JSON.stringify(input.context) : null,
-        ],
+        ]
       );
     });
   }
 
-  async listByTenant(tenantId: string, limit: number, offset: number = 0): Promise<StoredAuditLog[]> {
+  async listByTenant(
+    tenantId: string,
+    limit: number,
+    offset: number = 0
+  ): Promise<StoredAuditLog[]> {
     if (!this.pool) {
-      return this.fallbackRows.slice(offset, offset + limit).filter((row) => row.tenantId === tenantId);
+      return this.fallbackRows
+        .slice(offset, offset + limit)
+        .filter((row) => row.tenantId === tenantId);
     }
 
     return this.runWithTenant(tenantId, async (client) => {
@@ -140,7 +146,7 @@ export class AuditLogService implements OnModuleDestroy {
           LIMIT $2
           OFFSET $3;
         `,
-        [tenantId, limit, offset],
+        [tenantId, limit, offset]
       );
 
       return result.rows.map((row) => ({
@@ -157,7 +163,10 @@ export class AuditLogService implements OnModuleDestroy {
     });
   }
 
-  private async runWithTenant<T>(tenantId: string, work: (client: PoolClient) => Promise<T>): Promise<T> {
+  private async runWithTenant<T>(
+    tenantId: string,
+    work: (client: PoolClient) => Promise<T>
+  ): Promise<T> {
     if (!this.pool) {
       throw new Error('Database pool is not initialized.');
     }

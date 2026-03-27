@@ -21,7 +21,7 @@ async function bootstrap(): Promise<void> {
       requestTimeout: runtimeConfig.fastify.requestTimeout,
       bodyLimit: runtimeConfig.fastify.bodyLimit,
       maxParamLength: runtimeConfig.fastify.maxParamLength,
-    }),
+    })
   );
   app.setGlobalPrefix('api/v1');
 
@@ -35,7 +35,7 @@ async function bootstrap(): Promise<void> {
       whitelist: true,
       transform: true,
       forbidNonWhitelisted: true,
-    }),
+    })
   );
   app.useGlobalFilters(new UnifiedExceptionFilter());
   app.enableShutdownHooks();

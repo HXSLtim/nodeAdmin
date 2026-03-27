@@ -5,7 +5,13 @@ const reactHooksPlugin = require('eslint-plugin-react-hooks');
 /** @type {import('eslint').Linter.Config[]} */
 module.exports = [
   {
-    ignores: ['**/Dist/**', '**/dist/**', '**/node_modules/**', '**/*.d.ts', '**/tsconfig.tsbuildinfo'],
+    ignores: [
+      '**/Dist/**',
+      '**/dist/**',
+      '**/node_modules/**',
+      '**/*.d.ts',
+      '**/tsconfig.tsbuildinfo',
+    ],
   },
   {
     files: ['Apps/**/*.{ts,tsx}'],

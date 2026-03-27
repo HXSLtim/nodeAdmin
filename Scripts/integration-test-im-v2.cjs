@@ -16,7 +16,9 @@ function httpRequest(options, body = null) {
   return new Promise((resolve, reject) => {
     const req = http.request(options, (res) => {
       let data = '';
-      res.on('data', (chunk) => { data += chunk; });
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
       res.on('end', () => {
         try {
           resolve({ status: res.statusCode, body: data ? JSON.parse(data) : null });
@@ -41,24 +43,27 @@ function logTest(name, expected, actual, pass, details = '') {
 }
 
 function wait(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 // Test 1: Authentication
 async function testAuthentication() {
   console.log('\n=== TEST 1: Authentication ===');
   try {
-    const response = await httpRequest({
-      hostname: 'localhost',
-      port: 3001,
-      path: '/api/v1/auth/dev-token',
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' }
-    }, {
-      tenantId: 'tenant-demo',
-      userId: 'user-admin',
-      roles: ['tenant:admin', 'im:operator']
-    });
+    const response = await httpRequest(
+      {
+        hostname: 'localhost',
+        port: 3001,
+        path: '/api/v1/auth/dev-token',
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      },
+      {
+        tenantId: 'tenant-demo',
+        userId: 'user-admin',
+        roles: ['tenant:admin', 'im:operator'],
+      }
+    );
 
     const pass = response.status === 201 && response.body?.accessToken;
     logTest(
@@ -66,7 +71,9 @@ async function testAuthentication() {
       'HTTP 201 with accessToken',
       `HTTP ${response.status} ${response.body?.accessToken ? 'with token' : 'no token'}`,
       pass,
-      response.body?.accessToken ? `Token: ${response.body.accessToken.substring(0, 20)}...` : 'No token'
+      response.body?.accessToken
+        ? `Token: ${response.body.accessToken.substring(0, 20)}...`
+        : 'No token'
     );
 
     return pass ? response.body.accessToken : null;
@@ -84,7 +91,7 @@ async function testWebSocketConnection(token) {
       const socket = io(SOCKET_URL, {
         auth: { token },
         transports: ['websocket'],
-        reconnection: false
+        reconnection: false,
       });
 
       const timeout = setTimeout(() => {
@@ -120,7 +127,7 @@ async function testConversationAPI(token) {
       port: 3001,
       path: '/api/v1/console/conversations?tenantId=tenant-demo',
       method: 'GET',
-      headers: { 'Authorization': `Bearer ${token}` }
+      headers: { Authorization: `Bearer ${token}` },
     });
 
     const pass = response.status === 200 && Array.isArray(response.body);
@@ -144,7 +151,12 @@ async function testJoinConversation(socket, conversationId) {
   console.log('\n=== TEST 4: Join Conversation ===');
   return new Promise((resolve) => {
     if (!socket || !conversationId) {
-      logTest('Join Conversation', 'Joined successfully', 'Skipped - no socket or conversation', false);
+      logTest(
+        'Join Conversation',
+        'Joined successfully',
+        'Skipped - no socket or conversation',
+        false
+      );
       resolve(false);
       return;
     }
@@ -185,24 +197,28 @@ async function testSendMessage(socket, conversationId) {
       resolve(false);
     }, 5000);
 
-    socket.emit('sendMessage', {
-      conversationId,
-      messageId,
-      content: 'Integration test message',
-      messageType: 'text',
-      traceId: `trace-${Date.now()}`
-    }, (ack) => {
-      clearTimeout(timeout);
-      const pass = ack && ack.accepted;
-      logTest(
-        'Send Message',
-        'Acknowledgment with accepted:true',
-        pass ? `Message sent, sequenceId: ${ack.sequenceId}` : `Error: ${JSON.stringify(ack)}`,
-        pass,
-        JSON.stringify(ack)
-      );
-      resolve(pass);
-    });
+    socket.emit(
+      'sendMessage',
+      {
+        conversationId,
+        messageId,
+        content: 'Integration test message',
+        messageType: 'text',
+        traceId: `trace-${Date.now()}`,
+      },
+      (ack) => {
+        clearTimeout(timeout);
+        const pass = ack && ack.accepted;
+        logTest(
+          'Send Message',
+          'Acknowledgment with accepted:true',
+          pass ? `Message sent, sequenceId: ${ack.sequenceId}` : `Error: ${JSON.stringify(ack)}`,
+          pass,
+          JSON.stringify(ack)
+        );
+        resolve(pass);
+      }
+    );
   });
 }
 
@@ -242,7 +258,7 @@ async function testReceiveMessage(socket, conversationId) {
       messageId: `msg-receive-${Date.now()}`,
       content: 'Test receive message',
       messageType: 'text',
-      traceId: `trace-${Date.now()}`
+      traceId: `trace-${Date.now()}`,
     });
   });
 }
@@ -252,7 +268,12 @@ async function testTypingIndicators(socket, conversationId) {
   console.log('\n=== TEST 7: Typing Indicators ===');
   return new Promise((resolve) => {
     if (!socket || !conversationId) {
-      logTest('Typing Indicators', 'Typing event received', 'Skipped - no socket or conversation', false);
+      logTest(
+        'Typing Indicators',
+        'Typing event received',
+        'Skipped - no socket or conversation',
+        false
+      );
       resolve(false);
       return;
     }
@@ -263,21 +284,25 @@ async function testTypingIndicators(socket, conversationId) {
       resolve(false);
     }, 5000);
 
-    socket.emit('typing', {
-      conversationId,
-      isTyping: true
-    }, (ack) => {
-      clearTimeout(timeout);
-      const pass = ack && ack.ok;
-      logTest(
-        'Typing Indicators',
-        'Acknowledgment with ok:true',
-        pass ? 'Typing event sent' : `Error: ${JSON.stringify(ack)}`,
-        pass,
-        JSON.stringify(ack)
-      );
-      resolve(pass);
-    });
+    socket.emit(
+      'typing',
+      {
+        conversationId,
+        isTyping: true,
+      },
+      (ack) => {
+        clearTimeout(timeout);
+        const pass = ack && ack.ok;
+        logTest(
+          'Typing Indicators',
+          'Acknowledgment with ok:true',
+          pass ? 'Typing event sent' : `Error: ${JSON.stringify(ack)}`,
+          pass,
+          JSON.stringify(ack)
+        );
+        resolve(pass);
+      }
+    );
   });
 }
 
@@ -295,7 +320,7 @@ async function testPresenceJoin(socket, conversationId) {
     const socket2 = io(SOCKET_URL, {
       auth: { token: socket.auth.token },
       transports: ['websocket'],
-      reconnection: false
+      reconnection: false,
     });
 
     const timeout = setTimeout(() => {
@@ -340,7 +365,12 @@ async function testPresenceLeave(socket, conversationId) {
   console.log('\n=== TEST 9: Presence - Leave Event ===');
   return new Promise((resolve) => {
     if (!socket || !conversationId) {
-      logTest('Presence Leave', 'Leave event received', 'Skipped - no socket or conversation', false);
+      logTest(
+        'Presence Leave',
+        'Leave event received',
+        'Skipped - no socket or conversation',
+        false
+      );
       resolve(false);
       return;
     }
@@ -355,7 +385,7 @@ async function testPresenceLeave(socket, conversationId) {
     const tempSocket = io(SOCKET_URL, {
       auth: { token: socket.auth.token },
       transports: ['websocket'],
-      reconnection: false
+      reconnection: false,
     });
 
     tempSocket.on('connect', () => {
@@ -387,7 +417,12 @@ async function testConversationHistory(socket, conversationId) {
   console.log('\n=== TEST 10: Conversation History ===');
   return new Promise((resolve) => {
     if (!socket || !conversationId) {
-      logTest('Conversation History', 'History received', 'Skipped - no socket or conversation', false);
+      logTest(
+        'Conversation History',
+        'History received',
+        'Skipped - no socket or conversation',
+        false
+      );
       resolve(false);
       return;
     }
@@ -483,14 +518,13 @@ async function runTests() {
 
     // Cleanup
     if (socket) socket.close();
-
   } catch (error) {
     console.error('\n❌ Test suite error:', error);
   }
 
   printSummary();
 
-  const failedTests = testResults.filter(t => !t.pass).length;
+  const failedTests = testResults.filter((t) => !t.pass).length;
   process.exit(failedTests > 0 ? 1 : 0);
 }
 
@@ -499,8 +533,8 @@ function printSummary() {
   console.log('║                     TEST SUMMARY                           ║');
   console.log('╚════════════════════════════════════════════════════════════╝');
 
-  const passed = testResults.filter(t => t.pass).length;
-  const failed = testResults.filter(t => !t.pass).length;
+  const passed = testResults.filter((t) => t.pass).length;
+  const failed = testResults.filter((t) => !t.pass).length;
   const total = testResults.length;
 
   console.log(`\nTotal Tests: ${total}`);
@@ -510,11 +544,13 @@ function printSummary() {
 
   if (failed > 0) {
     console.log('\n❌ Failed Tests:');
-    testResults.filter(t => !t.pass).forEach(t => {
-      console.log(`  - ${t.name}`);
-      console.log(`    Expected: ${t.expected}`);
-      console.log(`    Actual: ${t.actual}`);
-    });
+    testResults
+      .filter((t) => !t.pass)
+      .forEach((t) => {
+        console.log(`  - ${t.name}`);
+        console.log(`    Expected: ${t.expected}`);
+        console.log(`    Actual: ${t.actual}`);
+      });
   }
 
   console.log(`\nCompleted at: ${new Date().toISOString()}`);

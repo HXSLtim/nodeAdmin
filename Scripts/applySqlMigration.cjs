@@ -33,7 +33,10 @@ function readMigrationFiles() {
 }
 
 async function wasApplied(client, filename) {
-  const result = await client.query('SELECT 1 FROM schema_migrations WHERE filename = $1 LIMIT 1;', [filename]);
+  const result = await client.query(
+    'SELECT 1 FROM schema_migrations WHERE filename = $1 LIMIT 1;',
+    [filename]
+  );
   return result.rowCount > 0;
 }
 
@@ -42,7 +45,9 @@ async function applyMigration(client, migration) {
 
   try {
     await client.query(migration.sql);
-    await client.query('INSERT INTO schema_migrations (filename) VALUES ($1);', [migration.filename]);
+    await client.query('INSERT INTO schema_migrations (filename) VALUES ($1);', [
+      migration.filename,
+    ]);
     await client.query('COMMIT');
   } catch (error) {
     await client.query('ROLLBACK');

@@ -50,7 +50,7 @@ export class AuthService {
       runtimeConfig.auth.accessSecret,
       {
         expiresIn: runtimeConfig.auth.accessExpiresIn as StringValue,
-      },
+      }
     );
 
     const refreshToken = sign(
@@ -63,7 +63,7 @@ export class AuthService {
       runtimeConfig.auth.refreshSecret,
       {
         expiresIn: runtimeConfig.auth.refreshExpiresIn as StringValue,
-      },
+      }
     );
 
     return {
@@ -89,7 +89,9 @@ export class AuthService {
     const userId = this.normalizeString(payload.sub);
     const tenantId = this.normalizeString(payload.tid);
     const jti = this.normalizeString(payload.jti);
-    const roles = Array.isArray(payload.roles) ? payload.roles.filter((role) => typeof role === 'string') : [];
+    const roles = Array.isArray(payload.roles)
+      ? payload.roles.filter((role) => typeof role === 'string')
+      : [];
     const tokenType = payload.type;
 
     if (!userId || !tenantId || !jti || tokenType !== 'access') {

@@ -52,7 +52,9 @@ export function ManagementOverviewPanel(): JSX.Element {
   const isHealthPending = healthQuery.isLoading || healthQuery.isError;
 
   const healthVersion = healthQuery.data ? `v${healthQuery.data.version}` : 'Unavailable';
-  const healthStatus = healthQuery.data ? `${healthQuery.data.service} / ${healthQuery.data.status}` : 'Unavailable';
+  const healthStatus = healthQuery.data
+    ? `${healthQuery.data.service} / ${healthQuery.data.status}`
+    : 'Unavailable';
 
   return (
     <section className="flex h-full flex-col gap-6 overflow-y-auto">
@@ -74,7 +76,10 @@ export function ManagementOverviewPanel(): JSX.Element {
           {isOverviewPending ? (
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {Array.from({ length: 4 }).map((_, index) => (
-                <div className="rounded-lg border border-border p-4" key={`overview-stat-skeleton-${index}`}>
+                <div
+                  className="rounded-lg border border-border p-4"
+                  key={`overview-stat-skeleton-${index}`}
+                >
                   <div className="h-4 w-full animate-pulse rounded bg-muted" />
                   <div className="mt-2 h-6 w-2/3 animate-pulse rounded bg-muted" />
                   <div className="mt-2 h-3 w-1/2 animate-pulse rounded bg-muted" />
@@ -94,7 +99,9 @@ export function ManagementOverviewPanel(): JSX.Element {
                   >
                     <div className="flex items-center justify-between">
                       <p className="text-xs text-muted-foreground">{stat.label}</p>
-                      <div className={`flex h-8 w-8 items-center justify-center rounded-full ${statBgClasses[index % statBgClasses.length]}`}>
+                      <div
+                        className={`flex h-8 w-8 items-center justify-center rounded-full ${statBgClasses[index % statBgClasses.length]}`}
+                      >
                         <NavIcon name={statIconNames[index % statIconNames.length]} />
                       </div>
                     </div>
@@ -107,12 +114,20 @@ export function ManagementOverviewPanel(): JSX.Element {
                       >
                         <path
                           clipRule="evenodd"
-                          d={isUp ? 'M5.293 9.707l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 8.414V16a1 1 0 11-2 0V8.414L6.707 11.12a1 1 0 01-1.414-1.414z' : 'M14.707 10.293l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 11.586V4a1 1 0 012 0v7.586l2.293-2.293a1 1 0 111.414 1.414z'}
+                          d={
+                            isUp
+                              ? 'M5.293 9.707l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 8.414V16a1 1 0 11-2 0V8.414L6.707 11.12a1 1 0 01-1.414-1.414z'
+                              : 'M14.707 10.293l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 11.586V4a1 1 0 012 0v7.586l2.293-2.293a1 1 0 111.414 1.414z'
+                          }
                           fillRule="evenodd"
                         />
                       </svg>
-                      <span className={isUp ? 'text-green-600' : 'text-red-600'}>{trend.value}</span>
-                      <span className="text-muted-foreground">{t({ id: 'overview.trend.vsLastPeriod' })}</span>
+                      <span className={isUp ? 'text-green-600' : 'text-red-600'}>
+                        {trend.value}
+                      </span>
+                      <span className="text-muted-foreground">
+                        {t({ id: 'overview.trend.vsLastPeriod' })}
+                      </span>
                     </div>
                   </div>
                 );
@@ -129,7 +144,9 @@ export function ManagementOverviewPanel(): JSX.Element {
               </div>
             ) : (
               <>
-                <p className="text-xs text-muted-foreground">{t({ id: 'overview.health.version' })}</p>
+                <p className="text-xs text-muted-foreground">
+                  {t({ id: 'overview.health.version' })}
+                </p>
                 <p className="mt-1 flex items-center text-sm font-medium">
                   <span className="relative mr-2 inline-flex h-2 w-2">
                     <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
@@ -153,7 +170,10 @@ export function ManagementOverviewPanel(): JSX.Element {
         <CardContent className="space-y-2">
           {isOverviewPending ? (
             Array.from({ length: 3 }).map((_, index) => (
-              <div className="h-4 w-full animate-pulse rounded bg-muted" key={`overview-todo-skeleton-${index}`} />
+              <div
+                className="h-4 w-full animate-pulse rounded bg-muted"
+                key={`overview-todo-skeleton-${index}`}
+              />
             ))
           ) : todos.length === 0 ? (
             <div className="rounded-md border border-border px-3 py-2 text-sm text-muted-foreground">
@@ -173,7 +193,9 @@ export function ManagementOverviewPanel(): JSX.Element {
                   <span className={isCompleted ? 'text-green-600' : 'text-muted-foreground'}>
                     {isCompleted ? '\u2611' : '\u25FB'}
                   </span>
-                  <span className={isCompleted ? 'text-foreground' : 'text-muted-foreground'}>{todo}</span>
+                  <span className={isCompleted ? 'text-foreground' : 'text-muted-foreground'}>
+                    {todo}
+                  </span>
                 </div>
               );
             })

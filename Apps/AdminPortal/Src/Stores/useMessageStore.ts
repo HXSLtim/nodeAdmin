@@ -21,18 +21,22 @@ export const useMessageStore = create<MessageState>((set) => ({
   messages: [],
   resetMessages: (messages) =>
     set({
-      messages: messages.map(normalizeMessage).sort((left, right) => left.sequenceId - right.sequenceId),
+      messages: messages
+        .map(normalizeMessage)
+        .sort((left, right) => left.sequenceId - right.sequenceId),
     }),
   upsertMessage: (message) =>
     set((state) => {
-      const duplicated = state.messages.some((currentMessage) => currentMessage.messageId === message.messageId);
+      const duplicated = state.messages.some(
+        (currentMessage) => currentMessage.messageId === message.messageId
+      );
       if (duplicated) {
         return state;
       }
 
       return {
         messages: [...state.messages, normalizeMessage(message)].sort(
-          (left, right) => left.sequenceId - right.sequenceId,
+          (left, right) => left.sequenceId - right.sequenceId
         ),
       };
     }),

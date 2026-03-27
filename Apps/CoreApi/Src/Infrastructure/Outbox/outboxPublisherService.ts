@@ -60,10 +60,13 @@ export class OutboxPublisherService implements OnModuleInit, OnModuleDestroy {
       }, runtimeConfig.outbox.pollIntervalMs);
 
       this.logger.log(
-        `Outbox publisher enabled interval=${runtimeConfig.outbox.pollIntervalMs}ms batchSize=${runtimeConfig.outbox.batchSize} topic=${runtimeConfig.kafka.topic} dlq=${runtimeConfig.kafka.dlqTopic}.`,
+        `Outbox publisher enabled interval=${runtimeConfig.outbox.pollIntervalMs}ms batchSize=${runtimeConfig.outbox.batchSize} topic=${runtimeConfig.kafka.topic} dlq=${runtimeConfig.kafka.dlqTopic}.`
       );
     } catch (error) {
-      this.logger.error('Failed to initialize Outbox publisher. Service will continue without outbox functionality.', error);
+      this.logger.error(
+        'Failed to initialize Outbox publisher. Service will continue without outbox functionality.',
+        error
+      );
       // Clean up resources if initialization failed
       if (this.producer) {
         await this.producer.disconnect().catch(() => {});
@@ -120,7 +123,7 @@ export class OutboxPublisherService implements OnModuleInit, OnModuleDestroy {
           LIMIT $1
           FOR UPDATE SKIP LOCKED;
         `,
-        [runtimeConfig.outbox.batchSize],
+        [runtimeConfig.outbox.batchSize]
       );
 
       if (!picked.rowCount) {
@@ -159,7 +162,7 @@ export class OutboxPublisherService implements OnModuleInit, OnModuleDestroy {
                   last_error = NULL
               WHERE id = $1;
             `,
-            [row.id],
+            [row.id]
           );
           publishedCount += 1;
         } catch (publishError) {
@@ -194,7 +197,7 @@ export class OutboxPublisherService implements OnModuleInit, OnModuleDestroy {
                       retry_count = $3
                   WHERE id = $1;
                 `,
-                [row.id, serializedError.slice(0, 2000), nextRetry],
+                [row.id, serializedError.slice(0, 2000), nextRetry]
               );
               dlqCount += 1;
               continue;
@@ -206,7 +209,7 @@ export class OutboxPublisherService implements OnModuleInit, OnModuleDestroy {
                       last_error = $3
                   WHERE id = $1;
                 `,
-                [row.id, nextRetry, String(dlqError).slice(0, 2000)],
+                [row.id, nextRetry, String(dlqError).slice(0, 2000)]
               );
               continue;
             }
@@ -219,7 +222,7 @@ export class OutboxPublisherService implements OnModuleInit, OnModuleDestroy {
                   last_error = $3
               WHERE id = $1;
             `,
-            [row.id, nextRetry, serializedError.slice(0, 2000)],
+            [row.id, nextRetry, serializedError.slice(0, 2000)]
           );
         }
       }

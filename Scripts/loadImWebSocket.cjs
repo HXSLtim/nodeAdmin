@@ -29,7 +29,8 @@ const runtimeConfig = {
   holdDurationSec: readPositiveIntEnv('HOLD_DURATION', DEFAULT_HOLD_DURATION_SEC),
 };
 
-runtimeConfig.socketUrl = runtimeConfig.socketUrl.length > 0 ? runtimeConfig.socketUrl : runtimeConfig.baseUrl;
+runtimeConfig.socketUrl =
+  runtimeConfig.socketUrl.length > 0 ? runtimeConfig.socketUrl : runtimeConfig.baseUrl;
 
 if (cluster.isPrimary) {
   runMaster(runtimeConfig).catch((error) => {
@@ -206,7 +207,7 @@ async function runMaster(config) {
 
   process.stdout.write('[loadImWebSocket] Starting clustered WebSocket load test.\n');
   process.stdout.write(
-    `[loadImWebSocket] Config: maxConnections=${config.maxConnections}, rampDuration=${config.rampDurationSec}s, holdDuration=${config.holdDurationSec}s, workers=${workerSlots.length}\n`,
+    `[loadImWebSocket] Config: maxConnections=${config.maxConnections}, rampDuration=${config.rampDurationSec}s, holdDuration=${config.holdDurationSec}s, workers=${workerSlots.length}\n`
   );
 
   for (let slotIndex = 0; slotIndex < workerSlots.length; slotIndex += 1) {
@@ -292,14 +293,14 @@ async function runMaster(config) {
       if (stage && stage.name !== lastStageName) {
         lastStageName = stage.name;
         process.stdout.write(
-          `[loadImWebSocket] Enter ${stage.name}: target ${stage.from} -> ${stage.to} in ${stage.durationSec}s\n`,
+          `[loadImWebSocket] Enter ${stage.name}: target ${stage.from} -> ${stage.to} in ${stage.durationSec}s\n`
         );
       }
 
       if (Date.now() - lastPrintedAtMs >= 5000) {
         lastPrintedAtMs = Date.now();
         process.stdout.write(
-          `[loadImWebSocket] elapsed=${elapsedSec.toFixed(1)}s desired=${desiredConnections} attempts=${aggregate.connectionAttempts} connected=${aggregate.successfulConnections} sent=${aggregate.totalMessagesSent} recv=${aggregate.totalMessagesReceived}\n`,
+          `[loadImWebSocket] elapsed=${elapsedSec.toFixed(1)}s desired=${desiredConnections} attempts=${aggregate.connectionAttempts} connected=${aggregate.successfulConnections} sent=${aggregate.totalMessagesSent} recv=${aggregate.totalMessagesReceived}\n`
         );
       }
 
@@ -317,7 +318,9 @@ async function runMaster(config) {
 
     for (let slotIndex = 0; slotIndex < workerSlots.length; slotIndex += 1) {
       const slot = workerSlots[slotIndex];
-      const workerState = workerStates.find((candidateState) => candidateState.workerIndex === slot.workerIndex);
+      const workerState = workerStates.find(
+        (candidateState) => candidateState.workerIndex === slot.workerIndex
+      );
 
       if (!workerState || workerState.isExited) {
         continue;
@@ -408,7 +411,8 @@ function mergeWorkerMetrics(aggregate, snapshot) {
     }
   }
 
-  const errorEntries = snapshot.errors && typeof snapshot.errors === 'object' ? Object.entries(snapshot.errors) : [];
+  const errorEntries =
+    snapshot.errors && typeof snapshot.errors === 'object' ? Object.entries(snapshot.errors) : [];
   for (let index = 0; index < errorEntries.length; index += 1) {
     const [type, countValue] = errorEntries[index];
     const count = Number(countValue || 0);
@@ -426,7 +430,10 @@ function incrementError(errorMap, type, amount) {
 
 function buildFinalReport(config, aggregate, shutdownReason) {
   const latencySummary = summarizeLatencies(aggregate.latencies);
-  const totalMessagesLost = Math.max(aggregate.totalMessagesSent - aggregate.totalMessagesReceived, 0);
+  const totalMessagesLost = Math.max(
+    aggregate.totalMessagesSent - aggregate.totalMessagesReceived,
+    0
+  );
   const totalRequests = aggregate.connectionAttempts + aggregate.totalMessagesSent;
 
   return {
@@ -435,7 +442,10 @@ function buildFinalReport(config, aggregate, shutdownReason) {
       totalConnectionAttempts: aggregate.connectionAttempts,
       successfulConnections: aggregate.successfulConnections,
       failedConnections: aggregate.failedConnections,
-      connectionSuccessRate: safeRate(aggregate.successfulConnections, aggregate.connectionAttempts),
+      connectionSuccessRate: safeRate(
+        aggregate.successfulConnections,
+        aggregate.connectionAttempts
+      ),
       totalMessagesSent: aggregate.totalMessagesSent,
       totalMessagesReceived: aggregate.totalMessagesReceived,
       messageLossRate: safeRate(totalMessagesLost, aggregate.totalMessagesSent),
@@ -458,12 +468,18 @@ function printHumanReadableSummary(report, reportPath) {
   process.stdout.write(`Connection Attempts      : ${summary.totalConnectionAttempts}\n`);
   process.stdout.write(`Successful Connections   : ${summary.successfulConnections}\n`);
   process.stdout.write(`Failed Connections       : ${summary.failedConnections}\n`);
-  process.stdout.write(`Connection Success Rate  : ${(summary.connectionSuccessRate * 100).toFixed(2)}%\n`);
+  process.stdout.write(
+    `Connection Success Rate  : ${(summary.connectionSuccessRate * 100).toFixed(2)}%\n`
+  );
   process.stdout.write(`Messages Sent            : ${summary.totalMessagesSent}\n`);
   process.stdout.write(`Messages Received        : ${summary.totalMessagesReceived}\n`);
-  process.stdout.write(`Message Loss Rate        : ${(summary.messageLossRate * 100).toFixed(2)}%\n`);
+  process.stdout.write(
+    `Message Loss Rate        : ${(summary.messageLossRate * 100).toFixed(2)}%\n`
+  );
   process.stdout.write(`Error Rate               : ${(summary.errorRate * 100).toFixed(2)}%\n`);
-  process.stdout.write(`Latency P50/P95/P99/Max  : ${latency.p50.toFixed(2)} / ${latency.p95.toFixed(2)} / ${latency.p99.toFixed(2)} / ${latency.max.toFixed(2)} ms\n`);
+  process.stdout.write(
+    `Latency P50/P95/P99/Max  : ${latency.p50.toFixed(2)} / ${latency.p95.toFixed(2)} / ${latency.p99.toFixed(2)} / ${latency.max.toFixed(2)} ms\n`
+  );
   process.stdout.write(`Shutdown Reason          : ${summary.shutdownReason}\n`);
   process.stdout.write(`JSON Report              : ${reportPath}\n`);
 }
@@ -618,7 +634,11 @@ async function runWorker(config) {
     if (message.includes('refused')) {
       return 'connection_refused';
     }
-    if (message.includes('unauthorized') || message.includes('forbidden') || message.includes('token')) {
+    if (
+      message.includes('unauthorized') ||
+      message.includes('forbidden') ||
+      message.includes('token')
+    ) {
       return 'auth_error';
     }
 
@@ -645,12 +665,18 @@ async function runWorker(config) {
     });
 
     if (!response.ok) {
-      throw createTaggedError('token_issue_failed', `Token issue failed with status ${response.status}`);
+      throw createTaggedError(
+        'token_issue_failed',
+        `Token issue failed with status ${response.status}`
+      );
     }
 
     const payload = await response.json();
     if (!payload || typeof payload.accessToken !== 'string' || payload.accessToken.length === 0) {
-      throw createTaggedError('token_issue_invalid_response', 'Token issue response missing accessToken.');
+      throw createTaggedError(
+        'token_issue_invalid_response',
+        'Token issue response missing accessToken.'
+      );
     }
 
     return payload.accessToken;
@@ -676,7 +702,8 @@ async function runWorker(config) {
   }
 
   function createConversationId(connectionIndex) {
-    const bucketIndex = (workerIndex * CONVERSATION_BUCKETS + connectionIndex) % CONVERSATION_BUCKETS;
+    const bucketIndex =
+      (workerIndex * CONVERSATION_BUCKETS + connectionIndex) % CONVERSATION_BUCKETS;
     return `conversation-load-${bucketIndex}`;
   }
 
@@ -722,7 +749,15 @@ async function runWorker(config) {
     });
   }
 
-  function emitWithAck(socket, eventName, payload, timeoutMs, validateAck, timeoutType, rejectType) {
+  function emitWithAck(
+    socket,
+    eventName,
+    payload,
+    timeoutMs,
+    validateAck,
+    timeoutType,
+    rejectType
+  ) {
     return new Promise((resolve, reject) => {
       let settled = false;
 
@@ -860,7 +895,7 @@ async function runWorker(config) {
         SEND_TIMEOUT_MS,
         (ack) => Boolean(ack && ack.accepted === true),
         'send_timeout',
-        'send_rejected',
+        'send_rejected'
       );
     } catch (error) {
       const pending = connectionState.pendingMessages.get(messageId);
@@ -905,7 +940,7 @@ async function runWorker(config) {
         CONNECT_TIMEOUT_MS,
         (ack) => Boolean(ack && ack.ok === true),
         'join_timeout',
-        'join_rejected',
+        'join_rejected'
       );
 
       const connectionId = `${workerIndex}-${sequenceId}`;
