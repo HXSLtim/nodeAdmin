@@ -5,6 +5,9 @@ import { AuthModule } from '../modules/auth/authModule';
 import { ConsoleModule } from '../modules/console/consoleModule';
 import { HealthModule } from '../modules/health/healthModule';
 import { ImModule } from '../modules/im/imModule';
+import { PermissionsModule } from '../modules/permissions/permissionsModule';
+import { RolesModule } from '../modules/roles/rolesModule';
+import { UsersModule } from '../modules/users/usersModule';
 
 @Module({
   imports: [
@@ -13,6 +16,9 @@ import { ImModule } from '../modules/im/imModule';
     AuthModule,
     ImModule,
     ConsoleModule,
+    UsersModule,
+    RolesModule,
+    PermissionsModule,
   ],
   providers: [OutboxPublisherService],
 })
