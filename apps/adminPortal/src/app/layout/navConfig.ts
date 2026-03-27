@@ -19,6 +19,27 @@ export const navItems: NavItem[] = [
   { icon: 'chat', key: 'im', labelId: 'nav.im', path: '/im', permission: 'im:view' },
   {
     icon: 'users',
+    key: 'users',
+    labelId: 'nav.users',
+    path: '/users',
+    permission: 'users:view',
+  },
+  {
+    icon: 'shield',
+    key: 'roles',
+    labelId: 'nav.roles',
+    path: '/roles',
+    permission: 'roles:view',
+  },
+  {
+    icon: 'menuIcon',
+    key: 'menus',
+    labelId: 'nav.menus',
+    path: '/menus',
+    permission: 'menus:view',
+  },
+  {
+    icon: 'users',
     key: 'tenant',
     labelId: 'nav.tenants',
     path: '/tenant',

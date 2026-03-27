@@ -6,46 +6,59 @@ interface ApiClientConfig {
 export class ApiClient {
   constructor(private readonly config: ApiClientConfig) {}
 
-  async get<TResponse>(path: string): Promise<TResponse> {
+  private buildHeaders(includeContentType = false): HeadersInit {
     const headers: HeadersInit = {};
-
+    if (includeContentType) {
+      headers['Content-Type'] = 'application/json';
+    }
     const accessToken = this.config.getAccessToken?.();
     if (accessToken) {
       headers.Authorization = `Bearer ${accessToken}`;
     }
+    return headers;
+  }
 
+  private async request<TResponse>(
+    method: string,
+    path: string,
+    body?: unknown
+  ): Promise<TResponse> {
+    const headers = this.buildHeaders(body !== undefined);
     const response = await fetch(`${this.config.baseUrl}${path}`, {
+      ...(body !== undefined && { body: JSON.stringify(body) }),
       headers,
-      method: 'GET',
+      method,
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status} for ${path}`);
+      const text = await response.text().catch(() => '');
+      throw new Error(`HTTP ${response.status} for ${path}${text ? `: ${text}` : ''}`);
+    }
+
+    if (response.status === 204) {
+      return undefined as TResponse;
     }
 
     return (await response.json()) as TResponse;
   }
 
+  async get<TResponse>(path: string): Promise<TResponse> {
+    return this.request<TResponse>('GET', path);
+  }
+
   async post<TResponse>(path: string, body: unknown): Promise<TResponse> {
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json',
-    };
+    return this.request<TResponse>('POST', path, body);
+  }
 
-    const accessToken = this.config.getAccessToken?.();
-    if (accessToken) {
-      headers.Authorization = `Bearer ${accessToken}`;
-    }
+  async put<TResponse>(path: string, body: unknown): Promise<TResponse> {
+    return this.request<TResponse>('PUT', path, body);
+  }
 
-    const response = await fetch(`${this.config.baseUrl}${path}`, {
-      body: JSON.stringify(body),
-      headers,
-      method: 'POST',
-    });
+  async patch<TResponse>(path: string, body: unknown): Promise<TResponse> {
+    return this.request<TResponse>('PATCH', path, body);
+  }
 
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status} for ${path}`);
-    }
-
-    return (await response.json()) as TResponse;
+  async del<TResponse>(path: string): Promise<TResponse> {
+    return this.request<TResponse>('DELETE', path);
   }
 }

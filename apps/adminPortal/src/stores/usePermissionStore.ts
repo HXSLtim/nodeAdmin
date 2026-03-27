@@ -6,10 +6,16 @@ type PermissionMap = Record<AppPermission, boolean>;
 const defaultPermissions: PermissionMap = {
   'im:send': false,
   'im:view': false,
+  'menus:manage': false,
+  'menus:view': false,
   'overview:view': true,
   'release:view': false,
+  'roles:manage': false,
+  'roles:view': false,
   'settings:view': false,
   'tenant:view': false,
+  'users:manage': false,
+  'users:view': false,
 };
 
 function buildPermissionMap(roles: string[]): PermissionMap {
@@ -19,10 +25,16 @@ function buildPermissionMap(roles: string[]): PermissionMap {
   return {
     'im:send': isAdmin || roleSet.has('im:operator'),
     'im:view': isAdmin || roleSet.has('im:operator') || roleSet.has('tenant:viewer'),
+    'menus:manage': isAdmin,
+    'menus:view': isAdmin,
     'overview:view': true,
     'release:view': isAdmin || roleSet.has('release:viewer'),
+    'roles:manage': isAdmin,
+    'roles:view': isAdmin,
     'settings:view': isAdmin,
     'tenant:view': isAdmin || roleSet.has('tenant:viewer'),
+    'users:manage': isAdmin,
+    'users:view': isAdmin,
   };
 }
 

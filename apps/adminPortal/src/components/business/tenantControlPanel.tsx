@@ -1,5 +1,9 @@
-import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useIntl } from 'react-intl';
+import { type TenantItem, type PaginatedResponse } from '@nodeadmin/shared-types';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
@@ -9,28 +13,38 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { ConfirmDialog } from '@/components/ui/dialog';
 import { useApiClient } from '@/hooks/useApiClient';
-
-interface TenantRow {
-  key: string;
-  name: string;
-  roleCount: number;
-  status: 'active' | 'review';
-}
-
-interface TenantResponse {
-  rows: TenantRow[];
-}
+import { TenantFormDialog } from './tenantFormDialog';
 
 export function TenantControlPanel(): JSX.Element {
   const { formatMessage: t } = useIntl();
   const apiClient = useApiClient();
+
+  const [createFormOpen, setCreateFormOpen] = useState(false);
+  const [editTenant, setEditTenant] = useState<TenantItem | undefined>();
+  const [deleteTenant, setDeleteTenant] = useState<TenantItem | undefined>();
+
   const tenantQuery = useQuery({
-    queryFn: () => apiClient.get<TenantResponse>('/api/v1/console/tenants'),
-    queryKey: ['console-tenants'],
+    queryFn: () => apiClient.get<PaginatedResponse<TenantItem>>('/api/v1/tenants?limit=100'),
+    queryKey: ['tenants'],
   });
 
-  const tenantRows = tenantQuery.data?.rows ?? [];
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => apiClient.del<{ success: boolean }>(`/api/v1/tenants/${id}`),
+    onSuccess: () => {
+      tenantQuery.refetch();
+    },
+  });
+
+  const handleDeleteConfirm = async () => {
+    if (deleteTenant) {
+      await deleteMutation.mutateAsync(deleteTenant.id);
+      setDeleteTenant(undefined);
+    }
+  };
+
+  const tenants = tenantQuery.data?.items ?? [];
 
   return (
     <section className="h-full overflow-y-auto">
@@ -40,18 +54,18 @@ export function TenantControlPanel(): JSX.Element {
             <CardTitle className="text-base">{t({ id: 'tenant.title' })}</CardTitle>
             <CardDescription>{t({ id: 'tenant.desc' })}</CardDescription>
           </div>
-          <span className="inline-flex items-center rounded-full border border-border bg-muted px-3 py-1 text-xs font-medium">
-            {t({ id: 'tenant.total' }, { count: tenantRows.length })}
-          </span>
+          <Button size="sm" onClick={() => setCreateFormOpen(true)}>
+            {t({ id: 'tenant.create' })}
+          </Button>
         </CardHeader>
 
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>{t({ id: 'tenant.colId' })}</TableHead>
               <TableHead>{t({ id: 'tenant.colName' })}</TableHead>
-              <TableHead>{t({ id: 'tenant.colRoles' })}</TableHead>
+              <TableHead>{t({ id: 'tenant.colPlan' })}</TableHead>
               <TableHead>{t({ id: 'tenant.colStatus' })}</TableHead>
+              <TableHead>{t({ id: 'tenant.colActions' })}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -82,7 +96,7 @@ export function TenantControlPanel(): JSX.Element {
               </TableRow>
             ) : null}
 
-            {!tenantQuery.isLoading && !tenantQuery.isError && tenantRows.length === 0 ? (
+            {!tenantQuery.isLoading && !tenantQuery.isError && tenants.length === 0 ? (
               <TableRow className="hover:bg-transparent">
                 <TableCell className="py-8 text-center text-sm text-muted-foreground" colSpan={4}>
                   {t({ id: 'tenant.empty' })}
@@ -91,21 +105,34 @@ export function TenantControlPanel(): JSX.Element {
             ) : null}
 
             {!tenantQuery.isLoading && !tenantQuery.isError
-              ? tenantRows.map((tenant) => (
-                  <TableRow className="hover:bg-muted/50" key={tenant.key}>
-                    <TableCell className="font-medium">{tenant.key}</TableCell>
-                    <TableCell>{tenant.name}</TableCell>
-                    <TableCell>{tenant.roleCount}</TableCell>
+              ? tenants.map((tenant) => (
+                  <TableRow className="hover:bg-muted/50" key={tenant.id}>
+                    <TableCell className="font-medium">{tenant.name}</TableCell>
+                    <TableCell>{tenant.plan}</TableCell>
                     <TableCell>
-                      <span
-                        className={
-                          tenant.status === 'active'
-                            ? 'inline-flex rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900 dark:text-green-200'
-                            : 'inline-flex rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-                        }
-                      >
-                        {tenant.status}
-                      </span>
+                      {tenant.is_active ? (
+                        <Badge variant="default">{t({ id: 'tenant.active' })}</Badge>
+                      ) : (
+                        <Badge variant="outline">{t({ id: 'tenant.inactive' })}</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <button
+                          className="text-sm text-primary hover:underline"
+                          onClick={() => setEditTenant(tenant)}
+                          type="button"
+                        >
+                          {t({ id: 'tenant.edit' })}
+                        </button>
+                        <button
+                          className="text-sm text-destructive hover:underline"
+                          onClick={() => setDeleteTenant(tenant)}
+                          type="button"
+                        >
+                          {t({ id: 'tenant.delete' })}
+                        </button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
@@ -113,6 +140,24 @@ export function TenantControlPanel(): JSX.Element {
           </TableBody>
         </Table>
       </Card>
+
+      <TenantFormDialog
+        onClose={() => {
+          setCreateFormOpen(false);
+          setEditTenant(undefined);
+        }}
+        onSaved={() => tenantQuery.refetch()}
+        open={createFormOpen || !!editTenant}
+        tenant={editTenant}
+      />
+
+      <ConfirmDialog
+        message={t({ id: 'tenant.deleteConfirm' })}
+        onClose={() => setDeleteTenant(undefined)}
+        onConfirm={handleDeleteConfirm}
+        open={!!deleteTenant}
+        title={t({ id: 'tenant.delete' })}
+      />
     </section>
   );
 }

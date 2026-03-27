@@ -1,19 +1,27 @@
 import { useIntl } from 'react-intl';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import type { AppLocale } from '@/i18n';
+import { clearAuthStore, useAuthStore } from '@/stores/useAuthStore';
 import { useUiStore } from '@/stores/useUiStore';
 import { resolveCurrentPageTitle } from './navConfig';
 
 export function Header(): JSX.Element {
   const location = useLocation();
+  const navigate = useNavigate();
   const { formatMessage: t, locale } = useIntl();
   const theme = useUiStore((s) => s.theme);
   const setTheme = useUiStore((s) => s.setTheme);
   const setLocale = useUiStore((s) => s.setLocale);
   const setMobileMenuOpen = useUiStore((s) => s.setMobileMenuOpen);
   const pageTitleId = resolveCurrentPageTitle(location.pathname);
+  const userName = useAuthStore((s) => s.userName);
 
   const toggleLocale = () => setLocale((locale === 'zh' ? 'en' : 'zh') as AppLocale);
+
+  const handleLogout = () => {
+    clearAuthStore();
+    navigate('/login', { replace: true });
+  };
 
   return (
     <header className="flex h-14 items-center justify-between border-b bg-card px-4 md:px-6">
@@ -63,8 +71,16 @@ export function Header(): JSX.Element {
           )}
         </button>
         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-medium text-primary-foreground">
-          A
+          {userName?.charAt(0).toUpperCase() ?? 'A'}
         </div>
+        <button
+          className="flex h-9 items-center rounded-md border border-border bg-card px-3 text-xs font-medium text-destructive transition-colors hover:bg-destructive/10"
+          onClick={handleLogout}
+          title={t({ id: 'auth.logout' })}
+          type="button"
+        >
+          {t({ id: 'auth.logout' })}
+        </button>
       </div>
     </header>
   );

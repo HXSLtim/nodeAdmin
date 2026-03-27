@@ -1,18 +1,9 @@
 import { useEffect, type ReactNode } from 'react';
+import { useAuthStore } from '@/stores/useAuthStore';
 import { usePermissionStore } from '@/stores/usePermissionStore';
 import { useUiStore } from '@/stores/useUiStore';
 import { Header } from './header';
 import { Sidebar } from './sidebar';
-
-function readRolesFromEnv(): string[] {
-  const rolesRaw = (import.meta.env.VITE_IM_ROLES as string | undefined)?.trim();
-  if (!rolesRaw) return ['tenant:admin'];
-  const roles = rolesRaw
-    .split(',')
-    .map((r) => r.trim())
-    .filter((r) => r.length > 0);
-  return roles.length > 0 ? roles : ['tenant:admin'];
-}
 
 export function AppLayout({ children }: { children: ReactNode }): JSX.Element {
   const theme = useUiStore((s) => s.theme);
@@ -23,7 +14,20 @@ export function AppLayout({ children }: { children: ReactNode }): JSX.Element {
   }, [theme]);
 
   useEffect(() => {
-    setPermissionsFromRoles(readRolesFromEnv());
+    const roles = useAuthStore.getState().userRoles;
+    if (roles.length > 0) {
+      setPermissionsFromRoles(roles);
+      return;
+    }
+    // Dev fallback when no auth
+    const rolesRaw = (import.meta.env.VITE_IM_ROLES as string | undefined)?.trim();
+    const fallback = rolesRaw
+      ? rolesRaw
+          .split(',')
+          .map((r) => r.trim())
+          .filter((r) => r.length > 0)
+      : ['tenant:admin'];
+    setPermissionsFromRoles(fallback);
   }, [setPermissionsFromRoles]);
 
   return (

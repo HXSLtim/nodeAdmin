@@ -1,4 +1,43 @@
 services:
+  coreapi:
+    build:
+      context: .
+      dockerfile: apps/coreApi/Dockerfile
+    container_name: nodeadmin-coreapi
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://nodeadmin:nodeadmin@postgres:5432/nodeadmin
+      REDIS_URL: redis://redis:6379
+      PORT: '3001'
+      JWT_ACCESS_SECRET: replace-with-a-long-random-access-secret
+      JWT_REFRESH_SECRET: replace-with-a-long-random-refresh-secret
+      FRONTEND_ORIGINS: http://localhost:5173,http://adminportal
+    ports:
+      - '3001:3001'
+    healthcheck:
+      test: ['CMD', 'node', '-e', "const http = require('http'); const req = http.get('http://127.0.0.1:3001/api/v1/health', r => { process.exit(r.statusCode === 200 ? 0 : 1); }); req.on('error', () => process.exit(1)); setTimeout(() => { req.destroy(); process.exit(1); }, 3000)"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    restart: unless-stopped
+
+  adminportal:
+    build:
+      context: .
+      dockerfile: apps/adminPortal/Dockerfile
+    container_name: nodeadmin-adminportal
+    depends_on:
+      coreapi:
+        condition: service_healthy
+    ports:
+      - '5173:80'
+    restart: unless-stopped
+
   postgres:
     image: postgres:16
     container_name: nodeadmin-postgres

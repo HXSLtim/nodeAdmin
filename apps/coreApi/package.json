@@ -8,7 +8,7 @@
     "build": "tsc -p tsconfig.json",
     "db:generate": "echo SQL migrations are managed under apps/coreApi/drizzle/migrations",
     "db:migrate": "node ../../scripts/applySqlMigration.cjs",
-    "start": "node dist/main.js"
+    "start": "node Dist/main.js"
   },
   "dependencies": {
     "@nodeadmin/shared-types": "0.1.0",

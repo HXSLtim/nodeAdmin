@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useIntl } from 'react-intl';
 import { NavLink, useLocation } from 'react-router-dom';
 import { className } from '@/lib/className';
+import { useMenuStore } from '@/stores/useMenuStore';
 import { usePermissionStore } from '@/stores/usePermissionStore';
 import { useUiStore } from '@/stores/useUiStore';
 import { isNavItemActive, navItems } from './navConfig';
@@ -15,6 +16,8 @@ export function Sidebar(): JSX.Element {
   const mobileMenuOpen = useUiStore((s) => s.mobileMenuOpen);
   const setMobileMenuOpen = useUiStore((s) => s.setMobileMenuOpen);
   const hasPermission = usePermissionStore((s) => s.hasPermission);
+  const menus = useMenuStore((s) => s.menus);
+  const menusLoaded = useMenuStore((s) => s.loaded);
 
   const visibleNavItems = navItems.filter((item) => hasPermission(item.permission));
 
@@ -44,6 +47,36 @@ export function Sidebar(): JSX.Element {
   const sidebarBase =
     'flex shrink-0 flex-col border-r bg-[hsl(var(--sidebar))] text-[hsl(var(--sidebar-foreground))] transition-all duration-200';
 
+  function renderMenuItem(
+    menu: {
+      icon: string;
+      name: string;
+      path: string;
+      children?: { icon: string; name: string; path: string }[];
+    },
+    depth = 0
+  ): JSX.Element {
+    const hasChildren = menu.children && menu.children.length > 0;
+    const isActive = isNavItemActive(location.pathname, menu.path);
+
+    return (
+      <div key={menu.path + menu.name}>
+        <NavLink
+          className={() => linkClass(isActive)}
+          onClick={() => setMobileMenuOpen(false)}
+          style={{ paddingLeft: `${depth * 12 + 8}px` }}
+          to={menu.path}
+        >
+          <NavIcon name={menu.icon} />
+          {!sidebarCollapsed ? <span className="truncate">{menu.name}</span> : null}
+        </NavLink>
+        {hasChildren && !sidebarCollapsed
+          ? menu.children!.map((child) => renderMenuItem(child, depth + 1))
+          : null}
+      </div>
+    );
+  }
+
   const navContent = (
     <>
       {/* Brand */}
@@ -57,20 +90,24 @@ export function Sidebar(): JSX.Element {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-1 p-2">
-        {visibleNavItems.map((item) => (
-          <NavLink
-            className={({ isActive }) =>
-              linkClass(isNavItemActive(location.pathname, item.path) || isActive)
-            }
-            key={item.key}
-            onClick={() => setMobileMenuOpen(false)}
-            to={item.path}
-          >
-            <NavIcon name={item.icon} />
-            {!sidebarCollapsed ? <span className="truncate">{t({ id: item.labelId })}</span> : null}
-          </NavLink>
-        ))}
+      <nav className="flex-1 space-y-1 overflow-y-auto p-2">
+        {menusLoaded && menus.length > 0
+          ? menus.map((menu) => renderMenuItem(menu))
+          : visibleNavItems.map((item) => (
+              <NavLink
+                className={({ isActive }) =>
+                  linkClass(isNavItemActive(location.pathname, item.path) || isActive)
+                }
+                key={item.key}
+                onClick={() => setMobileMenuOpen(false)}
+                to={item.path}
+              >
+                <NavIcon name={item.icon} />
+                {!sidebarCollapsed ? (
+                  <span className="truncate">{t({ id: item.labelId })}</span>
+                ) : null}
+              </NavLink>
+            ))}
       </nav>
 
       {/* Footer */}
