@@ -583,6 +583,10 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
   const topSpacerHeight = firstVisibleIndex * virtualRowHeightPx;
   const bottomSpacerHeight = (totalCount - lastVisibleIndex) * virtualRowHeightPx;
 
+  const conversationPanelOpen = useUiStore((s) => s.imConversationPanelOpen);
+  const setConversationPanelOpen = useUiStore((s) => s.setImConversationPanelOpen);
+  const toggleConversationPanel = useUiStore((s) => s.toggleImConversationPanel);
+
   if (!canViewIm) {
     return (
       <section className="rounded-md border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
@@ -590,10 +594,6 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
       </section>
     );
   }
-
-  const conversationPanelOpen = useUiStore((s) => s.imConversationPanelOpen);
-  const setConversationPanelOpen = useUiStore((s) => s.setImConversationPanelOpen);
-  const toggleConversationPanel = useUiStore((s) => s.toggleImConversationPanel);
 
   return (
     <section className="flex h-full w-full overflow-hidden rounded-md border border-border bg-card md:gap-4 md:p-4">
