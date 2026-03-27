@@ -1,8 +1,11 @@
 import { Body, Controller, ForbiddenException, Post } from '@nestjs/common';
 import { runtimeConfig } from '../../app/runtimeConfig';
 import { AuditLogService } from '../../infrastructure/audit/auditLogService';
-import { IssueDevTokenDto } from './dto/issueDevTokenDto';
 import { AuthService } from './authService';
+import { IssueDevTokenDto } from './dto/issueDevTokenDto';
+import { LoginDto } from './dto/loginDto';
+import { RefreshTokenDto } from './dto/refreshTokenDto';
+import { RegisterDto } from './dto/registerDto';
 
 @Controller('auth')
 export class AuthController {
@@ -11,46 +14,69 @@ export class AuthController {
     private readonly auditLogService: AuditLogService
   ) {}
 
+  @Post('register')
+  async register(@Body() dto: RegisterDto) {
+    const { userId, tokens } = await this.authService.register(
+      dto.email,
+      dto.password,
+      dto.tenantId,
+      dto.name
+    );
+
+    return {
+      identity: { userId, tenantId: dto.tenantId },
+      ...tokens,
+    };
+  }
+
+  @Post('login')
+  async login(@Body() dto: LoginDto) {
+    const { userId, tokens } = await this.authService.login(
+      dto.email,
+      dto.password,
+      dto.tenantId
+    );
+
+    try {
+      await this.auditLogService.record({
+        action: 'auth.login',
+        targetId: userId,
+        targetType: 'user',
+        tenantId: dto.tenantId,
+        traceId: tokens.accessToken.slice(0, 12),
+        userId,
+      });
+    } catch {
+      // Don't block login if audit fails
+    }
+
+    return {
+      identity: { userId, tenantId: dto.tenantId },
+      ...tokens,
+    };
+  }
+
+  @Post('refresh')
+  async refresh(@Body() dto: RefreshTokenDto) {
+    const tokens = await this.authService.refreshTokens(dto.refreshToken);
+    return tokens;
+  }
+
   @Post('dev-token')
   async issueDevToken(@Body() payload: IssueDevTokenDto) {
     if (!runtimeConfig.auth.enableDevTokenIssue) {
       throw new ForbiddenException('Dev token issuance is disabled.');
     }
 
-    const roles = payload.roles ?? ['tenant:admin'];
-
+    const roles = payload.roles ?? ['super-admin'];
     const tokens = this.authService.issueTokens({
       roles,
       tenantId: payload.tenantId,
       userId: payload.userId,
     });
 
-    // Temporarily disabled audit logging to unblock testing
-    // TODO: Fix audit log database connection issue (Task #32)
-    try {
-      await this.auditLogService.record({
-        action: 'auth.dev_token_issued',
-        context: { roles },
-        targetId: payload.userId,
-        targetType: 'user',
-        tenantId: payload.tenantId,
-        traceId: tokens.accessToken.slice(0, 12),
-        userId: payload.userId,
-      });
-    } catch (error) {
-      // Log error but don't block token issuance
-      console.error(
-        '[AuthController] Audit log failed:',
-        error instanceof Error ? error.message : String(error)
-      );
-    }
-
     return {
-      identity: {
-        roles,
-        tenantId: payload.tenantId,
-        userId: payload.userId,
-      },
+      identity: { roles, tenantId: payload.tenantId, userId: payload.userId },
       ...tokens,
     };
   }
