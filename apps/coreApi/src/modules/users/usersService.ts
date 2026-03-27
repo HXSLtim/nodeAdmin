@@ -66,7 +66,13 @@ export class UsersService {
     return result.rows[0];
   }
 
-  async create(tenantId: string, email: string, password: string, name?: string, roleIds?: string[]) {
+  async create(
+    tenantId: string,
+    email: string,
+    password: string,
+    name?: string,
+    roleIds?: string[]
+  ) {
     if (!this.pool) throw new Error('Database not available');
     const userId = randomUUID();
     const passwordHash = await hash(password, 12);
@@ -81,7 +87,10 @@ export class UsersService {
       );
       if (roleIds && roleIds.length > 0) {
         for (const roleId of roleIds) {
-          await client.query('INSERT INTO user_roles (user_id, role_id) VALUES ($1, $2)', [userId, roleId]);
+          await client.query('INSERT INTO user_roles (user_id, role_id) VALUES ($1, $2)', [
+            userId,
+            roleId,
+          ]);
         }
       }
       await client.query('COMMIT');
@@ -94,7 +103,11 @@ export class UsersService {
     return this.findById(tenantId, userId);
   }
 
-  async update(tenantId: string, userId: string, data: { name?: string; avatar?: string; isActive?: boolean; roleIds?: string[] }) {
+  async update(
+    tenantId: string,
+    userId: string,
+    data: { name?: string; avatar?: string; isActive?: boolean; roleIds?: string[] }
+  ) {
     if (!this.pool) throw new Error('Database not available');
 
     const client = await this.pool.connect();
@@ -106,9 +119,18 @@ export class UsersService {
       const params: unknown[] = [];
       let paramIdx = 1;
 
-      if (data.name !== undefined) { sets.push(`name = $${++paramIdx}`); params.push(data.name); }
-      if (data.avatar !== undefined) { sets.push(`avatar = $${++paramIdx}`); params.push(data.avatar); }
-      if (data.isActive !== undefined) { sets.push(`is_active = $${++paramIdx}`); params.push(data.isActive); }
+      if (data.name !== undefined) {
+        sets.push(`name = $${++paramIdx}`);
+        params.push(data.name);
+      }
+      if (data.avatar !== undefined) {
+        sets.push(`avatar = $${++paramIdx}`);
+        params.push(data.avatar);
+      }
+      if (data.isActive !== undefined) {
+        sets.push(`is_active = $${++paramIdx}`);
+        params.push(data.isActive);
+      }
 
       if (sets.length > 0) {
         sets.push(`updated_at = now()`);
@@ -122,7 +144,10 @@ export class UsersService {
       if (data.roleIds !== undefined) {
         await client.query('DELETE FROM user_roles WHERE user_id = $1', [userId]);
         for (const roleId of data.roleIds) {
-          await client.query('INSERT INTO user_roles (user_id, role_id) VALUES ($1, $2)', [userId, roleId]);
+          await client.query('INSERT INTO user_roles (user_id, role_id) VALUES ($1, $2)', [
+            userId,
+            roleId,
+          ]);
         }
       }
 
@@ -143,7 +168,10 @@ export class UsersService {
       await client.query('BEGIN');
       await client.query(`SELECT set_config('app.current_tenant', $1, true)`, [tenantId]);
       await client.query('DELETE FROM user_roles WHERE user_id = $1', [userId]);
-      const result = await client.query('DELETE FROM users WHERE tenant_id = $1 AND id = $2 RETURNING id', [tenantId, userId]);
+      const result = await client.query(
+        'DELETE FROM users WHERE tenant_id = $1 AND id = $2 RETURNING id',
+        [tenantId, userId]
+      );
       await client.query('COMMIT');
       if (result.rows.length === 0) throw new NotFoundException('User not found');
     } catch (error) {

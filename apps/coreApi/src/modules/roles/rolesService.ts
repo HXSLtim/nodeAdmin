@@ -62,7 +62,10 @@ export class RolesService {
       );
       if (permissionIds && permissionIds.length > 0) {
         for (const permId of permissionIds) {
-          await client.query('INSERT INTO role_permissions (role_id, permission_id) VALUES ($1, $2)', [roleId, permId]);
+          await client.query(
+            'INSERT INTO role_permissions (role_id, permission_id) VALUES ($1, $2)',
+            [roleId, permId]
+          );
         }
       }
       await client.query('COMMIT');
@@ -75,11 +78,18 @@ export class RolesService {
     return this.findById(tenantId, roleId);
   }
 
-  async update(tenantId: string, roleId: string, data: { name?: string; description?: string; permissionIds?: string[] }) {
+  async update(
+    tenantId: string,
+    roleId: string,
+    data: { name?: string; description?: string; permissionIds?: string[] }
+  ) {
     if (!this.pool) throw new Error('Database not available');
 
     // Check not system role
-    const check = await this.pool.query('SELECT is_system FROM roles WHERE tenant_id = $1 AND id = $2', [tenantId, roleId]);
+    const check = await this.pool.query(
+      'SELECT is_system FROM roles WHERE tenant_id = $1 AND id = $2',
+      [tenantId, roleId]
+    );
     if (check.rows.length === 0) throw new NotFoundException('Role not found');
     if (check.rows[0].is_system) throw new BadRequestException('Cannot modify system roles');
 
@@ -92,8 +102,14 @@ export class RolesService {
       const params: unknown[] = [];
       let paramIdx = 0;
 
-      if (data.name !== undefined) { sets.push(`name = $${++paramIdx}`); params.push(data.name); }
-      if (data.description !== undefined) { sets.push(`description = $${++paramIdx}`); params.push(data.description); }
+      if (data.name !== undefined) {
+        sets.push(`name = $${++paramIdx}`);
+        params.push(data.name);
+      }
+      if (data.description !== undefined) {
+        sets.push(`description = $${++paramIdx}`);
+        params.push(data.description);
+      }
 
       if (sets.length > 0) {
         sets.push(`updated_at = now()`);
@@ -107,7 +123,10 @@ export class RolesService {
       if (data.permissionIds !== undefined) {
         await client.query('DELETE FROM role_permissions WHERE role_id = $1', [roleId]);
         for (const permId of data.permissionIds) {
-          await client.query('INSERT INTO role_permissions (role_id, permission_id) VALUES ($1, $2)', [roleId, permId]);
+          await client.query(
+            'INSERT INTO role_permissions (role_id, permission_id) VALUES ($1, $2)',
+            [roleId, permId]
+          );
         }
       }
 
@@ -123,7 +142,10 @@ export class RolesService {
 
   async remove(tenantId: string, roleId: string) {
     if (!this.pool) throw new Error('Database not available');
-    const check = await this.pool.query('SELECT is_system FROM roles WHERE tenant_id = $1 AND id = $2', [tenantId, roleId]);
+    const check = await this.pool.query(
+      'SELECT is_system FROM roles WHERE tenant_id = $1 AND id = $2',
+      [tenantId, roleId]
+    );
     if (check.rows.length === 0) throw new NotFoundException('Role not found');
     if (check.rows[0].is_system) throw new BadRequestException('Cannot delete system roles');
 

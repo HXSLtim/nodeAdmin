@@ -55,9 +55,18 @@ export class TenantsService {
     const params: unknown[] = [];
     let idx = 1;
 
-    if (data.name !== undefined) { sets.push(`name = $${++idx}`); params.push(data.name); }
-    if (data.logo !== undefined) { sets.push(`logo = $${++idx}`); params.push(data.logo); }
-    if (data.isActive !== undefined) { sets.push(`is_active = $${++idx}`); params.push(data.isActive); }
+    if (data.name !== undefined) {
+      sets.push(`name = $${++idx}`);
+      params.push(data.name);
+    }
+    if (data.logo !== undefined) {
+      sets.push(`logo = $${++idx}`);
+      params.push(data.logo);
+    }
+    if (data.isActive !== undefined) {
+      sets.push(`is_active = $${++idx}`);
+      params.push(data.isActive);
+    }
 
     if (sets.length === 0) return this.findById(id);
 

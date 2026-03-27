@@ -46,37 +46,83 @@ export class MenusService {
     return result.rows[0];
   }
 
-  async create(data: { parentId?: string; name: string; path?: string; icon?: string; sortOrder?: number; permissionCode?: string; isVisible?: boolean }) {
+  async create(data: {
+    parentId?: string;
+    name: string;
+    path?: string;
+    icon?: string;
+    sortOrder?: number;
+    permissionCode?: string;
+    isVisible?: boolean;
+  }) {
     if (!this.pool) throw new Error('Database not available');
     const id = `menu-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     await this.pool.query(
       'INSERT INTO menus (id, parent_id, name, path, icon, sort_order, permission_code, is_visible) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
-      [id, data.parentId ?? null, data.name, data.path ?? null, data.icon ?? null, data.sortOrder ?? 0, data.permissionCode ?? null, data.isVisible !== false]
+      [
+        id,
+        data.parentId ?? null,
+        data.name,
+        data.path ?? null,
+        data.icon ?? null,
+        data.sortOrder ?? 0,
+        data.permissionCode ?? null,
+        data.isVisible !== false,
+      ]
     );
     return this.findById(id);
   }
 
-  async update(id: string, data: { parentId?: string; name?: string; path?: string; icon?: string; sortOrder?: number; permissionCode?: string; isVisible?: boolean }) {
+  async update(
+    id: string,
+    data: {
+      parentId?: string;
+      name?: string;
+      path?: string;
+      icon?: string;
+      sortOrder?: number;
+      permissionCode?: string;
+      isVisible?: boolean;
+    }
+  ) {
     if (!this.pool) throw new Error('Database not available');
     const sets: string[] = [];
     const params: unknown[] = [];
     let idx = 1;
 
-    if (data.parentId !== undefined) { sets.push(`parent_id = $${++idx}`); params.push(data.parentId); }
-    if (data.name !== undefined) { sets.push(`name = $${++idx}`); params.push(data.name); }
-    if (data.path !== undefined) { sets.push(`path = $${++idx}`); params.push(data.path); }
-    if (data.icon !== undefined) { sets.push(`icon = $${++idx}`); params.push(data.icon); }
-    if (data.sortOrder !== undefined) { sets.push(`sort_order = $${++idx}`); params.push(data.sortOrder); }
-    if (data.permissionCode !== undefined) { sets.push(`permission_code = $${++idx}`); params.push(data.permissionCode); }
-    if (data.isVisible !== undefined) { sets.push(`is_visible = $${++idx}`); params.push(data.isVisible); }
+    if (data.parentId !== undefined) {
+      sets.push(`parent_id = $${++idx}`);
+      params.push(data.parentId);
+    }
+    if (data.name !== undefined) {
+      sets.push(`name = $${++idx}`);
+      params.push(data.name);
+    }
+    if (data.path !== undefined) {
+      sets.push(`path = $${++idx}`);
+      params.push(data.path);
+    }
+    if (data.icon !== undefined) {
+      sets.push(`icon = $${++idx}`);
+      params.push(data.icon);
+    }
+    if (data.sortOrder !== undefined) {
+      sets.push(`sort_order = $${++idx}`);
+      params.push(data.sortOrder);
+    }
+    if (data.permissionCode !== undefined) {
+      sets.push(`permission_code = $${++idx}`);
+      params.push(data.permissionCode);
+    }
+    if (data.isVisible !== undefined) {
+      sets.push(`is_visible = $${++idx}`);
+      params.push(data.isVisible);
+    }
 
     if (sets.length === 0) return this.findById(id);
 
     params.push(id);
-    await this.pool.query(
-      `UPDATE menus SET ${sets.join(', ')} WHERE id = $${idx + 1}`,
-      params
-    );
+    await this.pool.query(`UPDATE menus SET ${sets.join(', ')} WHERE id = $${idx + 1}`, params);
     return this.findById(id);
   }
 
@@ -93,10 +139,9 @@ export class MenusService {
 
   async getRoleMenus(roleId: string): Promise<string[]> {
     if (!this.pool) return [];
-    const result = await this.pool.query(
-      'SELECT menu_id FROM role_menus WHERE role_id = $1',
-      [roleId]
-    );
+    const result = await this.pool.query('SELECT menu_id FROM role_menus WHERE role_id = $1', [
+      roleId,
+    ]);
     return result.rows.map((r: any) => r.menu_id);
   }
 
@@ -107,7 +152,10 @@ export class MenusService {
       await client.query('BEGIN');
       await client.query('DELETE FROM role_menus WHERE role_id = $1', [roleId]);
       for (const menuId of menuIds) {
-        await client.query('INSERT INTO role_menus (role_id, menu_id) VALUES ($1, $2)', [roleId, menuId]);
+        await client.query('INSERT INTO role_menus (role_id, menu_id) VALUES ($1, $2)', [
+          roleId,
+          menuId,
+        ]);
       }
       await client.query('COMMIT');
     } catch (error) {

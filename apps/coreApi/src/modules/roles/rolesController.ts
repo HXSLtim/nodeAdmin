@@ -23,7 +23,11 @@ export class RolesController {
   }
 
   @Patch(':id')
-  async update(@Param('id') id: string, @Body() dto: UpdateRoleDto, @Query('tenantId') tenantId?: string) {
+  async update(
+    @Param('id') id: string,
+    @Body() dto: UpdateRoleDto,
+    @Query('tenantId') tenantId?: string
+  ) {
     return this.rolesService.update(tenantId ?? 'default', id, {
       name: dto.name,
       description: dto.description,

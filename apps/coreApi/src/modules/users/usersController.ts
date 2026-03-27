@@ -25,7 +25,11 @@ export class UsersController {
   }
 
   @Patch(':id')
-  async update(@Param('id') id: string, @Body() dto: UpdateUserDto, @Query('tenantId') tenantId?: string) {
+  async update(
+    @Param('id') id: string,
+    @Body() dto: UpdateUserDto,
+    @Query('tenantId') tenantId?: string
+  ) {
     return this.usersService.update(tenantId ?? 'default', id, {
       name: dto.name,
       avatar: dto.avatar,
