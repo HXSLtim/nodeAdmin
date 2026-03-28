@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useApiClient } from '@/hooks/useApiClient';
-import { type UserItem, type RoleItem, type PaginatedResponse } from '@nodeadmin/shared-types';
+import { type UserItem, type RoleItem } from '@nodeadmin/shared-types';
 
 interface UserFormDialogProps {
   onClose: () => void;
