@@ -1,7 +1,9 @@
 import { BadRequestException, Controller, Get, Query } from '@nestjs/common';
 import { monitorEventLoopDelay } from 'node:perf_hooks';
 import { AuditLogService } from '../../infrastructure/audit/auditLogService';
+import { ConnectionRegistry } from '../../infrastructure/connectionRegistry';
 import { ConversationRepository } from '../../infrastructure/database/conversationRepository';
+import { DatabaseService } from '../../infrastructure/database/databaseService';
 import { TenantsService } from '../tenants/tenantsService';
 
 const eventLoopLagHistogram = monitorEventLoopDelay({
@@ -14,6 +16,15 @@ interface ConversationListResponse {
   title: string;
   lastMessageAt: string | null;
   unreadCount: number;
+}
+
+function formatUptime(seconds: number): string {
+  const d = Math.floor(seconds / 86_400);
+  const h = Math.floor((seconds % 86_400) / 3_600);
+  const m = Math.floor((seconds % 3_600) / 60);
+  if (d > 0) return `${d}d ${h}h`;
+  if (h > 0) return `${h}h ${m}m`;
+  return `${m}m`;
 }
 
 @Controller()
@@ -48,21 +59,37 @@ export class MetricsController {
 export class ConsoleController {
   constructor(
     private readonly auditLogService: AuditLogService,
+    private readonly connectionRegistry: ConnectionRegistry,
     private readonly conversationRepository: ConversationRepository,
-    private readonly tenantsService: TenantsService
+    private readonly databaseService: DatabaseService,
+    private readonly tenantsService: TenantsService,
   ) {}
 
   @Get('overview')
   async getOverview() {
     const tenants = await this.tenantsService.list();
     const activeCount = tenants.filter((t: any) => t.is_active).length;
+    const onlineConnections = this.connectionRegistry.totalCount();
+
+    let totalUsers = 0;
+    try {
+      if (this.databaseService.drizzle) {
+        const result = await this.databaseService.drizzle.execute(
+          { sql: 'SELECT COUNT(*)::int AS count FROM users' } as any,
+        );
+        totalUsers = Number(result.rows?.[0]?.count ?? 0);
+      }
+    } catch {
+      // DB not available — keep 0
+    }
 
     return {
       stats: [
-        { label: 'Online connections', value: '—' },
-        { label: 'Active tenants', value: String(activeCount) },
-        { label: 'Total tenants', value: String(tenants.length) },
-        { label: 'API status', value: 'healthy' },
+        { label: 'overview.stat.totalUsers', value: String(totalUsers) },
+        { label: 'overview.stat.activeTenants', value: String(activeCount) },
+        { label: 'overview.stat.totalTenants', value: String(tenants.length) },
+        { label: 'overview.stat.onlineConnections', value: String(onlineConnections) },
+        { label: 'overview.stat.uptime', value: formatUptime(process.uptime()) },
       ],
       todos: [],
     };
@@ -71,14 +98,31 @@ export class ConsoleController {
   @Get('tenants')
   async getTenants() {
     const tenants = await this.tenantsService.list();
-    return {
-      rows: tenants.map((t: any) => ({
-        key: t.id,
-        name: t.name,
-        roleCount: 0,
-        status: t.is_active ? 'active' : 'inactive',
-      })),
-    };
+
+    const tenantsWithRoles = await Promise.all(
+      tenants.map(async (t: any) => {
+        let roleCount = 0;
+        try {
+          if (this.databaseService.drizzle) {
+            const result = await this.databaseService.drizzle.execute(
+              { sql: 'SELECT COUNT(*)::int AS count FROM roles WHERE tenant_id = $1', bindings: [t.id] } as any,
+            );
+            roleCount = Number(result.rows?.[0]?.count ?? 0);
+          }
+        } catch {
+          // DB not available
+        }
+
+        return {
+          key: t.id,
+          name: t.name,
+          roleCount,
+          status: t.is_active ? 'active' : 'inactive',
+        };
+      }),
+    );
+
+    return { rows: tenantsWithRoles };
   }
 
   @Get('release-checks')
@@ -96,7 +140,7 @@ export class ConsoleController {
 
   @Get('conversations')
   async getConversations(
-    @Query('tenantId') tenantId = 'tenant-demo'
+    @Query('tenantId') tenantId = 'default',
   ): Promise<ConversationListResponse[]> {
     const rows = await this.conversationRepository.listByTenant(tenantId, 50);
 
@@ -117,16 +161,16 @@ export class ConsoleController {
             .map((role) => role.trim())
             .filter(Boolean)
         : [];
-    const isAdmin = roles.includes('tenant:admin');
+    const isAdmin = roles.includes('admin') || roles.includes('super-admin');
 
     return {
       permissions: {
         'im:send': isAdmin || roles.includes('im:operator'),
-        'im:view': isAdmin || roles.includes('im:operator') || roles.includes('tenant:viewer'),
+        'im:view': isAdmin || roles.includes('im:operator') || roles.includes('viewer'),
         'overview:view': true,
         'release:view': isAdmin || roles.includes('release:viewer'),
         'settings:view': isAdmin,
-        'tenant:view': isAdmin || roles.includes('tenant:viewer'),
+        'tenant:view': isAdmin || roles.includes('viewer'),
       },
       roles,
     };
@@ -136,7 +180,7 @@ export class ConsoleController {
   async getAuditLogs(
     @Query('limit') limitRaw?: string,
     @Query('offset') offsetRaw?: string,
-    @Query('tenantId') tenantId?: string
+    @Query('tenantId') tenantId?: string,
   ): Promise<{ rows: Awaited<ReturnType<AuditLogService['listByTenant']>> }> {
     if (!tenantId || tenantId.trim().length === 0) {
       throw new BadRequestException('tenantId query parameter is required.');

@@ -72,14 +72,14 @@ function toRequiredEnvValue(name: RequiredImEnvKey): string {
 function readRolesFromEnv(): string[] {
   const rolesRaw = (import.meta.env.VITE_IM_ROLES as string | undefined)?.trim();
   if (!rolesRaw) {
-    return ['tenant:admin'];
+    return ['admin'];
   }
 
   const roles = rolesRaw
     .split(',')
     .map((role) => role.trim())
     .filter((role) => role.length > 0);
-  return roles.length > 0 ? roles : ['tenant:admin'];
+  return roles.length > 0 ? roles : ['admin'];
 }
 
 function renderMessageBody(message: ImSocketMessage): JSX.Element {
