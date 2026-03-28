@@ -105,7 +105,8 @@ Uses existing `PaginatedResponse<T>` shared type:
 
 ### New Files
 
-- `apps/adminPortal/src/components/business/auditLogPanel.tsx` — Activity timeline component
+- `apps/adminPortal/src/components/ui/timeline.tsx` — Reusable `Timeline` UI component (generic, not audit-specific)
+- `apps/adminPortal/src/components/business/auditLogPanel.tsx` — Audit log page composing `Timeline` + filters
 
 ### Modified Files
 
@@ -115,19 +116,53 @@ Uses existing `PaginatedResponse<T>` shared type:
 - `apps/adminPortal/src/i18n/locales/en.json` — English i18n keys
 - `apps/adminPortal/src/i18n/locales/zh.json` — Chinese i18n keys
 
-### Activity Timeline Component
+### Reusable Timeline Component (`components/ui/timeline.tsx`)
+
+Generic timeline list component, not tied to audit logs. Future panels (notifications, activity feeds) can reuse it.
+
+**Props:**
+```typescript
+interface TimelineItem {
+  id: string;
+  icon?: ReactNode;          // Custom icon node (e.g. colored circle)
+  title: ReactNode;          // Primary content line
+  subtitle?: ReactNode;      // Secondary info (e.g. resource, timestamp)
+  timestamp?: string;        // ISO date string
+}
+
+interface TimelineProps {
+  items: TimelineItem[];
+  isLoading: boolean;
+  isError: boolean;
+  errorMessage?: string;
+  onRetry?: () => void;
+  emptyMessage: string;
+  hasMore?: boolean;
+  onLoadMore?: () => void;
+  loadMoreLabel?: string;
+}
+```
+
+**Rendering:**
+- Vertical timeline with connector line between items
+- Each item: left icon + right content (title, subtitle, timestamp)
+- Loading skeleton, error state, empty state
+- "Load more" button at bottom when `hasMore` is true
+
+### Audit Log Panel (`auditLogPanel.tsx`)
+
+**Composition:** Uses reusable `Timeline` UI component + existing `Input`, `Select` primitives.
 
 **Filter bar** (top):
-- Search input (user/action)
-- Action type dropdown
-- Date range picker
+- Search input (user/action) — uses `Input` from `components/ui/input`
+- Action type dropdown — uses `Select` from `components/ui/select`
+- Date range picker — uses `Input type="date"`
 
-**Timeline list** (main):
-- Each record rendered as a timeline entry:
-  - Left: colored circle icon (create=green, update=yellow, delete=red, login=blue)
-  - Right: `{user} {action description} {resourceType}/{targetId}`
-  - Footer: timestamp
-- "Load more" button or traditional pagination at bottom
+**Maps audit data to `TimelineItem[]`:**
+- `icon`: colored circle based on action type (create=green, update=yellow, delete=red, login=blue)
+- `title`: `{user} {action description}`
+- `subtitle`: `{resourceType}/{targetId}`
+- `timestamp`: `createdAt`
 
 **Behavior:**
 - Read-only — no CRUD operations
