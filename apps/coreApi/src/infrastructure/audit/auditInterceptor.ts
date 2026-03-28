@@ -86,7 +86,8 @@ export class AuditInterceptor implements NestInterceptor {
 
   private parseUrl(url: string): { targetId: string | null; targetType: string | null } {
     // Expected: /api/v1/{resource}[/{id}][/*]
-    const segments = url.split('/').filter(Boolean);
+    const pathname = url.split('?')[0];
+    const segments = pathname.split('/').filter(Boolean);
     // segments: ['api', 'v1', 'users', 'user-123'] or ['api', 'v1', 'users']
     if (segments.length < 3) {
       return { targetId: null, targetType: null };

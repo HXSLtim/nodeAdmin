@@ -176,4 +176,15 @@ describe('AuditInterceptor', () => {
     expect(call.targetType).toBe('conversation');
     expect(call.targetId).toBe('conv-1');
   });
+
+  it('strips query string when parsing targetId from URL', async () => {
+    const ctx = createHttpContext('PUT', '/api/v1/users/user-123?fields=name', mockIdentity, { name: 'Bob' });
+    const next = createCallHandler();
+
+    await interceptor.intercept(ctx, next).toPromise();
+
+    const call = recordMock.mock.calls[0][0];
+    expect(call.targetId).toBe('user-123');
+    expect(call.targetType).toBe('user');
+  });
 });
