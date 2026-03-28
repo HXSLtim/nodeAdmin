@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { OutboxPublisherService } from '../infrastructure/outbox/outboxPublisherService';
+import { AuditInterceptor } from '../infrastructure/audit/auditInterceptor';
+import { InfrastructureModule } from '../infrastructure/infrastructureModule';
 import { AuthModule } from '../modules/auth/authModule';
 import { JwtAuthGuard } from '../modules/auth/jwtAuthGuard';
 import { ConsoleModule } from '../modules/console/consoleModule';
@@ -16,6 +18,7 @@ import { UsersModule } from '../modules/users/usersModule';
 @Module({
   imports: [
     ConfigModule.forRoot({ cache: true, isGlobal: true }),
+    InfrastructureModule,
     AuthModule,
     HealthModule,
     ImModule,
@@ -29,6 +32,7 @@ import { UsersModule } from '../modules/users/usersModule';
   providers: [
     OutboxPublisherService,
     { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_INTERCEPTOR, useClass: AuditInterceptor },
   ],
 })
 export class AppModule {}
