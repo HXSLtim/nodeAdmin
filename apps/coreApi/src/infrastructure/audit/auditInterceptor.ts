@@ -52,7 +52,7 @@ export class AuditInterceptor implements NestInterceptor {
 
     return next.handle().pipe(
       tap(() => {
-        this.recordAuditLog(request).catch((error: unknown) => {
+        this.recordAuditLog(request as { method: string; url: string; user: AuthIdentity; body?: Record<string, unknown> }).catch((error: unknown) => {
           this.logger.error('Failed to record audit log', error instanceof Error ? error.message : error);
         });
       }),

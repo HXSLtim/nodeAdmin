@@ -1,4 +1,4 @@
-import { and, count, desc, eq, gte, lte } from 'drizzle-orm';
+import { and, count, desc, eq, gte, lte, type SQL } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { randomUUID } from 'node:crypto';
 import * as schema from './schema';
@@ -87,8 +87,8 @@ export class AuditLogRepository {
     return Number(result[0]?.total ?? 0);
   }
 
-  private buildConditions(filter: AuditLogFilter): unknown[] {
-    const conditions: unknown[] = [eq(auditLogs.tenantId, filter.tenantId)];
+  private buildConditions(filter: AuditLogFilter): SQL[] {
+    const conditions: SQL[] = [eq(auditLogs.tenantId, filter.tenantId)];
 
     if (filter.userId) {
       conditions.push(eq(auditLogs.userId, filter.userId));

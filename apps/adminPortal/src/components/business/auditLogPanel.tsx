@@ -62,18 +62,18 @@ export function AuditLogPanel(): JSX.Element {
     queryKey: ['audit-logs', queryParams],
   });
 
-  const items = query.data?.items ?? [];
   const total = query.data?.total ?? 0;
   const hasMore = page * PAGE_SIZE < total;
 
   const timelineItems: TimelineItem[] = useMemo(() => {
+    const rawItems = query.data?.items ?? [];
     const filteredBySearch = search
-      ? items.filter(
+      ? rawItems.filter(
           (item) =>
             item.userId.toLowerCase().includes(search.toLowerCase()) ||
             item.action.toLowerCase().includes(search.toLowerCase()),
         )
-      : items;
+      : rawItems;
 
     return filteredBySearch.map((item) => ({
       id: item.id,
@@ -100,7 +100,7 @@ export function AuditLogPanel(): JSX.Element {
       subtitle: item.targetId ? `${item.targetType}/${item.targetId}` : undefined,
       timestamp: new Date(item.createdAt).toLocaleString(),
     }));
-  }, [items, search, t]);
+  }, [query.data?.items, search, t]);
 
   const handleLoadMore = () => {
     setPage((prev) => prev + 1);
