@@ -12,3 +12,4 @@ Apps/**/test-results/
 **/*.tsbuildinfo
 .claude/
 .superpowers/
+uploads/

@@ -21,6 +21,7 @@ import { usePermissionStore } from '@/stores/usePermissionStore';
 import { useMessageStore } from '@/stores/useMessageStore';
 import { useSocketStore } from '@/stores/useSocketStore';
 import { useUiStore } from '@/stores/useUiStore';
+import { ImagePreviewOverlay } from './imagePreviewOverlay';
 
 interface MessagePanelProps {
   conversationIdOverride?: string;
@@ -59,6 +60,17 @@ interface ConversationListResponse {
 
 type RequiredImEnvKey = 'VITE_IM_CONVERSATION_ID' | 'VITE_IM_TENANT_ID' | 'VITE_IM_USER_ID';
 type TypingMap = Record<string, number>;
+
+interface PendingImage {
+  file: File;
+  objectUrl: string;
+}
+
+interface UploadResponse {
+  fileName: string;
+  fileSizeBytes: number;
+  url: string;
+}
 
 function toRequiredEnvValue(name: RequiredImEnvKey): string {
   const value = (import.meta.env[name] as string | undefined)?.trim();
@@ -152,9 +164,12 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
   const [offlineQueueCount, setOfflineQueueCount] = useState(0);
   const [presenceMembers, setPresenceMembers] = React.useState<Set<string>>(new Set());
   const [viewportHeight, setViewportHeight] = useState(320);
+  const [pendingImage, setPendingImage] = useState<PendingImage | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   const messageViewportRef = useRef<HTMLDivElement | null>(null);
   const typingIdleTimerRef = useRef<number | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const apiClient = useApiClient();
 
   // Dynamic viewport height via ResizeObserver
@@ -444,6 +459,143 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
     };
   }, [connectionState, emitWithAck, imConfig, readOfflineQueue, writeOfflineQueue]);
 
+  const extractImageFile = useCallback(
+    (dataTransfer: DataTransfer): File | null => {
+      const items = dataTransfer.items;
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item.type.startsWith('image/')) {
+          const file = item.getAsFile();
+          if (file) return file;
+        }
+      }
+      if (dataTransfer.files && dataTransfer.files.length > 0) {
+        const file = dataTransfer.files[0];
+        if (file.type.startsWith('image/')) return file;
+      }
+      return null;
+    },
+    []
+  );
+
+  const handleImageCaptured = useCallback((file: File) => {
+    const objectUrl = URL.createObjectURL(file);
+    setPendingImage({ file, objectUrl });
+  }, []);
+
+  const handlePaste = useCallback(
+    (event: React.ClipboardEvent) => {
+      if (!canSendMessage || !imConfig) return;
+      const file = extractImageFile(event.clipboardData);
+      if (file) {
+        event.preventDefault();
+        handleImageCaptured(file);
+      }
+    },
+    [canSendMessage, imConfig, extractImageFile, handleImageCaptured]
+  );
+
+  const handleDrop = useCallback(
+    (event: React.DragEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (!canSendMessage || !imConfig) return;
+      setDragOver(false);
+      const file = extractImageFile(event.dataTransfer);
+      if (file) {
+        handleImageCaptured(file);
+      }
+    },
+    [canSendMessage, imConfig, extractImageFile, handleImageCaptured]
+  );
+
+  const [dragOver, setDragOver] = useState(false);
+
+  const handleDragOver = useCallback((event: React.DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((event: React.DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setDragOver(false);
+  }, []);
+
+  const cancelPendingImage = useCallback(() => {
+    if (pendingImage) {
+      URL.revokeObjectURL(pendingImage.objectUrl);
+    }
+    setPendingImage(null);
+  }, [pendingImage]);
+
+  const uploadAndSendImage = useCallback(async () => {
+    if (!pendingImage || !imConfig || !canSendMessage) return;
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', pendingImage.file);
+
+      const result = await apiClient.post<UploadResponse>(
+        '/api/v1/im/upload',
+        formData
+      );
+
+      const nonce = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      const payload: ImSendMessagePayload = {
+        content: pendingImage.file.name,
+        conversationId: imConfig.conversationId,
+        messageId: `msg-${nonce}`,
+        messageType: 'image',
+        metadata: {
+          fileName: result.fileName,
+          fileSizeBytes: result.fileSizeBytes,
+          url: result.url,
+        },
+        traceId: `trace-${nonce}`,
+      };
+
+      if (connectionState === 'connected') {
+        setSendState('sending');
+        const ack = await emitWithAck(payload, ackTimeoutMs);
+        if (ack && ack.accepted) {
+          setSendState('idle');
+          setBootError(null);
+          stopTyping();
+        } else {
+          enqueueOfflinePayload(payload);
+          setSendState('failed');
+          setBootError('Image send failed. Added to offline queue for retry.');
+        }
+      } else {
+        enqueueOfflinePayload(payload);
+        setBootError('Socket is offline. Image queued for automatic sync.');
+        setSendState('idle');
+      }
+
+      URL.revokeObjectURL(pendingImage.objectUrl);
+      setPendingImage(null);
+    } catch (err) {
+      setBootError(
+        err instanceof Error ? err.message : 'Image upload failed.'
+      );
+      setSendState('failed');
+    } finally {
+      setUploading(false);
+    }
+  }, [
+    pendingImage,
+    imConfig,
+    canSendMessage,
+    apiClient,
+    connectionState,
+    emitWithAck,
+    enqueueOfflinePayload,
+    stopTyping,
+  ]);
+
   const stopTyping = useCallback(() => {
     if (!imConfig) {
       return;
@@ -687,7 +839,13 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
         ) : null}
 
         <div
-          className="min-h-0 flex-1 overflow-y-auto rounded-md bg-muted p-3"
+          className={className(
+            'min-h-0 flex-1 overflow-y-auto rounded-md bg-muted p-3 transition-colors',
+            dragOver && 'ring-2 ring-primary/50 bg-primary/5'
+          )}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
           onScroll={(event) => {
             const node = event.currentTarget;
             const remainingDistance = node.scrollHeight - (node.scrollTop + node.clientHeight);
@@ -756,7 +914,43 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
           )}
         </div>
 
+        {pendingImage ? (
+          <ImagePreviewOverlay
+            fileName={pendingImage.file.name}
+            objectUrl={pendingImage.objectUrl}
+            onCancel={cancelPendingImage}
+            onConfirm={() => {
+              void uploadAndSendImage();
+            }}
+            uploading={uploading}
+          />
+        ) : null}
+
+        <input
+          accept="image/png,image/jpeg,image/gif,image/webp"
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            if (file) handleImageCaptured(file);
+            event.target.value = '';
+          }}
+          ref={fileInputRef}
+          style={{ display: 'none' }}
+          type="file"
+        />
+
         <div className="flex gap-2">
+          <Button
+            disabled={!canSendMessage || uploading}
+            onClick={() => fileInputRef.current?.click()}
+            size="icon"
+            title={t({ id: 'im.attachImage' })}
+            type="button"
+            variant="ghost"
+          >
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </Button>
           <Input
             className="flex-1"
             onBlur={() => {
@@ -790,6 +984,13 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
               if (event.key === 'Enter' && !event.shiftKey) {
                 event.preventDefault();
                 void sendMessage();
+              }
+            }}
+            onPaste={(event) => {
+              const file = extractImageFile(event.clipboardData);
+              if (file) {
+                event.preventDefault();
+                handleImageCaptured(file);
               }
             }}
             placeholder={t({ id: 'im.inputPlaceholder' })}

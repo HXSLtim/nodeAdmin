@@ -23,7 +23,6 @@ export function ProfilePanel(): JSX.Element {
 
   const changePasswordMutation = useMutation({
     mutationFn: (payload: {
-      confirmPassword: string;
       currentPassword: string;
       newPassword: string;
     }) => apiClient.post<{ success: boolean }>('/api/v1/auth/change-password', payload),
@@ -47,7 +46,6 @@ export function ProfilePanel(): JSX.Element {
     changePasswordMutation.mutate({
       currentPassword,
       newPassword,
-      confirmPassword,
     });
   };
 

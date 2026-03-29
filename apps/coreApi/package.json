@@ -14,13 +14,13 @@
     "modernizer:sync-docs": "node --import tsx tools/modernizer/index.ts sync-docs"
   },
   "dependencies": {
+    "@fastify/multipart": "^9.4.0",
     "@fastify/static": "^9.0.0",
     "@nestjs/common": "^11.0.0",
     "@nestjs/config": "^4.0.0",
     "@nestjs/core": "^11.0.0",
     "@nestjs/platform-fastify": "^11.0.0",
     "@nestjs/platform-socket.io": "^11.0.0",
-    "@nestjs/swagger": "^11.2.6",
     "@nestjs/websockets": "^11.0.0",
     "@nodeadmin/shared-types": "0.1.0",
     "@opentelemetry/api": "^1.9.0",
@@ -41,6 +41,7 @@
     "socket.io": "^4.7.5"
   },
   "devDependencies": {
+    "@nestjs/swagger": "^11.2.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^22.10.1",
     "@types/pg": "^8.18.0",

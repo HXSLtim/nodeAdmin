@@ -240,6 +240,10 @@ export class AuthService {
       throw new UnauthorizedException('User not found.');
     }
 
+    if (!user.is_active) {
+      throw new UnauthorizedException('Account is disabled.');
+    }
+
     const passwordValid = await compare(currentPassword, user.password_hash);
     if (!passwordValid) {
       throw new UnauthorizedException('Current password is incorrect.');

@@ -62,6 +62,11 @@
   "im.reconnecting": "reconnecting...",
   "im.loadingConversations": "Loading conversations...",
   "im.loadConversationsFailed": "Failed to load conversations.",
+  "im.attachImage": "Attach Image",
+  "im.sendImage": "Send Image",
+  "im.uploading": "Uploading...",
+  "im.imagePreviewError": "Preview failed",
+  "im.dragDropHint": "Drop image here to upload",
 
   "users.title": "User Management",
   "users.desc": "Manage system users and assign roles.",

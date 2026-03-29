@@ -12,6 +12,7 @@ function createMockAuthService() {
     login: vi.fn(),
     refreshTokens: vi.fn(),
     issueTokens: vi.fn(),
+    changePassword: vi.fn(),
   };
 }
 
@@ -178,6 +179,33 @@ describe('AuthController', () => {
 
       (runtimeConfig.auth as any).enableDevTokenIssue = originalValue;
       process.env.AUTH_ENABLE_DEV_TOKEN_ISSUE = original;
+    });
+  });
+
+  describe('changePassword', () => {
+    it('should delegate to authService.changePassword with user identity', async () => {
+      authService.changePassword.mockResolvedValue(undefined);
+
+      const user = { jti: 'jti-1', roles: ['admin'], tenantId: 't-1', userId: 'user-1' };
+      const result = await controller.changePassword(
+        { currentPassword: 'oldPass', newPassword: 'newPass' } as any,
+        user as any
+      );
+
+      expect(authService.changePassword).toHaveBeenCalledWith('user-1', 't-1', 'oldPass', 'newPass');
+      expect(result).toEqual({ success: true });
+    });
+
+    it('should propagate error from authService', async () => {
+      authService.changePassword.mockRejectedValue(new Error('DB down'));
+
+      const user = { jti: 'jti-1', roles: ['admin'], tenantId: 't-1', userId: 'user-1' };
+      await expect(
+        controller.changePassword(
+          { currentPassword: 'oldPass', newPassword: 'newPass' } as any,
+          user as any
+        )
+      ).rejects.toThrow('DB down');
     });
   });
 });

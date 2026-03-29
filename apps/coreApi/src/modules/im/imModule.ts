@@ -9,9 +9,11 @@ import { ImGateway } from './imGateway';
 import { ImConversationService } from './services/imConversationService';
 import { ImMessageService } from './services/imMessageService';
 import { ImPresenceService } from './services/imPresenceService';
+import { ImUploadController } from './imUploadController';
 
 @Module({
   imports: [AuthModule, InfrastructureModule],
+  controllers: [ImUploadController],
   providers: [
     ImGateway,
     WsTenantGuard,

@@ -224,6 +224,7 @@ export function BacklogPanel(): JSX.Element {
               },
               {
                 header: t({ id: 'backlog.colPriority' }),
+                className: 'hidden sm:table-cell',
                 cell: (row) => (
                   <Badge variant={PRIORITY_VARIANT[row.priority] ?? 'default'}>
                     {row.priority}
@@ -286,6 +287,7 @@ export function BacklogPanel(): JSX.Element {
               },
               {
                 header: t({ id: 'backlog.colDates' }),
+                className: 'hidden sm:table-cell',
                 cell: (row) => (
                   <span className="text-sm text-muted-foreground">
                     {row.start_date && row.end_date ? `${row.start_date} → ${row.end_date}` : '—'}

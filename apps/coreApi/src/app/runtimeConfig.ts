@@ -57,6 +57,11 @@ interface RuntimeConfig {
     bodyLimit: number;
     maxParamLength: number;
   };
+  upload: {
+    maxFileSize: number;
+    allowedMimeTypes: string[];
+    storagePath: string;
+  };
   swagger: {
     enabled: boolean;
   };
@@ -191,6 +196,11 @@ export const runtimeConfig: RuntimeConfig = {
     requestTimeout: readPositiveInt('FASTIFY_REQUEST_TIMEOUT', 30000),
     bodyLimit: readPositiveInt('FASTIFY_BODY_LIMIT', 10485760),
     maxParamLength: readPositiveInt('FASTIFY_MAX_PARAM_LENGTH', 500),
+  },
+  upload: {
+    maxFileSize: readPositiveInt('UPLOAD_MAX_FILE_SIZE', 5242880),
+    allowedMimeTypes: ['image/png', 'image/jpeg', 'image/gif', 'image/webp'],
+    storagePath: process.env.UPLOAD_STORAGE_PATH?.trim() || 'uploads/im',
   },
   swagger: {
     enabled: readBooleanEnv('SWAGGER_ENABLED', true),

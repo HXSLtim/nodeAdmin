@@ -3,6 +3,9 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import fastifyMultipart from '@fastify/multipart';
+import fastifyStatic from '@fastify/static';
+import { join } from 'node:path';
 import { AppModule } from './app/appModule';
 import { UnifiedExceptionFilter } from './app/filters/unifiedExceptionFilter';
 import { runtimeConfig } from './app/runtimeConfig';
@@ -24,11 +27,25 @@ async function bootstrap(): Promise<void> {
       maxParamLength: runtimeConfig.fastify.maxParamLength,
     })
   );
-  app.setGlobalPrefix('api/v1');
+  app.setGlobalPrefix('api/v1', {
+    exclude: ['/uploads/(.*)'],
+  });
 
   app.enableCors({
     origin: runtimeConfig.corsOrigins,
     credentials: true,
+  });
+
+  const fastify = app.getHttpAdapter().getInstance();
+  await fastify.register(fastifyMultipart, {
+    limits: {
+      fileSize: runtimeConfig.upload.maxFileSize,
+    },
+  });
+  await fastify.register(fastifyStatic, {
+    root: join(process.cwd(), runtimeConfig.upload.storagePath),
+    prefix: '/uploads/',
+    decorateReply: false,
   });
 
   app.useGlobalPipes(
@@ -42,7 +59,6 @@ async function bootstrap(): Promise<void> {
   app.enableShutdownHooks();
 
   if (runtimeConfig.security.enabled) {
-    const fastify = app.getHttpAdapter().getInstance();
     fastify.addHook('onRequest', (_request, reply, done) => {
       reply.header('X-Content-Type-Options', 'nosniff');
       reply.header('X-Frame-Options', 'DENY');
