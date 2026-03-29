@@ -1,4 +1,5 @@
 import { Body, Controller, ForbiddenException, Post } from '@nestjs/common';
+import { ApiOperation, ApiSecurity, ApiTags } from '@nestjs/swagger';
 import { runtimeConfig } from '../../app/runtimeConfig';
 import { AuditLogService } from '../../infrastructure/audit/auditLogService';
 import { AuthService } from './authService';
@@ -7,6 +8,7 @@ import { LoginDto } from './dto/loginDto';
 import { RefreshTokenDto } from './dto/refreshTokenDto';
 import { RegisterDto } from './dto/registerDto';
 
+@ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -15,6 +17,7 @@ export class AuthController {
   ) {}
 
   @Post('register')
+  @ApiOperation({ summary: 'Register a new user', security: [] })
   async register(@Body() dto: RegisterDto) {
     const { name, roles, tokens, userId } = await this.authService.register(
       dto.email,
@@ -31,6 +34,7 @@ export class AuthController {
   }
 
   @Post('login')
+  @ApiOperation({ summary: 'Login with email and password', security: [] })
   async login(@Body() dto: LoginDto) {
     const { name, roles, tokens, userId } = await this.authService.login(
       dto.email,
@@ -59,12 +63,15 @@ export class AuthController {
   }
 
   @Post('refresh')
+  @ApiOperation({ summary: 'Refresh access token', security: [] })
   async refresh(@Body() dto: RefreshTokenDto) {
     const tokens = await this.authService.refreshTokens(dto.refreshToken);
     return tokens;
   }
 
   @Post('dev-token')
+  @ApiSecurity('bearer')
+  @ApiOperation({ summary: 'Issue a dev token (dev mode only)', security: [] })
   async issueDevToken(@Body() payload: IssueDevTokenDto) {
     if (!runtimeConfig.auth.enableDevTokenIssue) {
       throw new ForbiddenException('Dev token issuance is disabled.');

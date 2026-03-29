@@ -1,4 +1,5 @@
 import { Controller, Get, Query } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { monitorEventLoopDelay } from 'node:perf_hooks';
 import { AuditLogService } from '../../infrastructure/audit/auditLogService';
 import { ConnectionRegistry } from '../../infrastructure/connectionRegistry';
@@ -29,9 +30,11 @@ function formatUptime(seconds: number): string {
   return `${m}m`;
 }
 
+@ApiTags('metrics')
 @Controller()
 export class MetricsController {
   @Get('metrics')
+  @ApiOperation({ summary: 'Get system metrics (CPU, memory, event loop)' })
   getMetrics() {
     const memUsage = process.memoryUsage();
     const cpuUsage = process.cpuUsage();
@@ -57,6 +60,8 @@ export class MetricsController {
   }
 }
 
+@ApiTags('console')
+@ApiBearerAuth()
 @Controller('console')
 export class ConsoleController {
   constructor(
@@ -68,6 +73,7 @@ export class ConsoleController {
   ) {}
 
   @Get('overview')
+  @ApiOperation({ summary: 'Get dashboard overview stats' })
   async getOverview() {
     const tenants = await this.tenantsService.list();
     const activeCount = tenants.filter((t: any) => t.is_active).length;
@@ -98,6 +104,7 @@ export class ConsoleController {
   }
 
   @Get('tenants')
+  @ApiOperation({ summary: 'List tenants with role counts' })
   async getTenants() {
     const tenants = await this.tenantsService.list();
 
@@ -129,6 +136,7 @@ export class ConsoleController {
   }
 
   @Get('release-checks')
+  @ApiOperation({ summary: 'Get infrastructure release readiness checks' })
   getReleaseChecks() {
     return {
       checks: [
@@ -142,6 +150,7 @@ export class ConsoleController {
   }
 
   @Get('conversations')
+  @ApiOperation({ summary: 'List recent conversations' })
   async getConversations(
     @Query('tenantId') tenantId = 'default'
   ): Promise<{ rows: ConversationListResponse[] }> {
@@ -158,6 +167,7 @@ export class ConsoleController {
   }
 
   @Get('permissions')
+  @ApiOperation({ summary: 'Get permission map for given roles' })
   getPermissions(@Query('roles') rolesRaw?: string) {
     const roles =
       typeof rolesRaw === 'string'
@@ -182,6 +192,7 @@ export class ConsoleController {
   }
 
   @Get('audit-logs')
+  @ApiOperation({ summary: 'Query audit logs with filtering and pagination' })
   async getAuditLogs(
     @CurrentUser() identity: AuthIdentity,
     @Query('page') pageRaw?: string,

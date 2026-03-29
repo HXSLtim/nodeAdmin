@@ -57,6 +57,9 @@ interface RuntimeConfig {
     bodyLimit: number;
     maxParamLength: number;
   };
+  swagger: {
+    enabled: boolean;
+  };
 }
 
 function readRequiredEnv(name: string): string {
@@ -188,5 +191,8 @@ export const runtimeConfig: RuntimeConfig = {
     requestTimeout: readPositiveInt('FASTIFY_REQUEST_TIMEOUT', 30000),
     bodyLimit: readPositiveInt('FASTIFY_BODY_LIMIT', 10485760),
     maxParamLength: readPositiveInt('FASTIFY_MAX_PARAM_LENGTH', 500),
+  },
+  swagger: {
+    enabled: readBooleanEnv('SWAGGER_ENABLED', true),
   },
 };

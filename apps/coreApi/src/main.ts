@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app/appModule';
 import { UnifiedExceptionFilter } from './app/filters/unifiedExceptionFilter';
 import { runtimeConfig } from './app/runtimeConfig';
@@ -50,6 +51,17 @@ async function bootstrap(): Promise<void> {
       reply.header('Content-Security-Policy', runtimeConfig.security.csp);
       done();
     });
+  }
+
+  if (runtimeConfig.swagger.enabled) {
+    const config = new DocumentBuilder()
+      .setTitle('nodeAdmin API')
+      .setDescription('Enterprise multi-tenant SaaS middleware platform API')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .build();
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('api/docs', app, document);
   }
 
   await app.listen(runtimeConfig.port, '0.0.0.0');
