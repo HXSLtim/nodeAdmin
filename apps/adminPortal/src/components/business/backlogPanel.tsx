@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { DataTable } from '@/components/ui/dataTable';
 import { Input } from '@/components/ui/input';
+import { ConfirmDialog } from '@/components/ui/dialog';
 import { useApiClient } from '@/hooks/useApiClient';
 import { TaskFormDialog } from './taskFormDialog';
 import { SprintFormDialog } from './sprintFormDialog';
@@ -49,6 +50,10 @@ export function BacklogPanel(): JSX.Element {
   // Sprint dialog state
   const [sprintFormOpen, setSprintFormOpen] = useState(false);
   const [editSprint, setEditSprint] = useState<BacklogSprint | undefined>();
+
+  // Delete confirm state
+  const [deleteTask, setDeleteTask] = useState<BacklogTask | undefined>();
+  const [deleteSprint, setDeleteSprint] = useState<BacklogSprint | undefined>();
 
   // ─── Tasks Query ─────────────────────────────────────────────────
   const tasksQuery = useQuery<PaginatedResponse<BacklogTask>>({
@@ -128,9 +133,9 @@ export function BacklogPanel(): JSX.Element {
       : Math.ceil((sprintsQuery.data?.total ?? 0) / PAGE_SIZE);
 
   return (
-    <section className="h-full overflow-y-auto">
-      <Card className="p-4">
-        <CardHeader className="mb-4 flex-row items-start justify-between space-y-0 p-0">
+    <section className="h-full overflow-y-auto p-2 sm:p-4">
+      <Card className="p-3 sm:p-4">
+        <CardHeader className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:space-y-0 p-0">
           <div className="space-y-1.5">
             <CardTitle className="text-base">{t({ id: 'backlog.title' })}</CardTitle>
             <CardDescription>{t({ id: 'backlog.desc' })}</CardDescription>
@@ -168,9 +173,9 @@ export function BacklogPanel(): JSX.Element {
         </div>
 
         {/* Search + Filter */}
-        <div className="mb-4 flex gap-3">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row">
           <Input
-            className="max-w-xs"
+            className="w-full sm:max-w-xs"
             placeholder={t({ id: 'backlog.search' })}
             value={search}
             onChange={(e) => {
@@ -232,11 +237,7 @@ export function BacklogPanel(): JSX.Element {
                     <Button size="sm" variant="secondary" onClick={() => handleOpenEditTask(row)}>
                       {t({ id: 'backlog.edit' })}
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      onClick={() => deleteTaskMutation.mutate(row.id)}
-                    >
+                    <Button size="sm" variant="secondary" onClick={() => setDeleteTask(row)}>
                       {t({ id: 'backlog.delete' })}
                     </Button>
                   </div>
@@ -298,11 +299,7 @@ export function BacklogPanel(): JSX.Element {
                     <Button size="sm" variant="secondary" onClick={() => handleOpenEditSprint(row)}>
                       {t({ id: 'backlog.edit' })}
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      onClick={() => deleteSprintMutation.mutate(row.id)}
-                    >
+                    <Button size="sm" variant="secondary" onClick={() => setDeleteSprint(row)}>
                       {t({ id: 'backlog.delete' })}
                     </Button>
                   </div>
@@ -349,6 +346,31 @@ export function BacklogPanel(): JSX.Element {
         onSaved={handleSprintSaved}
         open={sprintFormOpen}
         sprint={editSprint}
+      />
+
+      <ConfirmDialog
+        message={t({ id: 'backlog.deleteTaskConfirm' })}
+        onClose={() => setDeleteTask(undefined)}
+        onConfirm={async () => {
+          if (deleteTask) {
+            await deleteTaskMutation.mutateAsync(deleteTask.id);
+            setDeleteTask(undefined);
+          }
+        }}
+        open={!!deleteTask}
+        title={t({ id: 'backlog.deleteTask' })}
+      />
+      <ConfirmDialog
+        message={t({ id: 'backlog.deleteSprintConfirm' })}
+        onClose={() => setDeleteSprint(undefined)}
+        onConfirm={async () => {
+          if (deleteSprint) {
+            await deleteSprintMutation.mutateAsync(deleteSprint.id);
+            setDeleteSprint(undefined);
+          }
+        }}
+        open={!!deleteSprint}
+        title={t({ id: 'backlog.deleteSprint' })}
       />
     </section>
   );

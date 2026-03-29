@@ -303,5 +303,9 @@
   "backlog.priorityCritical": "紧急",
   "backlog.sprintStatusPlanning": "计划中",
   "backlog.sprintStatusActive": "进行中",
-  "backlog.sprintStatusCompleted": "已完成"
+  "backlog.sprintStatusCompleted": "已完成",
+  "backlog.deleteTask": "删除任务",
+  "backlog.deleteSprint": "删除冲刺",
+  "backlog.deleteTaskConfirm": "确定要删除该任务吗？此操作不可恢复。",
+  "backlog.deleteSprintConfirm": "确定要删除该冲刺吗？已分配的任务将变为未分配状态。"
 }
