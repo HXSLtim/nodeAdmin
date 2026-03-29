@@ -12,6 +12,7 @@ import { ProfilePanel } from '@/components/business/profilePanel';
 import { TenantControlPanel } from '@/components/business/tenantControlPanel';
 import { UserManagementPanel } from '@/components/business/userManagementPanel';
 import { AuditLogPanel } from '@/components/business/auditLogPanel';
+import { ModernizerPanel } from '@/components/business/modernizerPanel';
 import { AppLayout } from './layout/appLayout';
 import { AuthGuard } from './authGuard';
 import { ModuleErrorBoundary } from './moduleErrorBoundary';
@@ -147,6 +148,16 @@ export function AppRoot(): JSX.Element {
                     </RouteModule>
                   }
                   path="/profile"
+                />
+                <Route
+                  element={
+                    <RouteModule>
+                      <RequirePermission permission="modernizer:view">
+                        <ModernizerPanel />
+                      </RequirePermission>
+                    </RouteModule>
+                  }
+                  path="/modernizer"
                 />
                 <Route element={<NotFoundPage />} path="*" />
               </Routes>

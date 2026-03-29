@@ -1,0 +1,83 @@
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { {{ entityName }}sService } from './{{ entityNameLower }}sService';
+import { Create{{ entityName }}Dto } from './dto/create{{ entityName }}Dto';
+import { Update{{ entityName }}Dto } from './dto/update{{ entityName }}Dto';
+import { List{{ entityName }}sQueryDto } from './dto/list{{ entityName }}sQueryDto';
+
+@ApiTags('{{ entityNameLower }}s')
+@ApiBearerAuth()
+@Controller('{{ entityNameLower }}s')
+export class {{ entityName }}sController {
+  constructor(private readonly {{ entityNameLower }}sService: {{ entityName }}sService) {}
+{% if hasTenantId %}
+
+  @Get()
+  @ApiOperation({ summary: 'List {{ entityNameLower }}s with pagination' })
+  async list(@Query() query: List{{ entityName }}sQueryDto) {
+    const tenantId = query.tenantId ?? 'default';
+    return this.{{ entityNameLower }}sService.list(tenantId, query.page, query.pageSize, query.search);
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Get {{ entityNameLower }} by ID' })
+  async findOne(@Param('id') id: string, @Query('tenantId') tenantId?: string) {
+    return this.{{ entityNameLower }}sService.findById(tenantId ?? 'default', id);
+  }
+
+  @Post()
+  @ApiOperation({ summary: 'Create a new {{ entityNameLower }}' })
+  async create(@Body() dto: Create{{ entityName }}Dto) {
+    return this.{{ entityNameLower }}sService.create(dto.tenantId, dto);
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Update a {{ entityNameLower }}' })
+  async update(
+    @Param('id') id: string,
+    @Body() dto: Update{{ entityName }}Dto,
+    @Query('tenantId') tenantId?: string,
+  ) {
+    return this.{{ entityNameLower }}sService.update(tenantId ?? 'default', id, dto);
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete a {{ entityNameLower }}' })
+  async remove(@Param('id') id: string, @Query('tenantId') tenantId?: string) {
+    await this.{{ entityNameLower }}sService.remove(tenantId ?? 'default', id);
+    return { success: true };
+  }
+{% else %}
+
+  @Get()
+  @ApiOperation({ summary: 'List {{ entityNameLower }}s with pagination' })
+  async list(@Query() query: List{{ entityName }}sQueryDto) {
+    return this.{{ entityNameLower }}sService.list(query.page, query.pageSize);
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Get {{ entityNameLower }} by ID' })
+  async findOne(@Param('id') id: string) {
+    return this.{{ entityNameLower }}sService.findById(id);
+  }
+
+  @Post()
+  @ApiOperation({ summary: 'Create a new {{ entityNameLower }}' })
+  async create(@Body() dto: Create{{ entityName }}Dto) {
+    return this.{{ entityNameLower }}sService.create(dto);
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Update a {{ entityNameLower }}' })
+  async update(@Param('id') id: string, @Body() dto: Update{{ entityName }}Dto) {
+    return this.{{ entityNameLower }}sService.update(id, dto);
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete a {{ entityNameLower }}' })
+  async remove(@Param('id') id: string) {
+    await this.{{ entityNameLower }}sService.remove(id);
+    return { success: true };
+  }
+{% endif %}
+}

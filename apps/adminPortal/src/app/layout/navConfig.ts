@@ -66,6 +66,13 @@ export const navItems: NavItem[] = [
     path: '/settings',
     permission: 'settings:view',
   },
+  {
+    icon: 'scan',
+    key: 'modernizer',
+    labelId: 'nav.modernizer',
+    path: '/modernizer',
+    permission: 'modernizer:view',
+  },
 ];
 
 export function isNavItemActive(pathname: string, navPath: string): boolean {

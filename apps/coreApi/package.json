@@ -8,7 +8,10 @@
     "build": "tsc -p tsconfig.json",
     "db:generate": "echo SQL migrations are managed under apps/coreApi/drizzle/migrations",
     "db:migrate": "node ../../scripts/applySqlMigration.cjs",
-    "start": "node Dist/main.js"
+    "start": "node Dist/main.js",
+    "generate:crud": "node --import tsx tools/cli/index.ts",
+    "modernizer:analyze": "node --import tsx tools/modernizer/index.ts analyze",
+    "modernizer:sync-docs": "node --import tsx tools/modernizer/index.ts sync-docs"
   },
   "dependencies": {
     "@fastify/static": "^9.0.0",
@@ -42,6 +45,7 @@
     "@types/node": "^22.10.1",
     "@types/pg": "^8.18.0",
     "drizzle-kit": "^0.31.9",
+    "nunjucks": "^3.2.4",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.7.2"
   }

@@ -31,6 +31,7 @@ export type AppPermission =
   | 'im:view'
   | 'menus:manage'
   | 'menus:view'
+  | 'modernizer:view'
   | 'overview:view'
   | 'release:view'
   | 'roles:manage'
@@ -122,4 +123,32 @@ export interface AuditLogItem {
   traceId: string;
   context: Record<string, unknown> | null;
   createdAt: string;
+}
+
+// ─── Modernizer Types ──────────────────────────────────────────────
+
+export type AnalysisCategory =
+  | 'console-log'
+  | 'todo'
+  | 'missing-validation'
+  | 'unused-import';
+
+export type AnalysisSeverity = 'info' | 'warning' | 'error';
+
+export interface AnalysisIssue {
+  file: string;
+  line: number;
+  category: AnalysisCategory;
+  message: string;
+  severity: AnalysisSeverity;
+}
+
+export interface AnalysisSummary {
+  total: number;
+  byCategory: Record<AnalysisCategory, number>;
+}
+
+export interface AnalysisResult {
+  issues: AnalysisIssue[];
+  summary: AnalysisSummary;
 }

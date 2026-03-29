@@ -1,0 +1,179 @@
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { and, count, desc, eq, ilike } from 'drizzle-orm';
+import { randomUUID } from 'node:crypto';
+import { DatabaseService } from '../../infrastructure/database/databaseService';
+import * as schema from '../../infrastructure/database/schema';
+
+const { {{ tableName }} } = schema;
+
+@Injectable()
+export class {{ entityName }}sService {
+  private readonly logger = new Logger({{ entityName }}sService.name);
+
+  constructor(private readonly databaseService: DatabaseService) {}
+
+  private get db() {
+    return this.databaseService.drizzle;
+  }
+{% if hasTenantId %}
+
+  async list(
+    tenantId: string,
+    page = 1,
+    pageSize = 20,
+    search?: string,
+  ): Promise<{ items: any[]; total: number; page: number; pageSize: number }> {
+    if (!this.db) return { items: [], total: 0, page, pageSize };
+
+    const conditions = [eq({{ tableName }}.tenantId, tenantId)];
+{% if searchableColumns.length > 0 %}
+    if (search) {
+      conditions.push(ilike({{ tableName }}.{{ searchableColumns[0] }}, `%${search}%`));
+    }
+{% endif %}
+
+    const [items, [{ total }]] = await Promise.all([
+      this.db
+        .select()
+        .from({{ tableName }})
+        .where(and(...conditions))
+        .orderBy(desc({{ tableName }}.createdAt))
+        .limit(pageSize)
+        .offset((page - 1) * pageSize),
+      this.db
+        .select({ total: count() })
+        .from({{ tableName }})
+        .where(and(...conditions)),
+    ]);
+
+    return { items, total: Number(total), page, pageSize };
+  }
+
+  async findById(tenantId: string, id: string): Promise<any> {
+    if (!this.db) throw new NotFoundException('{{ entityName }} not found');
+
+    const [row] = await this.db
+      .select()
+      .from({{ tableName }})
+      .where(and(eq({{ tableName }}.tenantId, tenantId), eq({{ tableName }}.id, id)));
+
+    if (!row) throw new NotFoundException('{{ entityName }} not found');
+    return row;
+  }
+
+  async create(tenantId: string, data: Record<string, unknown>): Promise<any> {
+    if (!this.db) throw new Error('Database not available');
+
+    const [row] = await this.db
+      .insert({{ tableName }})
+      .values({
+        id: randomUUID(),
+        tenantId,
+        ...data,
+      })
+      .returning();
+
+    return row;
+  }
+
+  async update(
+    tenantId: string,
+    id: string,
+    data: Record<string, unknown>,
+  ): Promise<any> {
+    if (!this.db) throw new Error('Database not available');
+
+    const [row] = await this.db
+      .update({{ tableName }})
+      .set({ ...data, updatedAt: new Date() })
+      .where(and(eq({{ tableName }}.tenantId, tenantId), eq({{ tableName }}.id, id)))
+      .returning();
+
+    if (!row) throw new NotFoundException('{{ entityName }} not found');
+    return row;
+  }
+
+  async remove(tenantId: string, id: string): Promise<void> {
+    if (!this.db) throw new Error('Database not available');
+
+    const result = await this.db
+      .delete({{ tableName }})
+      .where(and(eq({{ tableName }}.tenantId, tenantId), eq({{ tableName }}.id, id)))
+      .returning();
+
+    if (!result.length) throw new NotFoundException('{{ entityName }} not found');
+  }
+{% else %}
+
+  async list(
+    page = 1,
+    pageSize = 20,
+  ): Promise<{ items: any[]; total: number; page: number; pageSize: number }> {
+    if (!this.db) return { items: [], total: 0, page, pageSize };
+
+    const [items, [{ total }]] = await Promise.all([
+      this.db
+        .select()
+        .from({{ tableName }})
+        .orderBy(desc({{ tableName }}.createdAt))
+        .limit(pageSize)
+        .offset((page - 1) * pageSize),
+      this.db
+        .select({ total: count() })
+        .from({{ tableName }}),
+    ]);
+
+    return { items, total: Number(total), page, pageSize };
+  }
+
+  async findById(id: string): Promise<any> {
+    if (!this.db) throw new NotFoundException('{{ entityName }} not found');
+
+    const [row] = await this.db
+      .select()
+      .from({{ tableName }})
+      .where(eq({{ tableName }}.id, id));
+
+    if (!row) throw new NotFoundException('{{ entityName }} not found');
+    return row;
+  }
+
+  async create(data: Record<string, unknown>): Promise<any> {
+    if (!this.db) throw new Error('Database not available');
+
+    const [row] = await this.db
+      .insert({{ tableName }})
+      .values({
+        id: randomUUID(),
+        ...data,
+      })
+      .returning();
+
+    return row;
+  }
+
+  async update(id: string, data: Record<string, unknown>): Promise<any> {
+    if (!this.db) throw new Error('Database not available');
+
+    const [row] = await this.db
+      .update({{ tableName }})
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq({{ tableName }}.id, id))
+      .returning();
+
+    if (!row) throw new NotFoundException('{{ entityName }} not found');
+    return row;
+  }
+
+  async remove(id: string): Promise<void> {
+    if (!this.db) throw new Error('Database not available');
+
+    const result = await this.db
+      .delete({{ tableName }})
+      .where(eq({{ tableName }}.id, id))
+      .returning();
+
+    if (!result.length) throw new NotFoundException('{{ entityName }} not found');
+  }
+{% endif %}
+}

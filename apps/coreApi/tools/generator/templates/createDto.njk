@@ -1,0 +1,46 @@
+{%- set cvImports = ["IsOptional", "IsString"] -%}
+{%- set ctImports = [] -%}
+{%- for col in createDtoColumns -%}
+  {%- if col.drizzleType === "integer" or col.drizzleType === "bigint" -%}
+    {%- if "IsInt" not in cvImports -%}{%- set _ = cvImports.push("IsInt") -%}{%- endif -%}
+    {%- if "Type" not in ctImports -%}{%- set _ = ctImports.push("Type") -%}{%- endif -%}
+  {%- endif -%}
+  {%- if col.drizzleType === "varchar" and col.length -%}
+    {%- if "MaxLength" not in cvImports -%}{%- set _ = cvImports.push("MaxLength") -%}{%- endif -%}
+  {%- endif -%}
+  {%- if col.drizzleType === "timestamp" -%}
+    {%- if "IsDateString" not in cvImports -%}{%- set _ = cvImports.push("IsDateString") -%}{%- endif -%}
+  {%- endif -%}
+{%- endfor -%}
+import { {{ cvImports | join(", ") }} } from 'class-validator';
+{%- if ctImports.length > 0 %}
+import { {{ ctImports | join(", ") }} } from 'class-transformer';
+{%- endif %}
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+
+export class Create{{ entityName }}Dto {
+{% for col in createDtoColumns %}
+{% if col.isNullable or col.hasDefault %}
+  @ApiPropertyOptional({ description: '{{ col.propertyName }}' })
+  @IsOptional()
+{% else %}
+  @ApiProperty({ description: '{{ col.propertyName }}' })
+{% endif %}
+{% if col.drizzleType === 'varchar' %}
+  @IsString()
+{% if col.length %}
+  @MaxLength({{ col.length }})
+{% endif %}
+{% elif col.drizzleType === 'text' %}
+  @IsString()
+{% elif col.drizzleType === 'integer' or col.drizzleType === 'bigint' %}
+  @Type(() => Number)
+  @IsInt()
+{% elif col.drizzleType === 'timestamp' %}
+  @IsDateString()
+{% elif col.drizzleType === 'boolean' %}
+{% endif %}
+  {{ col.propertyName }}{% if col.isNullable or col.hasDefault %}?{% else %}!{% endif %}: {{ mapColumn(col).tsType }};
+
+{% endfor %}
+}

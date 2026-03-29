@@ -1,0 +1,122 @@
+import { useState } from 'react';
+import { useMutation } from '@tanstack/react-query';
+import { useIntl } from 'react-intl';
+import { type {{ entityName }}Item } from '@nodeadmin/shared-types';
+import { Dialog } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { FormField } from '@/components/ui/formField';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '@/components/ui/button';
+import { useApiClient } from '@/hooks/useApiClient';
+
+interface {{ entityName }}FormDialogProps {
+  open: boolean;
+  onClose: () => void;
+  item?: {{ entityName }}Item;
+  onSaved: () => void;
+}
+
+export function {{ entityName }}FormDialog({
+  onClose,
+  onSaved,
+  open,
+  item,
+}: {{ entityName }}FormDialogProps): JSX.Element {
+  const { formatMessage: t } = useIntl();
+  const apiClient = useApiClient();
+
+{% for col in formColumns %}
+{% if col.drizzleType === 'boolean' %}
+  const [{{ col.propertyName }}, set{{ col.propertyName | pascal }}] = useState(Boolean(item?.{{ col.propertyName }} ?? {{ 'true' if col.hasDefault else 'false' }}));
+{% else %}
+  const [{{ col.propertyName }}, set{{ col.propertyName | pascal }}] = useState(item?.{{ col.propertyName }} ?? '');
+{% endif %}
+{% endfor %}
+
+  const isEdit = !!item;
+
+  const saveMutation = useMutation({
+    mutationFn: async (data: Record<string, unknown>) => {
+      if (isEdit && item) {
+        await apiClient.put(`/api/v1/{{ entityNameLower }}s/${item.id}`, data);
+      } else {
+        await apiClient.post('/api/v1/{{ entityNameLower }}s', data);
+      }
+    },
+    onSuccess: () => {
+      onSaved();
+      handleClose();
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    saveMutation.mutate({
+{% for col in formColumns %}
+      {{ col.propertyName }},
+{% endfor %}
+    });
+  };
+
+  const handleClose = () => {
+{% for col in formColumns %}
+{% if col.drizzleType === 'boolean' %}
+    set{{ col.propertyName | pascal }}(Boolean(item?.{{ col.propertyName }} ?? {{ 'true' if col.hasDefault else 'false' }}));
+{% else %}
+    set{{ col.propertyName | pascal }}(item?.{{ col.propertyName }} ?? '');
+{% endif %}
+{% endfor %}
+    onClose();
+  };
+
+  return (
+    <Dialog
+      onClose={handleClose}
+      open={open}
+      title={t({ id: isEdit ? '{{ entityNameLower }}.edit' : '{{ entityNameLower }}.create' })}
+    >
+      <form onSubmit={handleSubmit}>
+        <div className="space-y-4">
+{% for col in formColumns %}
+{% if col.drizzleType === 'boolean' %}
+          <Checkbox
+            checked={ {{ col.propertyName }} }
+            id="{{ entityNameLower }}-{{ col.propertyName }}"
+            label={t({ id: '{{ entityNameLower }}.field{{ col.propertyName | pascal }}' })}
+            onChange={set{{ col.propertyName | pascal }}}
+          />
+{% else %}
+          <FormField label={t({ id: '{{ entityNameLower }}.field{{ col.propertyName | capitalize }}' })} htmlFor="{{ entityNameLower }}-{{ col.propertyName }}">
+            <Input
+              id="{{ entityNameLower }}-{{ col.propertyName }}"
+{% if col.isNullable %}
+              value={ {{ col.propertyName }} }
+              onChange={(e) => set{{ col.propertyName | pascal }}(e.target.value)}
+{% else %}
+              required
+              value={ {{ col.propertyName }} }
+              onChange={(e) => set{{ col.propertyName | pascal }}(e.target.value)}
+{% endif %}
+            />
+          </FormField>
+{% endif %}
+{% endfor %}
+        </div>
+
+        <div className="mt-6 flex justify-end gap-3">
+          <Button
+            disabled={saveMutation.isPending}
+            type="button"
+            variant="secondary"
+            onClick={handleClose}
+          >
+            {t({ id: 'common.cancel' })}
+          </Button>
+          <Button disabled={saveMutation.isPending} type="submit">
+            {saveMutation.isPending ? '...' : t({ id: 'common.save' })}
+          </Button>
+        </div>
+      </form>
+    </Dialog>
+  );
+}

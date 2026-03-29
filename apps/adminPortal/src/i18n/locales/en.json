@@ -245,5 +245,21 @@
   "audit.action.login": "logged in",
   "audit.allActions": "All actions",
   "audit.startDate": "Start date",
-  "audit.endDate": "End date"
+  "audit.endDate": "End date",
+
+  "nav.modernizer": "Code Analysis",
+  "modernizer.title": "Code Analysis",
+  "modernizer.desc": "Scan source code for quality issues and generate API documentation.",
+  "modernizer.runAnalysis": "Run Analysis",
+  "modernizer.running": "Analyzing...",
+  "modernizer.totalIssues": "Total Issues",
+  "modernizer.missingValidation": "Missing Validation",
+  "modernizer.colSeverity": "Severity",
+  "modernizer.colCategory": "Category",
+  "modernizer.colFile": "File",
+  "modernizer.colLine": "Line",
+  "modernizer.colMessage": "Message",
+  "modernizer.clickToRun": "Click \"Run Analysis\" to scan the codebase",
+  "modernizer.noIssues": "No issues found!",
+  "modernizer.loadFailed": "Failed to run analysis."
 }

@@ -1,0 +1,137 @@
+import { useState } from 'react';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { useIntl } from 'react-intl';
+import { type {{ entityName }}Item } from '@nodeadmin/shared-types';
+import { Button } from '@/components/ui/button';
+import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { DataTable } from '@/components/ui/dataTable';
+import { ConfirmDialog } from '@/components/ui/dialog';
+import { useToast } from '@/components/ui/toast';
+import { useApiClient } from '@/hooks/useApiClient';
+import { {{ entityName }}FormDialog } from './{{ entityNameLower }}FormDialog';
+
+export function {{ entityName }}ControlPanel(): JSX.Element {
+  const { formatMessage: t } = useIntl();
+  const apiClient = useApiClient();
+  const toast = useToast();
+
+  const [createFormOpen, setCreateFormOpen] = useState(false);
+  const [editItem, setEditItem] = useState<{{ entityName }}Item | undefined>();
+  const [deleteItem, setDeleteItem] = useState<{{ entityName }}Item | undefined>();
+
+  const {{ entityNameLower }}Query = useQuery({
+    queryFn: () => apiClient.get<{{ entityName }}Item[]>('/api/v1/{{ entityNameLower }}s'),
+    queryKey: ['{{ entityNameLower }}s'],
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) =>
+      apiClient.del<{ success: boolean }>(`/api/v1/{{ entityNameLower }}s/${id}`),
+    onSuccess: () => {
+      {{ entityNameLower }}Query.refetch();
+      toast.success(t({ id: '{{ entityNameLower }}.deleteSuccess' }));
+    },
+    onError: () => {
+      toast.error(t({ id: '{{ entityNameLower }}.deleteFailed' }));
+    },
+  });
+
+  const handleDeleteConfirm = async () => {
+    if (deleteItem) {
+      await deleteMutation.mutateAsync(deleteItem.id);
+      setDeleteItem(undefined);
+    }
+  };
+
+  const items = Array.isArray({{ entityNameLower }}Query.data) ? {{ entityNameLower }}Query.data : [];
+
+  return (
+    <section className="h-full overflow-y-auto">
+      <Card className="p-4">
+        <CardHeader className="mb-4 flex-row items-start justify-between space-y-0 p-0">
+          <div className="space-y-1.5">
+            <CardTitle className="text-base">{t({ id: '{{ entityNameLower }}.title' })}</CardTitle>
+            <CardDescription>{t({ id: '{{ entityNameLower }}.desc' })}</CardDescription>
+          </div>
+          <Button size="sm" onClick={() => setCreateFormOpen(true)}>
+            {t({ id: '{{ entityNameLower }}.create' })}
+          </Button>
+        </CardHeader>
+
+        <DataTable<{{ entityName }}Item>
+          columns={[
+{% for col in displayColumns %}
+{% if col.drizzleType === 'boolean' %}
+            {
+              header: t({ id: '{{ entityNameLower }}.col{{ col.propertyName | pascal }}' }),
+              cell: (item) =>
+                item.{{ col.propertyName }} ? (
+                  <span className="text-sm text-green-600">{t({ id: '{{ entityNameLower }}.active' })}</span>
+                ) : (
+                  <span className="text-sm text-muted-foreground">{t({ id: '{{ entityNameLower }}.inactive' })}</span>
+                ),
+            },
+{% else %}
+            {
+              header: t({ id: '{{ entityNameLower }}.col{{ col.propertyName | pascal }}' }),
+              cell: (item) => <span>{item.{{ col.propertyName }}}</span>,
+            },
+{% endif %}
+{% endfor %}
+            {
+              header: t({ id: '{{ entityNameLower }}.colActions' }),
+              cell: (item) => (
+                <div className="flex gap-2">
+                  <button
+                    className="text-sm text-primary hover:underline"
+                    onClick={() => setEditItem(item)}
+                    type="button"
+                  >
+                    {t({ id: '{{ entityNameLower }}.edit' })}
+                  </button>
+                  <button
+                    className="text-sm text-destructive hover:underline"
+                    onClick={() => setDeleteItem(item)}
+                    type="button"
+                  >
+                    {t({ id: '{{ entityNameLower }}.delete' })}
+                  </button>
+                </div>
+              ),
+            },
+          ]}
+          data={items}
+          emptyMessage={t({ id: '{{ entityNameLower }}.empty' })}
+          errorMessage={t({ id: '{{ entityNameLower }}.loadFailed' })}
+          isError={ {{ entityNameLower }}Query.isError }
+          isLoading={ {{ entityNameLower }}Query.isLoading }
+          onRetry={() => {{ entityNameLower }}Query.refetch()}
+          retryLabel={t({ id: 'common.retry' })}
+          rowKey={(item) => item.id}
+        />
+      </Card>
+
+      <{{ entityName }}FormDialog
+        key={editItem?.id ?? 'create'}
+        onClose={() => {
+          setCreateFormOpen(false);
+          setEditItem(undefined);
+        }}
+        onSaved={() => {
+          {{ entityNameLower }}Query.refetch();
+          toast.success(t({ id: '{{ entityNameLower }}.saveSuccess' }));
+        }}
+        open={createFormOpen || !!editItem}
+        item={editItem}
+      />
+
+      <ConfirmDialog
+        message={t({ id: '{{ entityNameLower }}.deleteConfirm' })}
+        onClose={() => setDeleteItem(undefined)}
+        onConfirm={handleDeleteConfirm}
+        open={!!deleteItem}
+        title={t({ id: '{{ entityNameLower }}.delete' })}
+      />
+    </section>
+  );
+}

@@ -13,6 +13,7 @@ import { MenusModule } from '../modules/menus/menusModule';
 import { PermissionsModule } from '../modules/permissions/permissionsModule';
 import { RolesModule } from '../modules/roles/rolesModule';
 import { TenantsModule } from '../modules/tenants/tenantsModule';
+import { ModernizerModule } from '../modules/modernizer/modernizerModule';
 import { UsersModule } from '../modules/users/usersModule';
 
 @Module({
@@ -28,6 +29,7 @@ import { UsersModule } from '../modules/users/usersModule';
     PermissionsModule,
     MenusModule,
     TenantsModule,
+    ModernizerModule,
   ],
   providers: [
     OutboxPublisherService,

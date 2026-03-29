@@ -245,5 +245,21 @@
   "audit.action.login": "登录了",
   "audit.allActions": "全部操作",
   "audit.startDate": "开始日期",
-  "audit.endDate": "结束日期"
+  "audit.endDate": "结束日期",
+
+  "nav.modernizer": "代码分析",
+  "modernizer.title": "代码分析",
+  "modernizer.desc": "扫描源码检测质量问题并生成 API 文档。",
+  "modernizer.runAnalysis": "运行分析",
+  "modernizer.running": "分析中...",
+  "modernizer.totalIssues": "问题总数",
+  "modernizer.missingValidation": "缺少校验",
+  "modernizer.colSeverity": "严重程度",
+  "modernizer.colCategory": "类别",
+  "modernizer.colFile": "文件",
+  "modernizer.colLine": "行号",
+  "modernizer.colMessage": "消息",
+  "modernizer.clickToRun": "点击「运行分析」扫描代码库",
+  "modernizer.noIssues": "未发现问题！",
+  "modernizer.loadFailed": "分析运行失败。"
 }
