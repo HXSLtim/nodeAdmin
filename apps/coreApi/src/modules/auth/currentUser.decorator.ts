@@ -8,5 +8,5 @@ export const CurrentUser = createParamDecorator(
       throw new Error('@CurrentUser() used on a route without JwtAuthGuard.');
     }
     return request.user;
-  },
+  }
 );

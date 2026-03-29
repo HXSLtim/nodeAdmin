@@ -17,9 +17,7 @@ export class AuditLogService implements OnModuleDestroy {
   private readonly logger = new Logger(AuditLogService.name);
   private readonly fallbackRows: StoredAuditLog[] = [];
 
-  constructor(
-    @Optional() private readonly repository?: AuditLogRepository,
-  ) {
+  constructor(@Optional() private readonly repository?: AuditLogRepository) {
     if (!this.repository) {
       this.logger.warn('AuditLogRepository not available. Audit logs will use in-memory fallback.');
     }
@@ -53,9 +51,16 @@ export class AuditLogService implements OnModuleDestroy {
   }
 
   async listByFilter(
-    filter: { tenantId: string; userId?: string; action?: string; targetType?: string; startDate?: string; endDate?: string },
+    filter: {
+      tenantId: string;
+      userId?: string;
+      action?: string;
+      targetType?: string;
+      startDate?: string;
+      endDate?: string;
+    },
     page: number,
-    pageSize: number,
+    pageSize: number
   ): Promise<{ items: StoredAuditLog[]; total: number }> {
     if (!this.repository) {
       const filtered = this.fallbackRows.filter((row) => {
@@ -85,7 +90,11 @@ export class AuditLogService implements OnModuleDestroy {
    * Compatibility wrapper for consoleController.
    * Task 4 will migrate the controller to use listByFilter directly.
    */
-  async listByTenant(tenantId: string, limit: number, offset: number = 0): Promise<StoredAuditLog[]> {
+  async listByTenant(
+    tenantId: string,
+    limit: number,
+    offset: number = 0
+  ): Promise<StoredAuditLog[]> {
     const page = Math.floor(offset / Math.max(limit, 1)) + 1;
     const { items } = await this.listByFilter({ tenantId }, page, limit);
     return items;

@@ -81,7 +81,12 @@ export function TenantFormDialog({
         </div>
 
         <div className="mt-6 flex justify-end gap-3">
-          <Button disabled={saveMutation.isPending} type="button" variant="secondary" onClick={handleClose}>
+          <Button
+            disabled={saveMutation.isPending}
+            type="button"
+            variant="secondary"
+            onClick={handleClose}
+          >
             {t({ id: 'common.cancel' })}
           </Button>
           <Button disabled={saveMutation.isPending} type="submit">

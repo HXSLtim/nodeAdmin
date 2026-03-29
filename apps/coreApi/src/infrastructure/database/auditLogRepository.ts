@@ -27,9 +27,7 @@ export interface StoredAuditLog {
 }
 
 export class AuditLogRepository {
-  constructor(
-    private readonly db: NodePgDatabase<typeof schema>,
-  ) {}
+  constructor(private readonly db: NodePgDatabase<typeof schema>) {}
 
   async record(input: {
     action: string;
@@ -52,7 +50,11 @@ export class AuditLogRepository {
     });
   }
 
-  async findByFilter(filter: AuditLogFilter, page: number, pageSize: number): Promise<StoredAuditLog[]> {
+  async findByFilter(
+    filter: AuditLogFilter,
+    page: number,
+    pageSize: number
+  ): Promise<StoredAuditLog[]> {
     const conditions = this.buildConditions(filter);
 
     const rows = await this.db

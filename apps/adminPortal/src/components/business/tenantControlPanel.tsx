@@ -60,7 +60,10 @@ export function TenantControlPanel(): JSX.Element {
 
         <DataTable<TenantItem>
           columns={[
-            { header: t({ id: 'tenant.colName' }), cell: (tenant) => <span className="font-medium">{tenant.name}</span> },
+            {
+              header: t({ id: 'tenant.colName' }),
+              cell: (tenant) => <span className="font-medium">{tenant.name}</span>,
+            },
             {
               header: t({ id: 'tenant.colStatus' }),
               cell: (tenant) =>

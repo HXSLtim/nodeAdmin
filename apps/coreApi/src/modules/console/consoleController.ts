@@ -64,7 +64,7 @@ export class ConsoleController {
     private readonly connectionRegistry: ConnectionRegistry,
     private readonly conversationRepository: ConversationRepository,
     private readonly databaseService: DatabaseService,
-    private readonly tenantsService: TenantsService,
+    private readonly tenantsService: TenantsService
   ) {}
 
   @Get('overview')
@@ -76,9 +76,9 @@ export class ConsoleController {
     let totalUsers = 0;
     try {
       if (this.databaseService.drizzle) {
-        const result = await this.databaseService.drizzle.execute(
-          { sql: 'SELECT COUNT(*)::int AS count FROM users' } as any,
-        );
+        const result = await this.databaseService.drizzle.execute({
+          sql: 'SELECT COUNT(*)::int AS count FROM users',
+        } as any);
         totalUsers = Number(result.rows?.[0]?.count ?? 0);
       }
     } catch {
@@ -106,9 +106,10 @@ export class ConsoleController {
         let roleCount = 0;
         try {
           if (this.databaseService.drizzle) {
-            const result = await this.databaseService.drizzle.execute(
-              { sql: 'SELECT COUNT(*)::int AS count FROM roles WHERE tenant_id = $1', bindings: [t.id] } as any,
-            );
+            const result = await this.databaseService.drizzle.execute({
+              sql: 'SELECT COUNT(*)::int AS count FROM roles WHERE tenant_id = $1',
+              bindings: [t.id],
+            } as any);
             roleCount = Number(result.rows?.[0]?.count ?? 0);
           }
         } catch {
@@ -121,7 +122,7 @@ export class ConsoleController {
           roleCount,
           status: t.is_active ? 'active' : 'inactive',
         };
-      }),
+      })
     );
 
     return { rows: tenantsWithRoles };
@@ -142,7 +143,7 @@ export class ConsoleController {
 
   @Get('conversations')
   async getConversations(
-    @Query('tenantId') tenantId = 'default',
+    @Query('tenantId') tenantId = 'default'
   ): Promise<{ rows: ConversationListResponse[] }> {
     const rows = await this.conversationRepository.listByTenant(tenantId, 50);
 
@@ -189,15 +190,14 @@ export class ConsoleController {
     @Query('action') action?: string,
     @Query('targetType') targetType?: string,
     @Query('startDate') startDate?: string,
-    @Query('endDate') endDate?: string,
+    @Query('endDate') endDate?: string
   ) {
     const parsedPage = Number(pageRaw);
     const page = Number.isInteger(parsedPage) && parsedPage > 0 ? parsedPage : 1;
 
     const parsedPageSize = Number(pageSizeRaw);
-    const pageSize = Number.isInteger(parsedPageSize) && parsedPageSize > 0
-      ? Math.min(parsedPageSize, 100)
-      : 20;
+    const pageSize =
+      Number.isInteger(parsedPageSize) && parsedPageSize > 0 ? Math.min(parsedPageSize, 100) : 20;
 
     const { items, total } = await this.auditLogService.listByFilter(
       {
@@ -209,7 +209,7 @@ export class ConsoleController {
         endDate: endDate || undefined,
       },
       page,
-      pageSize,
+      pageSize
     );
 
     return {

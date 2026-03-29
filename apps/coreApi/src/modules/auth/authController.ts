@@ -32,7 +32,11 @@ export class AuthController {
 
   @Post('login')
   async login(@Body() dto: LoginDto) {
-    const { name, roles, tokens, userId } = await this.authService.login(dto.email, dto.password, dto.tenantId);
+    const { name, roles, tokens, userId } = await this.authService.login(
+      dto.email,
+      dto.password,
+      dto.tenantId
+    );
 
     try {
       await this.auditLogService.record({

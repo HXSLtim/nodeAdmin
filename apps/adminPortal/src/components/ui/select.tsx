@@ -14,7 +14,14 @@ export interface SelectProps {
   className?: string;
 }
 
-export function Select({ options, value, onChange, placeholder, disabled, className: cls }: SelectProps): JSX.Element {
+export function Select({
+  options,
+  value,
+  onChange,
+  placeholder,
+  disabled,
+  className: cls,
+}: SelectProps): JSX.Element {
   return (
     <select
       className={className(
@@ -29,7 +36,9 @@ export function Select({ options, value, onChange, placeholder, disabled, classN
     >
       {placeholder ? <option value="">{placeholder}</option> : null}
       {options.map((opt) => (
-        <option key={opt.value} value={opt.value}>{opt.label}</option>
+        <option key={opt.value} value={opt.value}>
+          {opt.label}
+        </option>
       ))}
     </select>
   );

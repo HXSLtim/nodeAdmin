@@ -22,8 +22,11 @@ export function ProfilePanel(): JSX.Element {
   const [confirmPassword, setConfirmPassword] = useState('');
 
   const changePasswordMutation = useMutation({
-    mutationFn: (payload: { confirmPassword: string; currentPassword: string; newPassword: string }) =>
-      apiClient.post<{ success: boolean }>('/api/v1/auth/change-password', payload),
+    mutationFn: (payload: {
+      confirmPassword: string;
+      currentPassword: string;
+      newPassword: string;
+    }) => apiClient.post<{ success: boolean }>('/api/v1/auth/change-password', payload),
     onSuccess: () => {
       toast.success(t({ id: 'profile.passwordChangeSuccess' }));
       setCurrentPassword('');
@@ -79,7 +82,9 @@ export function ProfilePanel(): JSX.Element {
               </div>
               <div className="flex justify-between">
                 <dt className="text-muted-foreground">{t({ id: 'profile.roles' })}</dt>
-                <dd className="text-foreground">{userRoles.length > 0 ? userRoles.join(', ') : '—'}</dd>
+                <dd className="text-foreground">
+                  {userRoles.length > 0 ? userRoles.join(', ') : '—'}
+                </dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-muted-foreground">{t({ id: 'profile.tenantId' })}</dt>

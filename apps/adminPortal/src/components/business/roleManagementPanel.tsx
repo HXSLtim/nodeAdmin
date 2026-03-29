@@ -60,7 +60,10 @@ export function RoleManagementPanel(): JSX.Element {
 
         <DataTable<RoleItem>
           columns={[
-            { header: t({ id: 'roles.colName' }), cell: (role) => <span className="font-medium">{role.name}</span> },
+            {
+              header: t({ id: 'roles.colName' }),
+              cell: (role) => <span className="font-medium">{role.name}</span>,
+            },
             { header: t({ id: 'roles.colDescription' }), cell: (role) => role.description },
             {
               header: t({ id: 'roles.colSystem' }),

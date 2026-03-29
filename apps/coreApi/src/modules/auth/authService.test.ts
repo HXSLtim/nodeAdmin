@@ -39,10 +39,7 @@ describe('AuthService', () => {
         userId: 'user-1',
       });
 
-      const decoded = verify(accessToken, 'test-access-secret-key') as Record<
-        string,
-        unknown
-      >;
+      const decoded = verify(accessToken, 'test-access-secret-key') as Record<string, unknown>;
       expect(decoded.sub).toBe('user-1');
       expect(decoded.tid).toBe('tenant-1');
       expect(decoded.type).toBe('access');
@@ -57,10 +54,7 @@ describe('AuthService', () => {
         userId: 'user-1',
       });
 
-      const decoded = verify(refreshToken, 'test-refresh-secret-key') as Record<
-        string,
-        unknown
-      >;
+      const decoded = verify(refreshToken, 'test-refresh-secret-key') as Record<string, unknown>;
       expect(decoded.sub).toBe('user-1');
       expect(decoded.tid).toBe('tenant-1');
       expect(decoded.type).toBe('refresh');
@@ -74,10 +68,7 @@ describe('AuthService', () => {
         userId: 'user-1',
       });
 
-      const decoded = verify(accessToken, 'test-access-secret-key') as Record<
-        string,
-        unknown
-      >;
+      const decoded = verify(accessToken, 'test-access-secret-key') as Record<string, unknown>;
       expect(decoded.roles).toEqual(['admin', 'viewer']);
     });
 
@@ -88,10 +79,7 @@ describe('AuthService', () => {
         userId: 'user-1',
       });
 
-      const decoded = verify(accessToken, 'test-access-secret-key') as Record<
-        string,
-        unknown
-      >;
+      const decoded = verify(accessToken, 'test-access-secret-key') as Record<string, unknown>;
       expect(decoded.roles).toEqual(['admin', 'viewer']);
     });
   });
@@ -145,20 +133,18 @@ describe('AuthService', () => {
 
   describe('register', () => {
     it('should throw when pool is null (no DATABASE_URL)', async () => {
-      await expect(
-        service.register('test@example.com', 'password123', 'tenant-1')
-      ).rejects.toThrow('Database not available.');
+      await expect(service.register('test@example.com', 'password123', 'tenant-1')).rejects.toThrow(
+        'Database not available.'
+      );
     });
 
     it('should throw when email already exists', async () => {
-      const mockPool = createMockPool([
-        { rows: [{ id: 'existing-user' }], rowCount: 1 },
-      ]);
+      const mockPool = createMockPool([{ rows: [{ id: 'existing-user' }], rowCount: 1 }]);
       (service as any).pool = mockPool;
 
-      await expect(
-        service.register('test@example.com', 'password123', 'tenant-1')
-      ).rejects.toThrow('Email already registered');
+      await expect(service.register('test@example.com', 'password123', 'tenant-1')).rejects.toThrow(
+        'Email already registered'
+      );
     });
 
     it('should return userId and tokens on success', async () => {
@@ -200,9 +186,9 @@ describe('AuthService', () => {
 
       (service as any).pool = mockPool;
 
-      await expect(
-        service.register('test@example.com', 'password123', 'tenant-1')
-      ).rejects.toThrow('DB insert error');
+      await expect(service.register('test@example.com', 'password123', 'tenant-1')).rejects.toThrow(
+        'DB insert error'
+      );
 
       // Verify ROLLBACK was called
       const rollbackCall = mockClient.calls.find((c) => c.sql === 'ROLLBACK');
@@ -214,18 +200,18 @@ describe('AuthService', () => {
 
   describe('login', () => {
     it('should throw when pool is null', async () => {
-      await expect(
-        service.login('test@example.com', 'password123', 'tenant-1')
-      ).rejects.toThrow('Database not available.');
+      await expect(service.login('test@example.com', 'password123', 'tenant-1')).rejects.toThrow(
+        'Database not available.'
+      );
     });
 
     it('should throw for unknown email', async () => {
       const mockPool = createMockPool([{ rows: [], rowCount: 0 }]);
       (service as any).pool = mockPool;
 
-      await expect(
-        service.login('unknown@example.com', 'password123', 'tenant-1')
-      ).rejects.toThrow('Invalid email or password.');
+      await expect(service.login('unknown@example.com', 'password123', 'tenant-1')).rejects.toThrow(
+        'Invalid email or password.'
+      );
     });
 
     it('should throw for inactive user', async () => {
@@ -246,9 +232,9 @@ describe('AuthService', () => {
       ] as QueryResult[]);
       (service as any).pool = mockPool;
 
-      await expect(
-        service.login('test@example.com', 'password123', 'tenant-1')
-      ).rejects.toThrow('Account is disabled.');
+      await expect(service.login('test@example.com', 'password123', 'tenant-1')).rejects.toThrow(
+        'Account is disabled.'
+      );
     });
 
     it('should throw for wrong password', async () => {
@@ -271,9 +257,9 @@ describe('AuthService', () => {
 
       (service as any).pool = mockPool;
 
-      await expect(
-        service.login('test@example.com', 'wrong-password', 'tenant-1')
-      ).rejects.toThrow('Invalid email or password.');
+      await expect(service.login('test@example.com', 'wrong-password', 'tenant-1')).rejects.toThrow(
+        'Invalid email or password.'
+      );
     });
 
     it('should return userId and tokens for valid credentials', async () => {

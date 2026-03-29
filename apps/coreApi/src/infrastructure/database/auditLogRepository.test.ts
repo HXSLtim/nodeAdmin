@@ -27,7 +27,10 @@ function createCountChain(rows: Array<{ total: number }>) {
   return chain;
 }
 
-function createMockDb(selectRows: unknown[] = [], countRows: Array<{ total: number }> = [{ total: 5 }]) {
+function createMockDb(
+  selectRows: unknown[] = [],
+  countRows: Array<{ total: number }> = [{ total: 5 }]
+) {
   const selChain = createSelectChain(selectRows);
   const cntChain = createCountChain(countRows);
 

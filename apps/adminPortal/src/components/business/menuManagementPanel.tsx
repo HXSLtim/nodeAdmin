@@ -105,7 +105,9 @@ export function MenuManagementPanel(): JSX.Element {
     },
     {
       header: t({ id: 'menus.colPath' }),
-      cell: (node) => <span className="font-mono text-xs text-muted-foreground">{node.menu.path}</span>,
+      cell: (node) => (
+        <span className="font-mono text-xs text-muted-foreground">{node.menu.path}</span>
+      ),
       className: 'hidden sm:table-cell',
     },
     {

@@ -130,11 +130,23 @@ export function Sidebar(): JSX.Element {
           to="/profile"
           onClick={() => setMobileMenuOpen(false)}
         >
-          <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-            <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" strokeLinecap="round" strokeLinejoin="round" />
+          <svg
+            className="h-4 w-4 shrink-0"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            viewBox="0 0 24 24"
+          >
+            <path
+              d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
             <circle cx="12" cy="7" r="4" />
           </svg>
-          {!sidebarCollapsed ? <span className="truncate">{t({ id: 'profile.title' })}</span> : null}
+          {!sidebarCollapsed ? (
+            <span className="truncate">{t({ id: 'profile.title' })}</span>
+          ) : null}
         </NavLink>
         <p className="mb-2 text-center text-xs text-muted-foreground">{t({ id: 'version' })}</p>
         <button
@@ -143,11 +155,23 @@ export function Sidebar(): JSX.Element {
           type="button"
         >
           {sidebarCollapsed ? (
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <svg
+              className="h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              viewBox="0 0 24 24"
+            >
               <path d="M9 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           ) : (
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <svg
+              className="h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              viewBox="0 0 24 24"
+            >
               <path d="M15 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           )}

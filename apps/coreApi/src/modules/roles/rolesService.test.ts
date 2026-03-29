@@ -56,7 +56,13 @@ describe('RolesService', () => {
       const mockPool = createMockPool([
         {
           rows: [
-            { id: 'r-1', name: 'admin', description: 'Admin', is_system: false, permissions: [{ id: 'p-1', code: 'users:read', name: 'Read Users' }] },
+            {
+              id: 'r-1',
+              name: 'admin',
+              description: 'Admin',
+              is_system: false,
+              permissions: [{ id: 'p-1', code: 'users:read', name: 'Read Users' }],
+            },
           ],
           rowCount: 1,
         },
@@ -119,7 +125,9 @@ describe('RolesService', () => {
 
   describe('update', () => {
     it('should throw when pool is null', async () => {
-      await expect(service.update('t-1', 'r-1', { name: 'x' })).rejects.toThrow('Database not available');
+      await expect(service.update('t-1', 'r-1', { name: 'x' })).rejects.toThrow(
+        'Database not available'
+      );
     });
 
     it('should throw NotFoundException when role not found', async () => {
@@ -130,12 +138,12 @@ describe('RolesService', () => {
     });
 
     it('should throw BadRequestException for system roles', async () => {
-      const mockPool = createMockPool([
-        { rows: [{ is_system: true }], rowCount: 1 },
-      ]);
+      const mockPool = createMockPool([{ rows: [{ is_system: true }], rowCount: 1 }]);
       (service as any).pool = mockPool;
 
-      await expect(service.update('t-1', 'r-1', { name: 'x' })).rejects.toThrow('Cannot modify system roles');
+      await expect(service.update('t-1', 'r-1', { name: 'x' })).rejects.toThrow(
+        'Cannot modify system roles'
+      );
     });
 
     it('should update role and permissions in transaction', async () => {
@@ -154,7 +162,10 @@ describe('RolesService', () => {
       mockPool.connect = vi.fn(async () => mockClient);
       (service as any).pool = mockPool;
 
-      const result = await service.update('t-1', 'r-1', { name: 'updated', permissionIds: ['p-1'] });
+      const result = await service.update('t-1', 'r-1', {
+        name: 'updated',
+        permissionIds: ['p-1'],
+      });
       expect(result.name).toBe('updated');
     });
   });

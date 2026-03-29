@@ -46,7 +46,12 @@ describe('RolesController', () => {
   describe('create', () => {
     it('should delegate to service with dto fields', async () => {
       service.create.mockResolvedValue({ id: 'r-1' });
-      await controller.create({ tenantId: 't-1', name: 'editor', description: 'desc', permissionIds: ['p-1'] } as any);
+      await controller.create({
+        tenantId: 't-1',
+        name: 'editor',
+        description: 'desc',
+        permissionIds: ['p-1'],
+      } as any);
       expect(service.create).toHaveBeenCalledWith('t-1', 'editor', 'desc', ['p-1']);
     });
   });

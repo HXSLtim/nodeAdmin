@@ -56,9 +56,7 @@ export function AuditLogPanel(): JSX.Element {
 
   const query = useQuery({
     queryFn: () =>
-      apiClient.get<PaginatedResponse<AuditLogItem>>(
-        `/api/v1/console/audit-logs?${queryParams}`,
-      ),
+      apiClient.get<PaginatedResponse<AuditLogItem>>(`/api/v1/console/audit-logs?${queryParams}`),
     queryKey: ['audit-logs', queryParams],
   });
 
@@ -71,7 +69,7 @@ export function AuditLogPanel(): JSX.Element {
       ? rawItems.filter(
           (item) =>
             item.userId.toLowerCase().includes(search.toLowerCase()) ||
-            item.action.toLowerCase().includes(search.toLowerCase()),
+            item.action.toLowerCase().includes(search.toLowerCase())
         )
       : rawItems;
 

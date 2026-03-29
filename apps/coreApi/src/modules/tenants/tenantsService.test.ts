@@ -67,13 +67,13 @@ describe('TenantsService', () => {
 
   describe('create', () => {
     it('should throw when pool is null', async () => {
-      await expect(service.create({ name: 'T', slug: 't' })).rejects.toThrow('Database not available');
+      await expect(service.create({ name: 'T', slug: 't' })).rejects.toThrow(
+        'Database not available'
+      );
     });
 
     it('should throw ConflictException for duplicate slug', async () => {
-      const mockPool = createMockPool([
-        { rows: [{ id: 'existing' }], rowCount: 1 },
-      ]);
+      const mockPool = createMockPool([{ rows: [{ id: 'existing' }], rowCount: 1 }]);
       (service as any).pool = mockPool;
 
       await expect(service.create({ name: 'T', slug: 'existing-slug' })).rejects.toThrow(
@@ -85,7 +85,10 @@ describe('TenantsService', () => {
       const mockPool = createMockPool([
         { rows: [], rowCount: 0 }, // slug check
         { rows: [], rowCount: 1 }, // INSERT
-        { rows: [{ id: 't-1', name: 'New Tenant', slug: 'new-tenant', is_active: true }], rowCount: 1 }, // findById
+        {
+          rows: [{ id: 't-1', name: 'New Tenant', slug: 'new-tenant', is_active: true }],
+          rowCount: 1,
+        }, // findById
       ]);
       (service as any).pool = mockPool;
 
@@ -117,7 +120,9 @@ describe('TenantsService', () => {
       ]);
       (service as any).pool = mockPool;
 
-      await expect(service.update('nonexistent', { name: 'X' })).rejects.toThrow('Tenant not found');
+      await expect(service.update('nonexistent', { name: 'X' })).rejects.toThrow(
+        'Tenant not found'
+      );
     });
 
     it('should update fields and return updated tenant', async () => {
@@ -154,9 +159,7 @@ describe('TenantsService', () => {
     });
 
     it('should delete tenant', async () => {
-      const mockPool = createMockPool([
-        { rows: [{ id: 't-1' }], rowCount: 1 },
-      ]);
+      const mockPool = createMockPool([{ rows: [{ id: 't-1' }], rowCount: 1 }]);
       (service as any).pool = mockPool;
 
       await service.remove('t-1');

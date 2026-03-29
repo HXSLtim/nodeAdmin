@@ -48,7 +48,13 @@ describe('UsersController', () => {
   describe('create', () => {
     it('should delegate to service with dto fields', async () => {
       service.create.mockResolvedValue({ id: 'u-1' });
-      await controller.create({ tenantId: 't-1', email: 'a@b.com', password: 'p', name: 'N', roleIds: ['r-1'] } as any);
+      await controller.create({
+        tenantId: 't-1',
+        email: 'a@b.com',
+        password: 'p',
+        name: 'N',
+        roleIds: ['r-1'],
+      } as any);
       expect(service.create).toHaveBeenCalledWith('t-1', 'a@b.com', 'p', 'N', ['r-1']);
     });
   });

@@ -124,9 +124,9 @@ describe('UsersService', () => {
 
   describe('create', () => {
     it('should throw when pool is null', async () => {
-      await expect(
-        service.create('t-1', 'a@b.com', 'pass', 'Name')
-      ).rejects.toThrow('Database not available');
+      await expect(service.create('t-1', 'a@b.com', 'pass', 'Name')).rejects.toThrow(
+        'Database not available'
+      );
     });
 
     it('should create user with transaction and return user', async () => {
@@ -171,9 +171,9 @@ describe('UsersService', () => {
       mockPool.connect = vi.fn(async () => mockClient);
       (service as any).pool = mockPool;
 
-      await expect(
-        service.create('t-1', 'a@b.com', 'pass', 'Name')
-      ).rejects.toThrow('DB insert error');
+      await expect(service.create('t-1', 'a@b.com', 'pass', 'Name')).rejects.toThrow(
+        'DB insert error'
+      );
 
       const rollbackCall = mockClient.calls.find((c) => c.sql === 'ROLLBACK');
       expect(rollbackCall).toBeDefined();
@@ -184,9 +184,9 @@ describe('UsersService', () => {
 
   describe('update', () => {
     it('should throw when pool is null', async () => {
-      await expect(
-        service.update('t-1', 'u-1', { name: 'New' })
-      ).rejects.toThrow('Database not available');
+      await expect(service.update('t-1', 'u-1', { name: 'New' })).rejects.toThrow(
+        'Database not available'
+      );
     });
 
     it('should update fields and commit transaction', async () => {

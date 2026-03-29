@@ -53,7 +53,11 @@ export function Timeline({
         <div className="py-8 text-center">
           <p className="text-sm text-destructive">{errorMessage}</p>
           {onRetry ? (
-            <button className="mt-2 text-xs text-primary hover:underline" onClick={onRetry} type="button">
+            <button
+              className="mt-2 text-xs text-primary hover:underline"
+              onClick={onRetry}
+              type="button"
+            >
               {loadMoreLabel}
             </button>
           ) : null}

@@ -23,8 +23,28 @@ describe('MenusService', () => {
 
     it('should build tree from flat rows', async () => {
       const rows = [
-        { id: 'm-1', parent_id: null, name: 'Root', path: '/root', icon: null, sort_order: 0, permission_code: null, is_visible: true, created_at: new Date() },
-        { id: 'm-2', parent_id: 'm-1', name: 'Child', path: '/root/child', icon: null, sort_order: 1, permission_code: null, is_visible: true, created_at: new Date() },
+        {
+          id: 'm-1',
+          parent_id: null,
+          name: 'Root',
+          path: '/root',
+          icon: null,
+          sort_order: 0,
+          permission_code: null,
+          is_visible: true,
+          created_at: new Date(),
+        },
+        {
+          id: 'm-2',
+          parent_id: 'm-1',
+          name: 'Child',
+          path: '/root/child',
+          icon: null,
+          sort_order: 1,
+          permission_code: null,
+          is_visible: true,
+          created_at: new Date(),
+        },
       ];
       const mockPool = createMockPool([{ rows, rowCount: 2 }]);
       (service as any).pool = mockPool;
@@ -72,7 +92,22 @@ describe('MenusService', () => {
     it('should insert menu and return it', async () => {
       const mockPool = createMockPool([
         { rows: [], rowCount: 1 }, // INSERT
-        { rows: [{ id: 'm-1', name: 'Menu1', parent_id: null, path: null, icon: null, sort_order: 0, permission_code: null, is_visible: true, created_at: new Date() }], rowCount: 1 }, // findById
+        {
+          rows: [
+            {
+              id: 'm-1',
+              name: 'Menu1',
+              parent_id: null,
+              path: null,
+              icon: null,
+              sort_order: 0,
+              permission_code: null,
+              is_visible: true,
+              created_at: new Date(),
+            },
+          ],
+          rowCount: 1,
+        }, // findById
       ]);
       (service as any).pool = mockPool;
 
@@ -90,7 +125,22 @@ describe('MenusService', () => {
 
     it('should return menu unchanged when no fields provided', async () => {
       const mockPool = createMockPool([
-        { rows: [{ id: 'm-1', name: 'Menu1', parent_id: null, path: null, icon: null, sort_order: 0, permission_code: null, is_visible: true, created_at: new Date() }], rowCount: 1 },
+        {
+          rows: [
+            {
+              id: 'm-1',
+              name: 'Menu1',
+              parent_id: null,
+              path: null,
+              icon: null,
+              sort_order: 0,
+              permission_code: null,
+              is_visible: true,
+              created_at: new Date(),
+            },
+          ],
+          rowCount: 1,
+        },
       ]);
       (service as any).pool = mockPool;
 
@@ -101,7 +151,22 @@ describe('MenusService', () => {
     it('should update specified fields', async () => {
       const mockPool = createMockPool([
         { rows: [], rowCount: 1 }, // UPDATE
-        { rows: [{ id: 'm-1', name: 'Updated', parent_id: null, path: null, icon: null, sort_order: 0, permission_code: null, is_visible: true, created_at: new Date() }], rowCount: 1 }, // findById
+        {
+          rows: [
+            {
+              id: 'm-1',
+              name: 'Updated',
+              parent_id: null,
+              path: null,
+              icon: null,
+              sort_order: 0,
+              permission_code: null,
+              is_visible: true,
+              created_at: new Date(),
+            },
+          ],
+          rowCount: 1,
+        }, // findById
       ]);
       (service as any).pool = mockPool;
 
@@ -219,8 +284,28 @@ describe('MenusService', () => {
 
     it('should return menus for user roles as tree', async () => {
       const rows = [
-        { id: 'm-1', parent_id: null, name: 'Dashboard', path: '/dashboard', icon: 'home', sort_order: 0, permission_code: null, is_visible: true, created_at: new Date() },
-        { id: 'm-2', parent_id: 'm-1', name: 'Analytics', path: '/dashboard/analytics', icon: 'chart', sort_order: 1, permission_code: null, is_visible: true, created_at: new Date() },
+        {
+          id: 'm-1',
+          parent_id: null,
+          name: 'Dashboard',
+          path: '/dashboard',
+          icon: 'home',
+          sort_order: 0,
+          permission_code: null,
+          is_visible: true,
+          created_at: new Date(),
+        },
+        {
+          id: 'm-2',
+          parent_id: 'm-1',
+          name: 'Analytics',
+          path: '/dashboard/analytics',
+          icon: 'chart',
+          sort_order: 1,
+          permission_code: null,
+          is_visible: true,
+          created_at: new Date(),
+        },
       ];
       const mockPool = createMockPool([{ rows, rowCount: 2 }]);
       (service as any).pool = mockPool;

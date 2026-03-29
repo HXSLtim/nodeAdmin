@@ -30,10 +30,7 @@ describe('AuthController', () => {
   beforeEach(() => {
     authService = createMockAuthService();
     auditLogService = createMockAuditLogService();
-    controller = new AuthController(
-      authService as any,
-      auditLogService as any
-    );
+    controller = new AuthController(authService as any, auditLogService as any);
   });
 
   describe('register', () => {
@@ -52,9 +49,7 @@ describe('AuthController', () => {
         name: 'Test',
       } as any);
 
-      expect(authService.register).toHaveBeenCalledWith(
-        'test@example.com', 'pass', 't-1', 'Test'
-      );
+      expect(authService.register).toHaveBeenCalledWith('test@example.com', 'pass', 't-1', 'Test');
       expect(result.identity).toEqual({ roles: ['viewer'], userId: 'user-1', tenantId: 't-1' });
       expect(result.name).toBe('Test');
       expect(result.accessToken).toBe('at');

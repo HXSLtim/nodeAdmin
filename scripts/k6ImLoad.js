@@ -128,7 +128,7 @@ export function issueToken(baseUrl, smokeTenantId, vu) {
     }),
     {
       headers: TOKEN_REQUEST_HEADERS,
-    },
+    }
   );
 
   apiTokenDuration.add(tokenResponse.timings.duration);
@@ -178,32 +178,32 @@ export function runApiSmoke() {
   const overviewResponse = requestConsoleEndpoint(
     '/api/v1/console/overview',
     accessToken,
-    'overview status 200',
+    'overview status 200'
   );
   const tenantsResponse = requestConsoleEndpoint(
     '/api/v1/console/tenants',
     accessToken,
-    'tenants status 200',
+    'tenants status 200'
   );
   const releaseChecksResponse = requestConsoleEndpoint(
     '/api/v1/console/release-checks',
     accessToken,
-    'release checks status 200',
+    'release checks status 200'
   );
   const conversationsResponse = requestConsoleEndpoint(
     '/api/v1/console/conversations',
     accessToken,
-    'conversations status 200',
+    'conversations status 200'
   );
   const permissionsResponse = requestConsoleEndpoint(
     `/api/v1/console/permissions?roles=${permissionsRole}`,
     accessToken,
-    'permissions status 200',
+    'permissions status 200'
   );
   const auditLogsResponse = requestConsoleEndpoint(
     `/api/v1/console/audit-logs?tenantId=${encodedTenantId}&limit=50`,
     accessToken,
-    'audit logs status 200',
+    'audit logs status 200'
   );
 
   const consoleRequestsAverageDuration =

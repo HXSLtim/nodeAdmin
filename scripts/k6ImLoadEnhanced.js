@@ -97,7 +97,7 @@ function issueToken(baseUrl, smokeTenantId, vu) {
       headers: {
         'Content-Type': 'application/json',
       },
-    },
+    }
   );
 
   authTokenLatency.add(Date.now() - tokenStartAt);
@@ -165,7 +165,7 @@ export function runE2ESmoke() {
               tenantId,
             },
           ],
-        }),
+        })
       );
 
       // Send message with traceId
@@ -187,7 +187,7 @@ export function runE2ESmoke() {
               messageType: 'text',
             },
           ],
-        }),
+        })
       );
 
       traceIdPropagation.add(1);

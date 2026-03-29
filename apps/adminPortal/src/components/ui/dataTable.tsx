@@ -1,7 +1,12 @@
 import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from '@/components/ui/table';
 
 export interface DataColumn<T> {
@@ -33,8 +38,16 @@ export interface DataTableProps<T> {
 }
 
 export function DataTable<T>({
-  columns, data, isLoading, isError, errorMessage, onRetry,
-  emptyMessage, retryLabel, pagination, rowKey,
+  columns,
+  data,
+  isLoading,
+  isError,
+  errorMessage,
+  onRetry,
+  emptyMessage,
+  retryLabel,
+  pagination,
+  rowKey,
 }: DataTableProps<T>): JSX.Element {
   const colSpan = columns.length;
 
@@ -44,26 +57,34 @@ export function DataTable<T>({
         <TableHeader>
           <TableRow>
             {columns.map((col, i) => (
-              <TableHead key={i} className={col.className}>{col.header}</TableHead>
+              <TableHead key={i} className={col.className}>
+                {col.header}
+              </TableHead>
             ))}
           </TableRow>
         </TableHeader>
         <TableBody>
-          {isLoading ? Array.from({ length: 3 }).map((_, idx) => (
-            <TableRow key={`skeleton-${idx}`}>
-              {columns.map((_, ci) => (
-                <TableCell key={ci}>
-                  <div className="h-4 w-full animate-pulse rounded bg-muted" />
-                </TableCell>
-              ))}
-            </TableRow>
-          )) : null}
+          {isLoading
+            ? Array.from({ length: 3 }).map((_, idx) => (
+                <TableRow key={`skeleton-${idx}`}>
+                  {columns.map((_, ci) => (
+                    <TableCell key={ci}>
+                      <div className="h-4 w-full animate-pulse rounded bg-muted" />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            : null}
           {isError ? (
             <TableRow>
               <TableCell className="py-8 text-center" colSpan={colSpan}>
                 <p className="text-sm text-destructive">{errorMessage}</p>
                 {onRetry ? (
-                  <button className="mt-2 text-xs text-primary hover:underline" onClick={onRetry} type="button">
+                  <button
+                    className="mt-2 text-xs text-primary hover:underline"
+                    onClick={onRetry}
+                    type="button"
+                  >
                     {retryLabel}
                   </button>
                 ) : null}
@@ -72,7 +93,10 @@ export function DataTable<T>({
           ) : null}
           {!isLoading && !isError && data.length === 0 ? (
             <TableRow>
-              <TableCell className="py-8 text-center text-sm text-muted-foreground" colSpan={colSpan}>
+              <TableCell
+                className="py-8 text-center text-sm text-muted-foreground"
+                colSpan={colSpan}
+              >
                 {emptyMessage}
               </TableCell>
             </TableRow>
@@ -81,7 +105,9 @@ export function DataTable<T>({
             ? data.map((row) => (
                 <TableRow key={rowKey(row)}>
                   {columns.map((col, ci) => (
-                    <TableCell key={ci} className={col.className}>{col.cell(row)}</TableCell>
+                    <TableCell key={ci} className={col.className}>
+                      {col.cell(row)}
+                    </TableCell>
                   ))}
                 </TableRow>
               ))

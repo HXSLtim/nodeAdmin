@@ -9,7 +9,7 @@ function createHttpContext(
   method: string,
   url: string,
   user?: AuthIdentity,
-  body?: Record<string, unknown>,
+  body?: Record<string, unknown>
 ): ExecutionContext {
   return {
     switchToHttp: () => ({
@@ -84,7 +84,9 @@ describe('AuditInterceptor', () => {
   });
 
   it('records audit log for PATCH request', async () => {
-    const ctx = createHttpContext('PATCH', '/api/v1/tenants/tenant-1', mockIdentity, { name: 'Updated' });
+    const ctx = createHttpContext('PATCH', '/api/v1/tenants/tenant-1', mockIdentity, {
+      name: 'Updated',
+    });
     const next = createCallHandler();
 
     await interceptor.intercept(ctx, next).toPromise();
@@ -104,7 +106,10 @@ describe('AuditInterceptor', () => {
   });
 
   it('skips auth login endpoint', async () => {
-    const ctx = createHttpContext('POST', '/api/v1/auth/login', mockIdentity, { email: 'test@test.com', password: 'secret' });
+    const ctx = createHttpContext('POST', '/api/v1/auth/login', mockIdentity, {
+      email: 'test@test.com',
+      password: 'secret',
+    });
     const next = createCallHandler();
 
     await interceptor.intercept(ctx, next).toPromise();
@@ -167,7 +172,9 @@ describe('AuditInterceptor', () => {
   });
 
   it('handles URL with trailing path segments beyond targetId', async () => {
-    const ctx = createHttpContext('POST', '/api/v1/conversations/conv-1/messages', mockIdentity, { content: 'hi' });
+    const ctx = createHttpContext('POST', '/api/v1/conversations/conv-1/messages', mockIdentity, {
+      content: 'hi',
+    });
     const next = createCallHandler();
 
     await interceptor.intercept(ctx, next).toPromise();
@@ -178,7 +185,9 @@ describe('AuditInterceptor', () => {
   });
 
   it('strips query string when parsing targetId from URL', async () => {
-    const ctx = createHttpContext('PUT', '/api/v1/users/user-123?fields=name', mockIdentity, { name: 'Bob' });
+    const ctx = createHttpContext('PUT', '/api/v1/users/user-123?fields=name', mockIdentity, {
+      name: 'Bob',
+    });
     const next = createCallHandler();
 
     await interceptor.intercept(ctx, next).toPromise();

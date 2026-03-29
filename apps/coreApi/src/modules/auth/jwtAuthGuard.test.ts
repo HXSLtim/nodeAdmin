@@ -10,9 +10,13 @@ import type { AuthIdentity } from './authIdentity';
 
 function createHttpExecutionContext(
   headers: Record<string, string>,
-  url: string,
+  url: string
 ): ExecutionContext {
-  const request = { headers, url } as { headers: Record<string, string>; url: string; user?: AuthIdentity };
+  const request = { headers, url } as {
+    headers: Record<string, string>;
+    url: string;
+    user?: AuthIdentity;
+  };
   return {
     switchToHttp: () => ({
       getRequest: () => request,
@@ -38,7 +42,7 @@ describe('JwtAuthGuard', () => {
 
     const ctx = createHttpExecutionContext(
       { authorization: 'Bearer valid-token' },
-      '/api/v1/users',
+      '/api/v1/users'
     );
 
     const result = guard.canActivate(ctx);
@@ -66,10 +70,7 @@ describe('JwtAuthGuard', () => {
     } as unknown as AuthService;
     const guard = new JwtAuthGuard(authService);
 
-    const ctx = createHttpExecutionContext(
-      { authorization: 'Basic abc123' },
-      '/api/v1/users',
-    );
+    const ctx = createHttpExecutionContext({ authorization: 'Basic abc123' }, '/api/v1/users');
 
     expect(() => guard.canActivate(ctx)).toThrow(UnauthorizedException);
   });
@@ -81,10 +82,7 @@ describe('JwtAuthGuard', () => {
     const authService = { verifyAccessToken } as unknown as AuthService;
     const guard = new JwtAuthGuard(authService);
 
-    const ctx = createHttpExecutionContext(
-      { authorization: 'Bearer bad-token' },
-      '/api/v1/users',
-    );
+    const ctx = createHttpExecutionContext({ authorization: 'Bearer bad-token' }, '/api/v1/users');
 
     expect(() => guard.canActivate(ctx)).toThrow(UnauthorizedException);
   });
