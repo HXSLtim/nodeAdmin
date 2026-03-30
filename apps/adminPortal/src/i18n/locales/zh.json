@@ -69,6 +69,9 @@
   "im.dragDropHint": "拖拽图片到此处上传",
   "im.messageDeleted": "此消息已删除。",
   "im.markAsRead": "标记已读",
+  "im.statusOnline": "在线",
+  "im.statusAway": "离开",
+  "im.statusDnd": "免打扰",
 
   "users.title": "用户管理",
   "users.desc": "管理系统用户、分配角色。",

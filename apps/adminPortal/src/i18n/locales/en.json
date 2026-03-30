@@ -70,6 +70,9 @@
   "im.messageDeleted": "This message was deleted.",
   "im.markAsRead": "Mark as read",
   "im.edited": "(edited)",
+  "im.statusOnline": "Online",
+  "im.statusAway": "Away",
+  "im.statusDnd": "Do Not Disturb",
 
   "users.title": "User Management",
   "users.desc": "Manage system users and assign roles.",

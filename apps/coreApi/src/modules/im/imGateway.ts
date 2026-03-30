@@ -27,6 +27,7 @@ import { TypingStatusDto } from './dto/typingStatusDto';
 import { EditMessageDto } from './dto/editMessageDto';
 import { DeleteMessageDto } from './dto/deleteMessageDto';
 import { MarkAsReadDto } from './dto/markAsReadDto';
+import { PresenceStatusDto } from './dto/presenceStatusDto';
 import { WsTenantGuard } from './guards/wsTenantGuard';
 import { ImConversationService } from './services/imConversationService';
 import { ImMessageService } from './services/imMessageService';
@@ -396,6 +397,39 @@ export class ImGateway
 
     const roomKey = this.conversationService.toRoomKey(context.tenantId, context.conversationId);
     this.server.to(roomKey).emit('readReceiptUpdated', receipt);
+
+    return { ok: true };
+  }
+
+  @SubscribeMessage('setPresenceStatus')
+  @UseGuards(WsTenantGuard)
+  setPresenceStatus(
+    @ConnectedSocket() client: Socket,
+    @MessageBody(
+      new ValidationPipe({
+        exceptionFactory: (errors) => new WsException(errors),
+        forbidNonWhitelisted: true,
+        transform: true,
+        whitelist: true,
+      })
+    )
+    payload: PresenceStatusDto
+  ): { ok: true } {
+    const identity = this.requireIdentity(client);
+    const context = this.conversationService.getContext(client.id);
+    if (!context) {
+      throw new WsException('Please join a conversation before setting presence status.');
+    }
+
+    const event = this.presenceService.setStatus(
+      context.tenantId,
+      context.conversationId,
+      context.userId,
+      payload.status
+    );
+
+    const roomKey = this.conversationService.toRoomKey(context.tenantId, context.conversationId);
+    this.server.to(roomKey).emit('presenceStatusChanged', event);
 
     return { ok: true };
   }

@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useIntl } from 'react-intl';
 import { NavLink } from 'react-router-dom';
-import type { ImMessageType } from '@nodeadmin/shared-types';
+import type { ImMessageType, ImPresenceStatus } from '@nodeadmin/shared-types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,6 +15,7 @@ import {
   type ImMessageDeletedEvent,
   type ImMessageEditedEvent,
   type ImPresenceEvent,
+  type ImPresenceStatusEvent,
 } from '@/hooks/useImSocket';
 import { className } from '@/lib/className';
 import { useApiClient } from '@/hooks/useApiClient';
@@ -169,6 +170,8 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
   const [typingUsers, setTypingUsers] = useState<TypingMap>({});
   const [offlineQueueCount, setOfflineQueueCount] = useState(0);
   const [presenceMembers, setPresenceMembers] = React.useState<Set<string>>(new Set());
+  const [presenceStatusMap, setPresenceStatusMap] = React.useState<Map<string, ImPresenceStatus>>(new Map());
+  const [myPresenceStatus, setMyPresenceStatus] = useState<ImPresenceStatus>('online');
   const [viewportHeight, setViewportHeight] = useState(320);
   const [pendingImage, setPendingImage] = useState<PendingImage | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -393,7 +396,20 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
         next.add(event.userId);
       } else if (event.event === 'left') {
         next.delete(event.userId);
+        setPresenceStatusMap((prevMap) => {
+          const nextMap = new Map(prevMap);
+          nextMap.delete(event.userId);
+          return nextMap;
+        });
       }
+      return next;
+    });
+  }, []);
+
+  const handlePresenceStatusChanged = React.useCallback((event: ImPresenceStatusEvent) => {
+    setPresenceStatusMap((prev) => {
+      const next = new Map(prev);
+      next.set(event.userId, event.status);
       return next;
     });
   }, []);
@@ -412,7 +428,7 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
     [upsertMessage]
   );
 
-  const { emitDelete, emitEdit, emitMarkAsRead, emitTyping, emitWithAck } = useImSocket({
+  const { emitDelete, emitEdit, emitMarkAsRead, emitSetPresenceStatus, emitTyping, emitWithAck } = useImSocket({
     accessToken,
     conversationId: imConfig?.conversationId ?? '',
     onConnectionStateChange: setConnectionState,
@@ -421,6 +437,7 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
     onMessageDeleted: handleMessageDeleted,
     onMessageReceived: handleMessageReceived,
     onPresenceChanged: handlePresenceChanged,
+    onPresenceStatusChanged: handlePresenceStatusChanged,
     onTypingChanged: handleTypingChanged,
     socketUrl,
   });
@@ -839,6 +856,20 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
               <h2 className="text-base font-semibold">{t({ id: 'im.conversation' })}</h2>
               <div className="text-sm text-gray-500">
                 {t({ id: 'im.online' }, { count: presenceMembers.size })}
+                {presenceMembers.size > 0 ? (
+                  <span className="ml-2">
+                    {Array.from(presenceMembers).map((userId) => {
+                      const status = presenceStatusMap.get(userId) ?? 'online';
+                      const statusColor = status === 'online' ? 'bg-green-500' : status === 'away' ? 'bg-yellow-500' : 'bg-red-500';
+                      return (
+                        <span key={userId} className="mr-1 inline-flex items-center gap-0.5" title={`${userId} — ${status}`}>
+                          <span className={`inline-block h-2 w-2 rounded-full ${statusColor}`} />
+                          <span className="text-xs">{userId.slice(0, 6)}</span>
+                        </span>
+                      );
+                    })}
+                  </span>
+                ) : null}
               </div>
             </div>
           </div>
@@ -851,6 +882,21 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
             <Badge variant={connectionState === 'connected' ? 'default' : 'secondary'}>
               {connectionLabel}
             </Badge>
+            {connectionState === 'connected' ? (
+              <select
+                className="rounded border border-border bg-transparent px-1 py-0.5 text-xs"
+                value={myPresenceStatus}
+                onChange={(e) => {
+                  const next = e.target.value as ImPresenceStatus;
+                  setMyPresenceStatus(next);
+                  emitSetPresenceStatus(next);
+                }}
+              >
+                <option value="online">{t({ id: 'im.statusOnline' })}</option>
+                <option value="away">{t({ id: 'im.statusAway' })}</option>
+                <option value="dnd">{t({ id: 'im.statusDnd' })}</option>
+              </select>
+            ) : null}
           </div>
         </header>
 

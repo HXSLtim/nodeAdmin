@@ -1,5 +1,7 @@
 export type ImMessageType = 'file' | 'image' | 'system' | 'text';
 
+export type ImPresenceStatus = 'away' | 'dnd' | 'online';
+
 export interface MessageMetadata {
   fileName?: string;
   fileSizeBytes?: number;

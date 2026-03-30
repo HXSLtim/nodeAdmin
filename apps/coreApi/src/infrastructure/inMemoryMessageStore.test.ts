@@ -49,4 +49,44 @@ describe('InMemoryMessageStore', () => {
     expect(latest[0].messageId).toBe('m2');
     expect(latest[1].messageId).toBe('m3');
   });
+
+  describe('updateContent', () => {
+    it('updates content and sets editedAt', () => {
+      const store = new InMemoryMessageStore();
+      store.append(createMessage('m1'));
+
+      const updated = store.updateContent('tenant-1', 'conversation-1', 'm1', 'new content');
+
+      expect(updated).not.toBeNull();
+      expect(updated!.content).toBe('new content');
+      expect(updated!.editedAt).not.toBeNull();
+    });
+
+    it('returns null for unknown message', () => {
+      const store = new InMemoryMessageStore();
+
+      const result = store.updateContent('tenant-1', 'conversation-1', 'm99', 'x');
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('softDelete', () => {
+    it('clears content and sets deletedAt', () => {
+      const store = new InMemoryMessageStore();
+      store.append(createMessage('m1'));
+
+      const deleted = store.softDelete('tenant-1', 'conversation-1', 'm1');
+
+      expect(deleted).not.toBeNull();
+      expect(deleted!.content).toBe('');
+      expect(deleted!.deletedAt).not.toBeNull();
+    });
+
+    it('returns null for unknown message', () => {
+      const store = new InMemoryMessageStore();
+
+      const result = store.softDelete('tenant-1', 'conversation-1', 'm99');
+      expect(result).toBeNull();
+    });
+  });
 });

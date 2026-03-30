@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
-import type { ImMessage, ImMessageType, MessageMetadata } from '@nodeadmin/shared-types';
+import type { ImMessage, ImMessageType, ImPresenceStatus, MessageMetadata } from '@nodeadmin/shared-types';
 import { SocketConnectionState } from '@/stores/useSocketStore';
 
 export type ImSocketMessage = ImMessage;
@@ -49,6 +49,13 @@ export interface ImReadReceiptEvent {
   userId: string;
 }
 
+export interface ImPresenceStatusEvent {
+  conversationId: string;
+  status: ImPresenceStatus;
+  tenantId: string;
+  userId: string;
+}
+
 interface UseImSocketOptions {
   accessToken: string | null;
   conversationId: string;
@@ -60,6 +67,7 @@ interface UseImSocketOptions {
   onReadReceiptUpdated?: (event: ImReadReceiptEvent) => void;
   onTypingChanged?: (event: ImTypingEvent) => void;
   onPresenceChanged?: (event: ImPresenceEvent) => void;
+  onPresenceStatusChanged?: (event: ImPresenceStatusEvent) => void;
   socketUrl: string;
 }
 
@@ -67,6 +75,7 @@ export function useImSocket(options: UseImSocketOptions): {
   emitDelete: (payload: { conversationId: string; messageId: string }) => void;
   emitEdit: (payload: { conversationId: string; messageId: string; content: string }) => void;
   emitMarkAsRead: (payload: { conversationId: string; lastReadMessageId: string }) => void;
+  emitSetPresenceStatus: (status: ImPresenceStatus) => void;
   emitTyping: (payload: { conversationId: string; isTyping: boolean }) => void;
   emitWithAck: (
     payload: ImSendMessagePayload,
@@ -84,6 +93,7 @@ export function useImSocket(options: UseImSocketOptions): {
     onReadReceiptUpdated,
     onTypingChanged,
     onPresenceChanged,
+    onPresenceStatusChanged,
     socketUrl,
   } = options;
   const socketRef = useRef<Socket | null>(null);
@@ -146,6 +156,9 @@ export function useImSocket(options: UseImSocketOptions): {
     if (onPresenceChanged) {
       socket.on('presenceChanged', onPresenceChanged);
     }
+    if (onPresenceStatusChanged) {
+      socket.on('presenceStatusChanged', onPresenceStatusChanged);
+    }
 
     return () => {
       if (onMessageEdited) {
@@ -162,6 +175,9 @@ export function useImSocket(options: UseImSocketOptions): {
       }
       if (onPresenceChanged) {
         socket.off('presenceChanged', onPresenceChanged);
+      }
+      if (onPresenceStatusChanged) {
+        socket.off('presenceStatusChanged', onPresenceStatusChanged);
       }
       socket.disconnect();
       socketRef.current = null;
@@ -243,10 +259,20 @@ export function useImSocket(options: UseImSocketOptions): {
     []
   );
 
+  const emitSetPresenceStatus = useCallback(
+    (status: ImPresenceStatus) => {
+      const socket = socketRef.current;
+      if (!socket) return;
+      socket.emit('setPresenceStatus', { status });
+    },
+    []
+  );
+
   return {
     emitDelete,
     emitEdit,
     emitMarkAsRead,
+    emitSetPresenceStatus,
     emitTyping,
     emitWithAck,
   };
