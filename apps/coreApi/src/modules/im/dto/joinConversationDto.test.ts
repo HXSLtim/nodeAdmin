@@ -24,4 +24,18 @@ describe('JoinConversationDto', () => {
     expect(validateSync(blankDto).length).toBeGreaterThan(0);
     expect(validateSync(overlongDto).length).toBeGreaterThan(0);
   });
+
+  it('rejects missing conversationId values', () => {
+    const dto = plainToInstance(JoinConversationDto, {});
+
+    expect(validateSync(dto).length).toBeGreaterThan(0);
+  });
+
+  it('rejects non-string conversationId values', () => {
+    const dto = plainToInstance(JoinConversationDto, {
+      conversationId: 42,
+    });
+
+    expect(validateSync(dto).length).toBeGreaterThan(0);
+  });
 });

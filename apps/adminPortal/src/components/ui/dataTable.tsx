@@ -115,8 +115,9 @@ export function DataTable<T>({
         </TableBody>
       </Table>
       {pagination ? (
-        <div className="mt-4 flex items-center justify-between">
+        <div className="mt-4 flex items-center justify-between gap-4">
           <Button
+            className="h-11 flex-1 md:h-9 md:w-auto md:flex-initial"
             disabled={pagination.page === 0}
             onClick={() => pagination.onPageChange(pagination.page - 1)}
             size="sm"
@@ -126,9 +127,10 @@ export function DataTable<T>({
             {pagination.prevLabel}
           </Button>
           {pagination.pageInfo ? (
-            <span className="text-sm text-muted-foreground">{pagination.pageInfo}</span>
+            <span className="text-xs text-muted-foreground sm:text-sm">{pagination.pageInfo}</span>
           ) : null}
           <Button
+            className="h-11 flex-1 md:h-9 md:w-auto md:flex-initial"
             disabled={pagination.page >= pagination.totalPages - 1}
             onClick={() => pagination.onPageChange(pagination.page + 1)}
             size="sm"

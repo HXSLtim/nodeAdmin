@@ -233,6 +233,126 @@ describe.sequential('CoreApi integration', () => {
     });
     expect(crossTenantLogin.status).toBe(401);
   });
+
+  it('covers auth + users by disabling a created user and preventing future logins', async () => {
+    const adminToken = await context.issueDevToken(context.uniqueId('admin-user'));
+    const email = `${context.uniqueId('managed-user')}@example.com`;
+    const password = 'ManagedUserP@ss1';
+
+    const createResponse = await context.http
+      .post('/api/v1/users')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        email,
+        name: 'Managed User',
+        password,
+        tenantId: 'default',
+      });
+
+    expect(createResponse.status).toBe(201);
+    const userId = createResponse.body.id as string;
+
+    const loginResponse = await context.http.post('/api/v1/auth/login').send({
+      email,
+      password,
+      tenantId: 'default',
+    });
+    expect(loginResponse.status).toBe(201);
+
+    const disableResponse = await context.http
+      .patch(`/api/v1/users/${userId}`)
+      .query({ tenantId: 'default' })
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        isActive: false,
+      });
+
+    expect(disableResponse.status).toBe(200);
+    expect(disableResponse.body.is_active).toBe(0);
+
+    const disabledLogin = await context.http.post('/api/v1/auth/login').send({
+      email,
+      password,
+      tenantId: 'default',
+    });
+
+    expect(disabledLogin.status).toBe(401);
+  });
+
+  it('covers auth + tenants by creating tenant-scoped users and querying them within that tenant', async () => {
+    const tenantResponse = await context.http.post('/api/v1/tenants').send({
+      name: 'Scoped Tenant',
+      slug: context.uniqueId('scoped-tenant'),
+    });
+
+    expect(tenantResponse.status).toBe(201);
+    const tenantId = tenantResponse.body.id as string;
+    const tenantAdminToken = await context.issueDevToken(
+      context.uniqueId('tenant-admin'),
+      ['admin'],
+      tenantId
+    );
+    const email = `${context.uniqueId('tenant-user')}@example.com`;
+
+    const createUserResponse = await context.http
+      .post('/api/v1/users')
+      .set('Authorization', `Bearer ${tenantAdminToken}`)
+      .send({
+        email,
+        name: 'Tenant Scoped User',
+        password: 'TenantScopedP@ss1',
+        tenantId,
+      });
+
+    expect(createUserResponse.status).toBe(201);
+
+    const listResponse = await context.http
+      .get('/api/v1/users')
+      .query({ tenantId, search: email })
+      .set('Authorization', `Bearer ${tenantAdminToken}`);
+
+    expect(listResponse.status).toBe(200);
+    expect(listResponse.body.items.some((item: { email: string }) => item.email === email)).toBe(true);
+  });
+
+  it('covers permissions + roles by assigning seeded permissions to a new role', async () => {
+    const adminToken = await context.issueDevToken(context.uniqueId('roles-admin'));
+
+    const permissionsResponse = await context.http
+      .get('/api/v1/permissions')
+      .set('Authorization', `Bearer ${adminToken}`);
+
+    expect(permissionsResponse.status).toBe(200);
+    expect(Array.isArray(permissionsResponse.body)).toBe(true);
+    expect(permissionsResponse.body.length).toBeGreaterThan(0);
+
+    const permissionIds = permissionsResponse.body
+      .slice(0, 2)
+      .map((permission: { id: string }) => permission.id);
+
+    const createRoleResponse = await context.http
+      .post('/api/v1/roles')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        description: 'Integration role',
+        name: context.uniqueId('integration-role'),
+        permissionIds,
+        tenantId: 'default',
+      });
+
+    expect(createRoleResponse.status).toBe(201);
+    const roleId = createRoleResponse.body.id as string;
+
+    const roleResponse = await context.http
+      .get(`/api/v1/roles/${roleId}`)
+      .query({ tenantId: 'default' })
+      .set('Authorization', `Bearer ${adminToken}`);
+
+    expect(roleResponse.status).toBe(200);
+    expect(roleResponse.body.permissions.map((permission: { id: string }) => permission.id)).toEqual(
+      expect.arrayContaining(permissionIds)
+    );
+  });
 });
 
 async function connectSocket(baseUrl: string, token: string): Promise<Socket> {

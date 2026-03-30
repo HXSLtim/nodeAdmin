@@ -94,4 +94,38 @@ describe('PermissionsService', () => {
       },
     ]);
   });
+
+  it('returns an empty list when no permissions exist in the database', async () => {
+    const pool = createMockPool([{ rowCount: 0, rows: [] }]);
+    (service as unknown as { pool: typeof pool }).pool = pool;
+
+    await expect(service.findAll()).resolves.toEqual([]);
+  });
+
+  it('returns an empty list when a module has no permissions', async () => {
+    const pool = createMockPool([{ rowCount: 0, rows: [] }]);
+    (service as unknown as { pool: typeof pool }).pool = pool;
+
+    await expect(service.findByModule('analytics')).resolves.toEqual([]);
+  });
+
+  it('passes the requested module string through unchanged for filtering', async () => {
+    const pool = createMockPool([{ rowCount: 0, rows: [] }]);
+    (service as unknown as { pool: typeof pool }).pool = pool;
+
+    await service.findByModule('im:admin');
+
+    expect(pool.query).toHaveBeenCalledWith(
+      'SELECT id, code, name, module, description FROM permissions WHERE module = $1 ORDER BY code',
+      ['im:admin']
+    );
+  });
+
+  it('surfaces database query errors from findByModule', async () => {
+    const pool = createMockPool();
+    pool.query.mockRejectedValueOnce(new Error('query failed'));
+    (service as unknown as { pool: typeof pool }).pool = pool;
+
+    await expect(service.findByModule('users')).rejects.toThrow('query failed');
+  });
 });

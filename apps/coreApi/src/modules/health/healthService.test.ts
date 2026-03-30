@@ -120,4 +120,106 @@ describe('HealthService', () => {
     expect(result.checks.database.status).toBe('error');
     expect(result.checks.database.message).toContain('database unavailable');
   });
+
+  it('returns error when drizzle is unavailable even if optional dependencies are healthy', async () => {
+    const service = new HealthService({ drizzle: null } as never);
+
+    const result = await service.getHealth();
+
+    expect(result.status).toBe('error');
+    expect(result.checks.database).toEqual({
+      message: 'DATABASE_URL is not configured.',
+      status: 'error',
+    });
+    expect(result.checks.redis.status).toBe('ok');
+    expect(result.checks.kafka.status).toBe('ok');
+  });
+
+  it('returns degraded when Redis ping fails and still attempts to quit the client', async () => {
+    healthMocks.redisClient.ping.mockRejectedValue(new Error('redis timeout'));
+    const databaseService = {
+      drizzle: {
+        execute: vi.fn().mockResolvedValue({ rows: [{ '?column?': 1 }] }),
+      },
+    };
+    const service = new HealthService(databaseService as never);
+
+    const result = await service.getHealth();
+
+    expect(result.status).toBe('degraded');
+    expect(result.checks.redis.status).toBe('degraded');
+    expect(result.checks.redis.message).toContain('redis timeout');
+    expect(healthMocks.redisClient.quit).toHaveBeenCalledWith();
+  });
+
+  it('swallows Redis quit errors after a successful health check', async () => {
+    healthMocks.redisClient.quit.mockRejectedValue(new Error('quit failed'));
+    const databaseService = {
+      drizzle: {
+        execute: vi.fn().mockResolvedValue({ rows: [{ '?column?': 1 }] }),
+      },
+    };
+    const service = new HealthService(databaseService as never);
+
+    await expect(service.getHealth()).resolves.toMatchObject({
+      checks: {
+        redis: {
+          status: 'ok',
+        },
+      },
+      status: 'ok',
+    });
+  });
+
+  it('returns degraded when Kafka listing topics fails and still disconnects the admin client', async () => {
+    healthMocks.kafkaAdmin.listTopics.mockRejectedValue(new Error('broker unavailable'));
+    const databaseService = {
+      drizzle: {
+        execute: vi.fn().mockResolvedValue({ rows: [{ '?column?': 1 }] }),
+      },
+    };
+    const service = new HealthService(databaseService as never);
+
+    const result = await service.getHealth();
+
+    expect(result.status).toBe('degraded');
+    expect(result.checks.kafka.status).toBe('degraded');
+    expect(result.checks.kafka.message).toContain('broker unavailable');
+    expect(healthMocks.kafkaAdmin.disconnect).toHaveBeenCalledWith();
+  });
+
+  it('swallows Kafka disconnect errors after a failed Kafka health check', async () => {
+    healthMocks.kafkaAdmin.listTopics.mockRejectedValue(new Error('broker unavailable'));
+    healthMocks.kafkaAdmin.disconnect.mockRejectedValue(new Error('disconnect failed'));
+    const databaseService = {
+      drizzle: {
+        execute: vi.fn().mockResolvedValue({ rows: [{ '?column?': 1 }] }),
+      },
+    };
+    const service = new HealthService(databaseService as never);
+
+    await expect(service.getHealth()).resolves.toMatchObject({
+      checks: {
+        kafka: {
+          status: 'degraded',
+        },
+      },
+      status: 'degraded',
+    });
+  });
+
+  it('includes service metadata in the health payload', async () => {
+    const databaseService = {
+      drizzle: {
+        execute: vi.fn().mockResolvedValue({ rows: [{ '?column?': 1 }] }),
+      },
+    };
+    const service = new HealthService(databaseService as never);
+
+    const result = await service.getHealth();
+
+    expect(result.service).toBe('coreApi');
+    expect(result.version).toBeTypeOf('string');
+    expect(result.timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+  });
 });
