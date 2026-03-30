@@ -364,7 +364,7 @@ export class ImGateway
     );
 
     const roomKey = this.conversationService.toRoomKey(context.tenantId, context.conversationId);
-    this.server.to(roomKey).emit('messageEdited', updated);
+    this.server.to(roomKey).emit('messageEdited', { message: updated });
 
     return { ok: true, message: updated };
   }
@@ -396,7 +396,7 @@ export class ImGateway
     );
 
     const roomKey = this.conversationService.toRoomKey(context.tenantId, context.conversationId);
-    this.server.to(roomKey).emit('messageDeleted', deleted);
+    this.server.to(roomKey).emit('messageDeleted', { message: deleted });
 
     return { ok: true, message: deleted };
   }
