@@ -62,7 +62,7 @@ jobs:
       - run: npm ci
 
       - name: Start Infrastructure
-        run: npm run infra:up:kafka
+        run: docker compose up -d postgres redis zookeeper kafka
 
       - name: Wait for Services
         run: |
@@ -85,7 +85,7 @@ jobs:
 
       - name: Shutdown Infrastructure
         if: always()
-        run: npm run infra:down
+        run: docker compose down
 
   # ── Sequential: Acceptance Tests ─────────────────────────────────────────
   acceptance:
@@ -100,7 +100,7 @@ jobs:
       - run: npm ci
 
       - name: Start Infrastructure
-        run: npm run infra:up:kafka
+        run: docker compose up -d postgres redis zookeeper kafka
 
       - name: Wait for Services
         run: |
@@ -124,4 +124,4 @@ jobs:
 
       - name: Shutdown Infrastructure
         if: always()
-        run: npm run infra:down
+        run: docker compose down
