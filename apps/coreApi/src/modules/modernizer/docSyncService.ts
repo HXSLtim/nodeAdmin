@@ -14,11 +14,11 @@ export class DocSyncService {
   private readonly logger = new Logger(DocSyncService.name);
 
   private readonly HTTP_DECORATORS: [RegExp, string][] = [
-    [/@Get\s*\(\s*'([^']*)'\s*\)/, 'GET'],
-    [/@Post\s*\(\s*'([^']*)'\s*\)/, 'POST'],
-    [/@Put\s*\(\s*'([^']*)'\s*\)/, 'PUT'],
-    [/@Patch\s*\(\s*'([^']*)'\s*\)/, 'PATCH'],
-    [/@Delete\s*\(\s*'([^']*)'\s*\)/, 'DELETE'],
+    [/@Get\s*\(\s*(?:'([^']*)')?\s*\)/, 'GET'],
+    [/@Post\s*\(\s*(?:'([^']*)')?\s*\)/, 'POST'],
+    [/@Put\s*\(\s*(?:'([^']*)')?\s*\)/, 'PUT'],
+    [/@Patch\s*\(\s*(?:'([^']*)')?\s*\)/, 'PATCH'],
+    [/@Delete\s*\(\s*(?:'([^']*)')?\s*\)/, 'DELETE'],
   ];
 
   /**

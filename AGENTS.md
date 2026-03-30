@@ -101,6 +101,40 @@ docs/              ← 项目文档
 - 前端：暂无（计划用 Vitest + Testing Library）
 - 代码质量：ESLint (`eslint.config.cjs`) + Prettier (`.prettierrc.cjs`)
 
+## 多 Agent 通信协议
+
+本项目使用多 agent 协作模式。三个 agent 运行在 tmux 中：
+
+| Agent | 角色 | Tmux Pane |
+|-------|------|-----------|
+| Claude Code | 规划/协调/文档 | ai-workbench:0.0 |
+| Codex | 后端开发 | ai-workbench:0.1 |
+| Gemini | 前端开发 | ai-workbench:0.2 |
+
+### 回复 Orchestrator
+
+所有 agent **必须**在完成/阻塞/提问时回复 Claude Code。
+
+**禁止使用 bash 脚本回复（会阻塞）。直接用 tmux send-keys：**
+
+```bash
+# 第一步：发送文本
+tmux send-keys -t 'ai-workbench:0.0' -- '[YourName] 你的消息'
+# 第二步：发送回车
+tmux send-keys -t 'ai-workbench:0.0' Enter
+```
+
+流程：
+1. 先扫描确认 pane：`tmux list-panes -a -F '#{session_name}:#{window_index}.#{pane_index} | #{pane_current_command} | #{pane_title}'`
+2. 回复确认信息（含你的 agent 名称）
+3. 按需选择操作编号发送消息
+
+- 必须使用真实 agent 名称（Codex / Gemini），用 `[YourName]` 前缀标识
+- 消息中包含 issue 编号、文件名、测试数量等关键信息
+- 遇到阻塞尽早汇报，不要沉默
+
+详细说明见 `.codex/reply-skill.md` 或 `.gemini/reply-skill.md`。
+
 ## 相关文档
 
 - 架构基线：`docs/architecture/architectureBaseline.md`

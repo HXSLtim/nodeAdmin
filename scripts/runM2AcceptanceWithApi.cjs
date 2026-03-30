@@ -19,7 +19,7 @@ async function run() {
 
   console.log('[M2] Spawning CoreApi process...');
   console.log(`[M2] DATABASE_URL=${env.DATABASE_URL}`);
-  const apiProcess = cp.spawn(process.execPath, ['apps/coreApi/Dist/main.js'], {
+  const apiProcess = cp.spawn(process.execPath, ['apps/coreApi/dist/main.js'], {
     env,
     stdio: 'inherit',
   });

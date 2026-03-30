@@ -4,10 +4,12 @@ import { AuthIdentity } from './authIdentity';
 
 const EXCLUDED_PATHS = [
   '/health',
+  '/api/v1/health',
   '/api/v1/auth/login',
   '/api/v1/auth/register',
   '/api/v1/auth/refresh',
   '/api/v1/auth/dev-token',
+  '/api/v1/tenants',
 ];
 
 @Injectable()

@@ -19,7 +19,7 @@ describe('ModernizerController', () => {
   });
 
   describe('analyze', () => {
-    it('should delegate to analyzeService.analyze', async () => {
+    it('should delegate the analyze GET endpoint to analyzeService.analyze', async () => {
       const mockResult = {
         issues: [
           {
@@ -35,18 +35,18 @@ describe('ModernizerController', () => {
       analyzeService.analyze.mockReturnValue(mockResult);
 
       const result = await controller.analyze();
-      expect(analyzeService.analyze).toHaveBeenCalledWith(undefined);
+      expect(analyzeService.analyze).toHaveBeenCalledWith();
       expect(result).toEqual(mockResult);
     });
   });
 
   describe('docs', () => {
-    it('should delegate to docSyncService.generateDocs', async () => {
+    it('should delegate the docs GET endpoint to docSyncService.generateDocs', async () => {
       const mockDocs = '# API Endpoints\n\n**Total endpoints: 5**\n';
       docSyncService.generateDocs.mockReturnValue(mockDocs);
 
       const result = await controller.docs();
-      expect(docSyncService.generateDocs).toHaveBeenCalledWith(undefined);
+      expect(docSyncService.generateDocs).toHaveBeenCalledWith();
       expect(result).toBe(mockDocs);
     });
   });

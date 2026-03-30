@@ -191,6 +191,10 @@ export class ImMessageService implements OnModuleInit, OnModuleDestroy {
 
         const cachedResult = this.getCachedAppendResult(streamKey, payload.messageId, now);
         if (cachedResult) {
+          const duplicateResult: AppendResult = {
+            duplicate: true,
+            message: cachedResult.message,
+          };
           ImMessageService.appendDurationMs.record(Date.now() - startAt, {
             duplicate: 'true',
             tenantId: context.tenantId,
@@ -204,7 +208,7 @@ export class ImMessageService implements OnModuleInit, OnModuleDestroy {
             'im.message.sendAtMs': Date.now(),
           });
           span.setStatus({ code: SpanStatusCode.OK });
-          return cachedResult;
+          return duplicateResult;
         }
 
         const sequenceId = await this.reserveSequence(
