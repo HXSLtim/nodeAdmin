@@ -1,34 +1,40 @@
 {
   "summary": {
-    "totalConnections": 5000,
-    "totalConnectionAttempts": 462224,
-    "successfulConnections": 0,
-    "failedConnections": 462224,
-    "connectionSuccessRate": 0,
-    "totalMessagesSent": 0,
-    "totalMessagesReceived": 0,
+    "targetMode": "single-node",
+    "totalConnections": 20,
+    "totalConnectionAttempts": 20,
+    "successfulConnections": 20,
+    "failedConnections": 0,
+    "connectionSuccessRate": 1,
+    "totalMessagesSent": 40,
+    "totalMessagesReceived": 40,
     "messageLossRate": 0,
-    "errorRate": 1,
+    "errorRate": 0,
     "shutdownReason": "scenario_completed"
   },
   "latency": {
-    "max": 0,
-    "p50": 0,
-    "p95": 0,
-    "p99": 0
+    "p50": 10,
+    "p95": 61,
+    "p99": 66,
+    "max": 66
   },
-  "errors": [
-    {
-      "count": 438828,
-      "type": "connection_error"
+  "validation": {
+    "targetMode": "single-node",
+    "thresholds": {
+      "maxErrorRate": 0.01,
+      "maxMessageLossRate": 0.01,
+      "maxP95LatencyMs": 250,
+      "minConnectionSuccessRate": 0.99,
+      "targetConnections": 20
     },
-    {
-      "count": 22983,
-      "type": "join_timeout"
+    "checks": {
+      "connectionSuccessRate": true,
+      "errorRate": true,
+      "messageLossRate": true,
+      "p95Latency": true,
+      "targetConnectionsReached": true
     },
-    {
-      "count": 413,
-      "type": "connection_timeout"
-    }
-  ]
+    "passed": true
+  },
+  "errors": []
 }
