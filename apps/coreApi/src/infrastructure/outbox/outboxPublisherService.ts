@@ -92,7 +92,11 @@ export class OutboxPublisherService implements OnModuleInit, OnModuleDestroy {
     }
 
     if (this.pool) {
-      await this.pool.end();
+      try {
+        await this.pool.end();
+      } catch {
+        // Pool may already be closed during shutdown
+      }
       this.pool = null;
     }
   }

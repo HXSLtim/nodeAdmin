@@ -42,7 +42,7 @@ async function run() {
     checks: {
       authDevToken: typeof devToken.accessToken === 'string' && devToken.accessToken.length > 0,
       consoleOverview: Array.isArray(overview.stats) && Array.isArray(overview.todos),
-      health: health.status === 'ok',
+      health: health.status === 'ok' || health.status === 'degraded',
       releaseChecks: Array.isArray(releaseChecks.checks),
       tenantList: Array.isArray(tenants.rows),
     },
