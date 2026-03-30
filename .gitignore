@@ -13,3 +13,6 @@ Apps/**/test-results/
 .claude/
 .superpowers/
 uploads/
+.codex/
+.gemini/
+apps/adminPortal/test-results/
