@@ -11,11 +11,34 @@ interface DialogProps {
 
 export function Dialog({ children, onClose, open, title }: DialogProps): JSX.Element | null {
   const overlayRef = useRef<HTMLDivElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const previousActiveElement = useRef<Element | null>(null);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         onClose();
+        return;
+      }
+
+      if (e.key === 'Tab' && dialogRef.current) {
+        const focusableElements = dialogRef.current.querySelectorAll(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        const firstElement = focusableElements[0] as HTMLElement;
+        const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
+
+        if (e.shiftKey) {
+          if (document.activeElement === firstElement) {
+            lastElement.focus();
+            e.preventDefault();
+          }
+        } else {
+          if (document.activeElement === lastElement) {
+            firstElement.focus();
+            e.preventDefault();
+          }
+        }
       }
     },
     [onClose]
@@ -23,37 +46,63 @@ export function Dialog({ children, onClose, open, title }: DialogProps): JSX.Ele
 
   useEffect(() => {
     if (!open) return;
+
+    previousActiveElement.current = document.activeElement;
     document.addEventListener('keydown', handleKeyDown);
     document.body.style.overflow = 'hidden';
+
+    // Focus the first focusable element
+    const timer = setTimeout(() => {
+      if (dialogRef.current) {
+        const firstElement = dialogRef.current.querySelector(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        ) as HTMLElement;
+        firstElement?.focus();
+      }
+    }, 50);
+
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = '';
+      if (previousActiveElement.current instanceof HTMLElement) {
+        previousActiveElement.current.focus();
+      }
+      clearTimeout(timer);
     };
   }, [open, handleKeyDown]);
 
   if (!open) return null;
 
+  const titleId = title ? `dialog-title-${title.replace(/\s+/g, '-').toLowerCase()}` : undefined;
+
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 animate-in fade-in duration-150"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 animate-in fade-in duration-150 p-0 md:p-4"
       onClick={(e) => {
         if (e.target === overlayRef.current) onClose();
       }}
       ref={overlayRef}
     >
       <div
-        className="relative h-full w-full border-border bg-card p-6 shadow-lg animate-in fade-in zoom-in-95 duration-150 md:h-auto md:max-w-lg md:rounded-lg md:border"
+        aria-labelledby={titleId}
+        aria-modal="true"
+        className="relative h-full w-full border-border bg-card p-6 shadow-lg animate-in fade-in zoom-in-95 duration-150 md:h-auto md:max-w-lg md:rounded-lg md:border overflow-y-auto"
+        ref={dialogRef}
         role="dialog"
       >
         {title ? (
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold">{title}</h2>
+            <h2 className="text-lg font-semibold" id={titleId}>
+              {title}
+            </h2>
             <button
-              className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              aria-label="Close dialog"
+              className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               onClick={onClose}
               type="button"
             >
               <svg
+                aria-hidden="true"
                 className="h-4 w-4"
                 fill="none"
                 stroke="currentColor"

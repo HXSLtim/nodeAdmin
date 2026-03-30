@@ -8,6 +8,7 @@ import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/ca
 import { DataTable } from '@/components/ui/dataTable';
 import { Input } from '@/components/ui/input';
 import { ConfirmDialog } from '@/components/ui/dialog';
+import { useToast } from '@/components/ui/toast';
 import { useApiClient } from '@/hooks/useApiClient';
 import { TaskFormDialog } from './taskFormDialog';
 import { SprintFormDialog } from './sprintFormDialog';
@@ -38,6 +39,7 @@ export function BacklogPanel(): JSX.Element {
   const { formatMessage: t } = useIntl();
   const apiClient = useApiClient();
   const queryClient = useQueryClient();
+  const toast = useToast();
 
   const [activeTab, setActiveTab] = useState<TabKey>('tasks');
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -127,12 +129,20 @@ export function BacklogPanel(): JSX.Element {
   // ─── Delete Mutations ────────────────────────────────────────────
   const deleteTaskMutation = useMutation({
     mutationFn: (id: string) => apiClient.del(`/api/v1/backlog/tasks/${id}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['backlog', 'tasks'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['backlog', 'tasks'] });
+      toast.success(t({ id: 'backlog.deleteTaskSuccess' }));
+    },
+    onError: () => toast.error(t({ id: 'backlog.deleteTaskFailed' })),
   });
 
   const deleteSprintMutation = useMutation({
     mutationFn: (id: string) => apiClient.del(`/api/v1/backlog/sprints/${id}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['backlog', 'sprints'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['backlog', 'sprints'] });
+      toast.success(t({ id: 'backlog.deleteSprintSuccess' }));
+    },
+    onError: () => toast.error(t({ id: 'backlog.deleteSprintFailed' })),
   });
 
   // ─── Handlers ────────────────────────────────────────────────────

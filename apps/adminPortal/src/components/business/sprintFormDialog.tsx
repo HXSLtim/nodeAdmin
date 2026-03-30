@@ -6,6 +6,7 @@ import { Dialog } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { FormField } from '@/components/ui/formField';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/toast';
 import { useApiClient } from '@/hooks/useApiClient';
 import { useAuthStore } from '@/stores/useAuthStore';
 
@@ -30,6 +31,7 @@ export function SprintFormDialog({
 }: SprintFormDialogProps): JSX.Element {
   const { formatMessage: t } = useIntl();
   const apiClient = useApiClient();
+  const toast = useToast();
   const tenantId = useAuthStore((s) => s.tenantId);
 
   const [name, setName] = useState(sprint?.name ?? '');
@@ -56,8 +58,13 @@ export function SprintFormDialog({
       }
     },
     onSuccess: () => {
+      toast.success(t({ id: 'backlog.saveSprintSuccess' }));
       onSaved();
       handleClose();
+    },
+    onError: (error: any) => {
+      const message = error?.response?.data?.message || t({ id: 'backlog.saveFailed' });
+      toast.error(message);
     },
   });
 

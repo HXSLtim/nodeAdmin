@@ -841,11 +841,13 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
         <header className="flex shrink-0 items-center justify-between px-3 py-2 border-b bg-card md:rounded-t-lg">
           <div className="flex items-center gap-2">
             <button
+              aria-label={t({ id: 'im.toggleConversations' })}
               className="flex h-8 w-8 items-center justify-center rounded-md border border-border hover:bg-accent md:hidden"
               onClick={toggleConversationPanel}
               type="button"
             >
               <svg
+                aria-hidden="true"
                 className="h-4 w-4"
                 fill="none"
                 stroke="currentColor"
@@ -873,6 +875,7 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
             </Badge>
             {connectionState === 'connected' ? (
               <select
+                aria-label={t({ id: 'im.presenceStatus' })}
                 className="rounded border border-border bg-transparent px-1 py-0.5 text-[10px] outline-none"
                 value={myPresenceStatus}
                 onChange={(e) => {
@@ -987,7 +990,8 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
                         isMe ? "-left-12 pr-2" : "-right-12 pl-2"
                       )}>
                         <button
-                          className="rounded-full bg-muted p-1.5 text-muted-foreground hover:bg-accent"
+                          aria-label={t({ id: 'im.editMessage' })}
+                          className="rounded-full bg-muted p-1.5 text-muted-foreground hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                           onClick={() => {
                             setEditingMessageId(message.messageId);
                             setEditContent(message.content);
@@ -995,12 +999,13 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
                           title={t({ id: 'im.editMessage' })}
                           type="button"
                         >
-                          <svg className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                          <svg aria-hidden="true" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                             <path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" strokeLinecap="round" strokeLinejoin="round" />
                           </svg>
                         </button>
                         <button
-                          className="rounded-full bg-muted p-1.5 text-destructive hover:bg-destructive/10"
+                          aria-label={t({ id: 'im.deleteMessage' })}
+                          className="rounded-full bg-muted p-1.5 text-destructive hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                           onClick={() => {
                             if (window.confirm(t({ id: 'im.deleteConfirm' }))) {
                               emitDelete({
@@ -1012,7 +1017,7 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
                           title={t({ id: 'im.deleteMessage' })}
                           type="button"
                         >
-                          <svg className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                          <svg aria-hidden="true" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                             <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" strokeLinecap="round" strokeLinejoin="round" />
                           </svg>
                         </button>
@@ -1049,7 +1054,8 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
             {/* Options for mobile - more compact */}
             <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
               <select
-                className="h-8 rounded-md border border-input bg-background px-2 text-[10px] outline-none"
+                aria-label={t({ id: 'im.messageType' })}
+                className="h-8 rounded-md border border-input bg-background px-2 text-[10px] outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 onChange={(event) => setMessageType(event.target.value as ImMessageType)}
                 value={messageType}
               >

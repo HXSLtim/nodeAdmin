@@ -76,11 +76,12 @@ export function TaskFormDialog({ onClose, onSaved, open, task }: TaskFormDialogP
       }
     },
     onSuccess: () => {
+      toast.success(t({ id: 'backlog.saveTaskSuccess' }));
       onSaved();
       handleClose();
     },
     onError: (error: any) => {
-      const message = error?.response?.data?.message || t({ id: 'backlog.loadFailed' });
+      const message = error?.response?.data?.message || t({ id: 'backlog.saveFailed' });
       toast.error(message);
     },
   });
