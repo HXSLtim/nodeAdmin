@@ -8,6 +8,7 @@ import { FormField } from '@/components/ui/formField';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { useApiClient } from '@/hooks/useApiClient';
+import { useAuthStore } from '@/stores/useAuthStore';
 
 interface PermissionItem {
   id: string;
@@ -27,6 +28,7 @@ interface RoleFormDialogProps {
 export function RoleFormDialog({ onClose, onSaved, open, role }: RoleFormDialogProps): JSX.Element {
   const { formatMessage: t } = useIntl();
   const apiClient = useApiClient();
+  const tenantId = useAuthStore((s) => s.tenantId);
 
   const [name, setName] = useState(role?.name ?? '');
   const [description, setDescription] = useState(role?.description ?? '');
@@ -38,14 +40,14 @@ export function RoleFormDialog({ onClose, onSaved, open, role }: RoleFormDialogP
 
   const permissionsQuery = useQuery({
     queryFn: () =>
-      apiClient.get<PaginatedResponse<PermissionItem>>('/api/v1/permissions?limit=200'),
-    queryKey: ['permissions'],
+      apiClient.get<PaginatedResponse<PermissionItem>>(`/api/v1/permissions?limit=200&tenantId=${tenantId ?? 'default'}`),
+    queryKey: ['permissions', tenantId],
   });
 
   const saveMutation = useMutation({
-    mutationFn: async (data: { name: string; description: string; permissionIds: string[] }) => {
+    mutationFn: async (data: { name: string; description: string; permissionIds: string[]; tenantId: string }) => {
       if (isEdit && role) {
-        await apiClient.put(`/api/v1/roles/${role.id}`, data);
+        await apiClient.patch(`/api/v1/roles/${role.id}?tenantId=${data.tenantId}`, data);
       } else {
         await apiClient.post('/api/v1/roles', data);
       }
@@ -68,7 +70,7 @@ export function RoleFormDialog({ onClose, onSaved, open, role }: RoleFormDialogP
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    saveMutation.mutate({ name, description, permissionIds: selectedPermissionIds });
+    saveMutation.mutate({ name, description, permissionIds: selectedPermissionIds, tenantId: tenantId ?? 'default' });
   };
 
   const handleClose = () => {

@@ -31,11 +31,18 @@ export function TenantFormDialog({
   const isEdit = !!tenant;
 
   const saveMutation = useMutation({
-    mutationFn: async (data: { name: string; is_active: boolean }) => {
+    mutationFn: async (data: { name: string; is_active: boolean; slug?: string }) => {
       if (isEdit && tenant) {
-        await apiClient.put(`/api/v1/tenants/${tenant.id}`, data);
+        await apiClient.patch(`/api/v1/tenants/${tenant.id}`, {
+          name: data.name,
+          isActive: data.is_active,
+        });
       } else {
-        await apiClient.post('/api/v1/tenants', data);
+        await apiClient.post('/api/v1/tenants', {
+          name: data.name,
+          slug: data.name.toLowerCase().replace(/\s+/g, '-'),
+          isActive: data.is_active,
+        });
       }
     },
     onSuccess: () => {

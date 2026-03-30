@@ -200,6 +200,7 @@ export function RegisterPage(): JSX.Element {
           <FormField label={t({ id: 'auth.tenantId' })} htmlFor="reg-tenant">
             {tenants.length > 0 ? (
               <Select
+                id="reg-tenant"
                 onChange={setTenantId}
                 options={tenants.map((t) => ({ value: t.id, label: `${t.name} (${t.slug})` }))}
                 value={tenantId}

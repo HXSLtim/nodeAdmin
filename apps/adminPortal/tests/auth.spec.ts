@@ -9,42 +9,46 @@ test.describe('Authentication Flow', () => {
   test('successful login and logout', async ({ page }) => {
     await page.goto('/login');
 
-    // Use labels from en.json
-    await page.getByLabel('Email').fill('admin@nodeadmin.dev');
-    await page.getByLabel('Password').fill('Admin123456');
-    await page.getByLabel('Tenant ID').fill('default');
+    await page.getByLabel(/Email/i).fill('admin@nodeadmin.dev');
+    await page.getByLabel(/Password/i).fill('Admin123456');
+    
+    const tenantLocator = page.getByLabel(/Tenant ID/i);
+    const tagName = await tenantLocator.evaluate(el => el.tagName.toLowerCase());
+    if (tagName === 'select') {
+      await tenantLocator.selectOption('default');
+    } else {
+      await tenantLocator.clear();
+      await tenantLocator.fill('default');
+    }
 
-    await page.getByRole('button', { name: 'Login' }).click();
+    await page.getByRole('button', { name: /Login/i }).click();
 
     // Should redirect to overview
     await expect(page).toHaveURL(/\/overview/);
-    await expect(page.getByRole('heading', { level: 1 })).toContainText('Overview');
+    await expect(page.getByRole('main').getByRole('heading', { name: /Overview/i })).toBeVisible();
 
     // Logout
-    // Assuming there is a logout button in the layout.
-    // Let's check appLayout.tsx or similar to find the logout button.
-    const logoutBtn = page.getByRole('button', { name: 'Logout' });
-    if (await logoutBtn.isVisible()) {
-        await logoutBtn.click();
-        await expect(page).toHaveURL(/\/login/);
-    } else {
-        // Try finding it in a user menu if it's hidden
-        await page.getByRole('button', { name: /admin/i }).click();
-        await page.getByRole('button', { name: 'Logout' }).click();
-        await expect(page).toHaveURL(/\/login/);
-    }
+    await page.getByRole('button', { name: /Logout/i }).click();
+    await expect(page).toHaveURL(/\/login/);
   });
 
   test('shows error with invalid credentials', async ({ page }) => {
     await page.goto('/login');
 
-    await page.getByLabel('Email').fill('wrong@example.com');
-    await page.getByLabel('Password').fill('wrongpassword');
-    await page.getByLabel('Tenant ID').fill('default');
+    await page.getByLabel(/Email/i).fill('wrong@example.com');
+    await page.getByLabel(/Password/i).fill('wrongpassword');
+    const tenantLocator = page.getByLabel(/Tenant ID/i);
+    const tagName = await tenantLocator.evaluate(el => el.tagName.toLowerCase());
+    if (tagName === 'select') {
+      await tenantLocator.selectOption('default');
+    } else {
+      await tenantLocator.clear();
+      await tenantLocator.fill('default');
+    }
 
-    await page.getByRole('button', { name: 'Login' }).click();
+    await page.getByRole('button', { name: /Login/i }).click();
 
-    await expect(page.getByText('Login failed')).toBeVisible();
+    await expect(page.getByText(/Login failed/i)).toBeVisible();
     await expect(page).toHaveURL(/\/login/);
   });
 
@@ -53,13 +57,20 @@ test.describe('Authentication Flow', () => {
 
     const randomEmail = `test-${Date.now()}@example.com`;
 
-    await page.getByLabel('Name').fill('Test User');
-    await page.getByLabel('Email').fill(randomEmail);
-    await page.getByLabel('Password', { exact: true }).fill('Test123456');
-    await page.getByLabel('Confirm Password').fill('Test123456');
-    await page.getByLabel('Tenant ID').fill('default');
+    await page.getByLabel(/Name/i).fill('Test User');
+    await page.getByLabel(/Email/i).fill(randomEmail);
+    await page.getByLabel(/^Password$/i).fill('Test123456!');
+    await page.getByLabel(/Confirm Password/i).fill('Test123456!');
+    const tenantLocator = page.getByLabel(/Tenant ID/i);
+    const tagName = await tenantLocator.evaluate(el => el.tagName.toLowerCase());
+    if (tagName === 'select') {
+      await tenantLocator.selectOption('default');
+    } else {
+      await tenantLocator.clear();
+      await tenantLocator.fill('default');
+    }
 
-    await page.getByRole('button', { name: 'Register' }).click();
+    await page.getByRole('button', { name: /Register/i }).click();
 
     // Should redirect to overview
     await expect(page).toHaveURL(/\/overview/);

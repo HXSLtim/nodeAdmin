@@ -51,7 +51,7 @@ export function ProfilePanel(): JSX.Element {
 
   return (
     <section className="h-full overflow-y-auto">
-      <h1 className="mb-1 text-xl font-semibold text-foreground">{t({ id: 'profile.title' })}</h1>
+      <h3 className="mb-1 text-xl font-semibold text-foreground">{t({ id: 'profile.title' })}</h3>
       <p className="mb-6 text-sm text-muted-foreground">{t({ id: 'profile.desc' })}</p>
 
       <div className="grid gap-4 sm:grid-cols-2">

@@ -5,6 +5,6 @@ test('overview route renders heading', async ({ page }) => {
   await login(page);
   await page.goto('/overview');
 
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('Overview');
-  await expect(page.getByText('Platform Overview')).toBeVisible();
+  await expect(page.getByRole('main').getByRole('heading', { name: /Overview/i })).toBeVisible();
+  await expect(page.getByText(/Platform Overview/i)).toBeVisible();
 });

@@ -6,6 +6,7 @@ import { Dialog } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { FormField } from '@/components/ui/formField';
 import { Button } from '@/components/ui/button';
+import { useAuthStore } from '@/stores/useAuthStore';
 import { useApiClient } from '@/hooks/useApiClient';
 
 const STATUS_OPTIONS = [
@@ -32,6 +33,7 @@ interface TaskFormDialogProps {
 export function TaskFormDialog({ onClose, onSaved, open, task }: TaskFormDialogProps): JSX.Element {
   const { formatMessage: t } = useIntl();
   const apiClient = useApiClient();
+  const tenantId = useAuthStore((s) => s.tenantId);
 
   const [title, setTitle] = useState(task?.title ?? '');
   const [description, setDescription] = useState(task?.description ?? '');
@@ -46,9 +48,10 @@ export function TaskFormDialog({ onClose, onSaved, open, task }: TaskFormDialogP
       description: string;
       status: string;
       priority: string;
+      tenantId: string;
     }) => {
       if (isEdit && task) {
-        await apiClient.patch(`/api/v1/backlog/tasks/${task.id}`, data);
+        await apiClient.patch(`/api/v1/backlog/tasks/${task.id}?tenantId=${data.tenantId}`, data);
       } else {
         await apiClient.post('/api/v1/backlog/tasks', data);
       }
@@ -61,7 +64,7 @@ export function TaskFormDialog({ onClose, onSaved, open, task }: TaskFormDialogP
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    saveMutation.mutate({ title, description, status, priority });
+    saveMutation.mutate({ title, description, status, priority, tenantId: tenantId ?? 'default' });
   };
 
   const handleClose = () => {

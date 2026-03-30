@@ -175,6 +175,7 @@ export function LoginPage(): JSX.Element {
           <FormField label={t({ id: 'auth.tenantId' })} htmlFor="login-tenant">
             {tenants.length > 0 ? (
               <Select
+                id="login-tenant"
                 onChange={setTenantId}
                 options={tenants.map((t) => ({ value: t.id, label: `${t.name} (${t.slug})` }))}
                 value={tenantId}

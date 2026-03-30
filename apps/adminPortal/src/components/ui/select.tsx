@@ -9,6 +9,7 @@ export interface SelectProps {
   options: SelectOption[];
   value: string;
   onChange: (value: string) => void;
+  id?: string;
   placeholder?: string;
   disabled?: boolean;
   className?: string;
@@ -18,6 +19,7 @@ export function Select({
   options,
   value,
   onChange,
+  id,
   placeholder,
   disabled,
   className: cls,
@@ -31,6 +33,7 @@ export function Select({
         cls
       )}
       disabled={disabled}
+      id={id}
       onChange={(e) => onChange(e.target.value)}
       value={value}
     >

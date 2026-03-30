@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { FormField } from '@/components/ui/formField';
 import { useApiClient } from '@/hooks/useApiClient';
-import { type UserItem, type RoleItem } from '@nodeadmin/shared-types';
+import { useAuthStore } from '@/stores/useAuthStore';
 
 interface UserFormDialogProps {
   onClose: () => void;
@@ -20,6 +20,7 @@ interface CreateUserData {
   password: string;
   name: string;
   roleIds: string[];
+  tenantId: string;
 }
 
 interface UpdateUserData {
@@ -27,23 +28,27 @@ interface UpdateUserData {
   password?: string;
   name: string;
   roleIds: string[];
+  isActive: boolean;
+  avatar?: string;
 }
 
 export function UserFormDialog({ onClose, onSaved, open, user }: UserFormDialogProps): JSX.Element {
   const { formatMessage: t } = useIntl();
   const apiClient = useApiClient();
+  const tenantId = useAuthStore((s) => s.tenantId);
   const isEdit = user !== undefined;
 
   const [email, setEmail] = useState(user?.email ?? '');
   const [password, setPassword] = useState('');
   const [name, setName] = useState(user?.name ?? '');
+  const [isActive, setIsActive] = useState(user?.is_active ?? true);
   const [selectedRoleIds, setSelectedRoleIds] = useState<Set<string>>(
     new Set(user?.roles.map((r) => r.id) ?? [])
   );
 
   const rolesQuery = useQuery({
-    queryFn: () => apiClient.get<RoleItem[]>('/api/v1/roles'),
-    queryKey: ['roles'],
+    queryFn: () => apiClient.get<RoleItem[]>(`/api/v1/roles?tenantId=${tenantId ?? 'default'}`),
+    queryKey: ['roles', tenantId],
   });
 
   const roles = Array.isArray(rolesQuery.data) ? rolesQuery.data : [];
@@ -52,6 +57,7 @@ export function UserFormDialog({ onClose, onSaved, open, user }: UserFormDialogP
     setEmail(user?.email ?? '');
     setName(user?.name ?? '');
     setPassword('');
+    setIsActive(user?.is_active ?? true);
     setSelectedRoleIds(new Set(user?.roles.map((r) => r.id) ?? []));
   };
 
@@ -68,7 +74,7 @@ export function UserFormDialog({ onClose, onSaved, open, user }: UserFormDialogP
   const saveMutation = useMutation({
     mutationFn: async (data: CreateUserData | UpdateUserData) => {
       if (isEdit && user) {
-        await apiClient.put<UserItem>(`/api/v1/users/${user.id}`, data);
+        await apiClient.patch<UserItem>(`/api/v1/users/${user.id}?tenantId=${tenantId ?? 'default'}`, data);
       } else {
         await apiClient.post<UserItem>('/api/v1/users', data);
       }
@@ -86,6 +92,7 @@ export function UserFormDialog({ onClose, onSaved, open, user }: UserFormDialogP
         email,
         name,
         roleIds,
+        isActive,
       };
       if (password.trim()) {
         data.password = password;
@@ -97,6 +104,7 @@ export function UserFormDialog({ onClose, onSaved, open, user }: UserFormDialogP
         password,
         name,
         roleIds,
+        tenantId: tenantId ?? 'default',
       };
       saveMutation.mutate(data);
     }

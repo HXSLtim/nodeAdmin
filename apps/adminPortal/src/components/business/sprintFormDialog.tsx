@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { FormField } from '@/components/ui/formField';
 import { Button } from '@/components/ui/button';
 import { useApiClient } from '@/hooks/useApiClient';
+import { useAuthStore } from '@/stores/useAuthStore';
 
 const SPRINT_STATUS_OPTIONS = [
   { value: 'planning', labelId: 'backlog.sprintStatusPlanning' },
@@ -29,6 +30,7 @@ export function SprintFormDialog({
 }: SprintFormDialogProps): JSX.Element {
   const { formatMessage: t } = useIntl();
   const apiClient = useApiClient();
+  const tenantId = useAuthStore((s) => s.tenantId);
 
   const [name, setName] = useState(sprint?.name ?? '');
   const [goal, setGoal] = useState(sprint?.goal ?? '');
@@ -45,9 +47,10 @@ export function SprintFormDialog({
       status: string;
       startDate: string;
       endDate: string;
+      tenantId: string;
     }) => {
       if (isEdit && sprint) {
-        await apiClient.patch(`/api/v1/backlog/sprints/${sprint.id}`, data);
+        await apiClient.patch(`/api/v1/backlog/sprints/${sprint.id}?tenantId=${data.tenantId}`, data);
       } else {
         await apiClient.post('/api/v1/backlog/sprints', data);
       }
@@ -60,7 +63,7 @@ export function SprintFormDialog({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    saveMutation.mutate({ name, goal, status, startDate, endDate });
+    saveMutation.mutate({ name, goal, status, startDate, endDate, tenantId: tenantId ?? 'default' });
   };
 
   const handleClose = () => {

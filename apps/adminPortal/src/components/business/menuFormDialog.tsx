@@ -8,6 +8,7 @@ import { FormField } from '@/components/ui/formField';
 import { Select } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useApiClient } from '@/hooks/useApiClient';
+import { useAuthStore } from '@/stores/useAuthStore';
 import { MenuItem } from '@nodeadmin/shared-types';
 
 interface MenuFormDialogProps {
@@ -70,6 +71,7 @@ export function MenuFormDialog({
 }: MenuFormDialogProps): JSX.Element {
   const { formatMessage: t } = useIntl();
   const apiClient = useApiClient();
+  const tenantId = useAuthStore((s) => s.tenantId);
   const isEdit = menu !== undefined;
   const isChildMode = parentId !== undefined;
 
@@ -86,9 +88,9 @@ export function MenuFormDialog({
   const [isVisible, setIsVisible] = useState(initialValues.isVisible);
 
   const saveMutation = useMutation({
-    mutationFn: async (data: MenuData) => {
+    mutationFn: async (data: MenuData & { tenantId: string }) => {
       if (isEdit && menu) {
-        await apiClient.put<MenuItem>(`/api/v1/menus/${menu.id}`, data);
+        await apiClient.patch<MenuItem>(`/api/v1/menus/${menu.id}?tenantId=${data.tenantId}`, data);
       } else {
         await apiClient.post<MenuItem>('/api/v1/menus', data);
       }
@@ -112,7 +114,7 @@ export function MenuFormDialog({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    const data: MenuData = {
+    const data: MenuData & { tenantId: string } = {
       name,
       path,
       icon,
@@ -120,6 +122,7 @@ export function MenuFormDialog({
       sort_order: sortOrder,
       permission_code: permissionCode,
       is_visible: isVisible ? 1 : 0,
+      tenantId: tenantId ?? 'default',
     };
 
     saveMutation.mutate(data);

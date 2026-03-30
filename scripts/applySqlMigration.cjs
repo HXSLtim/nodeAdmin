@@ -4,7 +4,7 @@ const { Client } = require('pg');
 
 const defaultDatabaseUrl = 'postgres://nodeadmin:nodeadmin@localhost:55432/nodeadmin';
 const databaseUrl = (process.env.DATABASE_URL || defaultDatabaseUrl).trim();
-const migrationsDir = path.resolve(__dirname, '..', 'Apps', 'CoreApi', 'drizzle', 'migrations');
+const migrationsDir = path.resolve(__dirname, '..', 'apps', 'coreApi', 'drizzle', 'migrations');
 
 async function ensureMigrationTable(client) {
   await client.query(`
