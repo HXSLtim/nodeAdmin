@@ -12,7 +12,9 @@ describe.sequential('CoreApi integration', () => {
   });
 
   afterAll(async () => {
-    await context.close();
+    if (context) {
+      await context.close();
+    }
   });
 
   it('covers the auth flow: register, login, refresh, change password, and re-login', async () => {

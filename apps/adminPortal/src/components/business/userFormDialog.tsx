@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { FormField } from '@/components/ui/formField';
 import { useApiClient } from '@/hooks/useApiClient';
 import { useAuthStore } from '@/stores/useAuthStore';
+import type { UserItem, RoleItem } from '@nodeadmin/shared-types';
 
 interface UserFormDialogProps {
   onClose: () => void;
@@ -41,7 +42,7 @@ export function UserFormDialog({ onClose, onSaved, open, user }: UserFormDialogP
   const [email, setEmail] = useState(user?.email ?? '');
   const [password, setPassword] = useState('');
   const [name, setName] = useState(user?.name ?? '');
-  const [isActive, setIsActive] = useState(user?.is_active ?? true);
+  const [isActive, setIsActive] = useState(Boolean(user?.is_active ?? true));
   const [selectedRoleIds, setSelectedRoleIds] = useState<Set<string>>(
     new Set(user?.roles.map((r) => r.id) ?? [])
   );
@@ -57,7 +58,7 @@ export function UserFormDialog({ onClose, onSaved, open, user }: UserFormDialogP
     setEmail(user?.email ?? '');
     setName(user?.name ?? '');
     setPassword('');
-    setIsActive(user?.is_active ?? true);
+    setIsActive(Boolean(user?.is_active ?? true));
     setSelectedRoleIds(new Set(user?.roles.map((r) => r.id) ?? []));
   };
 

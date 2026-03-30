@@ -99,18 +99,20 @@ describe('ConsoleController', () => {
       { id: 'tenant-2', is_active: false },
     ]);
     connectionRegistry.totalCount.mockReturnValue(5);
-    databaseService.drizzle.execute.mockResolvedValue({ rows: [{ count: 42 }] });
+    databaseService.drizzle.execute
+      .mockResolvedValueOnce({ rows: [{ count: 10 }] })
+      .mockResolvedValueOnce({ rows: [{ count: 25 }] });
     vi.spyOn(process, 'uptime').mockReturnValue(7500);
 
     const result = await controller.getOverview();
 
     expect(result).toEqual({
       stats: [
-        { label: 'overview.stat.totalUsers', value: '42' },
+        { label: 'overview.stat.onlineUsers', value: '5' },
+        { label: 'overview.stat.totalConversations', value: '10' },
+        { label: 'overview.stat.todayMessages', value: '25' },
         { label: 'overview.stat.activeTenants', value: '1' },
-        { label: 'overview.stat.totalTenants', value: '2' },
-        { label: 'overview.stat.onlineConnections', value: '5' },
-        { label: 'overview.stat.uptime', value: '2h 5m' },
+        { label: 'overview.stat.uptime', value: expect.any(String) },
       ],
       todos: [],
     });

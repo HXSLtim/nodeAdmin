@@ -77,7 +77,7 @@ export function ModernizerPanel(): JSX.Element {
               <div className="text-2xl font-bold text-destructive">
                 {summary.byCategory['console-log'] ?? 0}
               </div>
-              <div className="text-xs text-muted-foreground">console.log</div>
+              <div className="text-xs text-muted-foreground">{t({ id: 'modernizer.summary.consoleLog' })}</div>
             </div>
             <div className="rounded-lg border p-3 text-center">
               <div className="text-2xl font-bold text-yellow-600">
@@ -91,7 +91,7 @@ export function ModernizerPanel(): JSX.Element {
               <div className="text-2xl font-bold text-blue-600">
                 {(summary.byCategory['todo'] ?? 0) + (summary.byCategory['unused-import'] ?? 0)}
               </div>
-              <div className="text-xs text-muted-foreground">TODO / Unused</div>
+              <div className="text-xs text-muted-foreground">{t({ id: 'modernizer.summary.todoUnused' })}</div>
             </div>
           </div>
         )}

@@ -39,6 +39,8 @@ interface RuntimeConfig {
   };
   port: number;
   rateLimit: {
+    authRequestsPerMinute: number;
+    httpRequestsPerMinute: number;
     wsMessagesPerSecond: number;
   };
   socketio: {
@@ -159,6 +161,8 @@ export const runtimeConfig: RuntimeConfig = {
   },
   port: readPort(),
   rateLimit: {
+    authRequestsPerMinute: readPositiveInt('HTTP_AUTH_RATE_LIMIT_PER_MINUTE', 30),
+    httpRequestsPerMinute: readPositiveInt('HTTP_RATE_LIMIT_PER_MINUTE', 600),
     wsMessagesPerSecond: readPositiveInt('WS_RATE_LIMIT_PER_SECOND', 10),
   },
   redis: {

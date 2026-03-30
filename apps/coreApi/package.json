@@ -8,7 +8,7 @@
     "build": "tsc -p tsconfig.json",
     "db:generate": "echo SQL migrations are managed under apps/coreApi/drizzle/migrations",
     "db:migrate": "node ../../scripts/applySqlMigration.cjs",
-    "start": "node Dist/main.js",
+    "start": "node dist/main.js",
     "generate:crud": "node --import tsx tools/cli/index.ts",
     "modernizer:analyze": "node --import tsx tools/modernizer/index.ts analyze",
     "modernizer:sync-docs": "node --import tsx tools/modernizer/index.ts sync-docs"

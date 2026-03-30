@@ -43,7 +43,7 @@ export class TenantsService {
     const id = randomUUID();
     await this.pool.query(
       'INSERT INTO tenants (id, name, slug, logo, is_active, config_json) VALUES ($1, $2, $3, $4, $5, $6)',
-      [id, data.name, data.slug, data.logo ?? null, data.isActive !== false, '{}']
+      [id, data.name, data.slug, data.logo ?? null, data.isActive === false ? 0 : 1, '{}']
     );
     return this.findById(id);
   }
@@ -53,7 +53,7 @@ export class TenantsService {
 
     const sets: string[] = [];
     const params: unknown[] = [];
-    let idx = 1;
+    let idx = 0;
 
     if (data.name !== undefined) {
       sets.push(`name = $${++idx}`);
@@ -65,7 +65,7 @@ export class TenantsService {
     }
     if (data.isActive !== undefined) {
       sets.push(`is_active = $${++idx}`);
-      params.push(data.isActive);
+      params.push(data.isActive ? 1 : 0);
     }
 
     if (sets.length === 0) return this.findById(id);

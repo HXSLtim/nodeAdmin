@@ -97,9 +97,9 @@ function readRolesFromEnv(): string[] {
   return roles.length > 0 ? roles : ['admin'];
 }
 
-function renderMessageBody(message: ImSocketMessage): JSX.Element {
+function renderMessageBody(message: ImSocketMessage, t: (id: { id: string }) => string): JSX.Element {
   if (message.deletedAt) {
-    return <p className="text-sm italic text-muted-foreground">This message was deleted.</p>;
+    return <p className="text-sm italic text-muted-foreground">{t({ id: 'im.messageDeleted' })}</p>;
   }
 
   if (message.messageType === 'image') {
@@ -120,7 +120,7 @@ function renderMessageBody(message: ImSocketMessage): JSX.Element {
   if (message.messageType === 'file') {
     return (
       <div className="space-y-1 text-sm">
-        <p className="font-medium">{message.metadata?.fileName || 'Attached file'}</p>
+        <p className="font-medium">{message.metadata?.fileName || t({ id: 'im.attachedFile' })}</p>
         {message.metadata?.url ? (
           <a
             className="text-primary underline"
@@ -128,7 +128,7 @@ function renderMessageBody(message: ImSocketMessage): JSX.Element {
             rel="noreferrer"
             target="_blank"
           >
-            Open file
+            {t({ id: 'im.openFile' })}
           </a>
         ) : null}
         <p className="break-all text-muted-foreground">{message.content}</p>
@@ -943,6 +943,7 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
                             setEditingMessageId(message.messageId);
                             setEditContent(message.content);
                           }}
+                          title={t({ id: 'im.editMessage' })}
                           type="button"
                         >
                           <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -952,11 +953,14 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
                         <button
                           className="rounded p-0.5 text-xs text-destructive opacity-0 transition-opacity hover:bg-muted group-hover:opacity-100"
                           onClick={() => {
-                            emitDelete({
-                              conversationId: message.conversationId,
-                              messageId: message.messageId,
-                            });
+                            if (window.confirm(t({ id: 'im.deleteConfirm' }))) {
+                              emitDelete({
+                                conversationId: message.conversationId,
+                                messageId: message.messageId,
+                              });
+                            }
                           }}
+                          title={t({ id: 'im.deleteMessage' })}
                           type="button"
                         >
                           <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -966,7 +970,7 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
                       </>
                     )}
                     <Badge variant={message.messageType === 'system' ? 'secondary' : 'default'}>
-                      {message.messageType}
+                      {t({ id: `im.type.${message.messageType}` })}
                     </Badge>
                   </div>
                 </div>
@@ -1003,12 +1007,12 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
                     </Button>
                   </div>
                 ) : (
-                  renderMessageBody(message)
+                  renderMessageBody(message, t)
                 )}
                 <div className="mt-2 flex items-center justify-between">
                   <p className="text-xs text-muted-foreground">
                     {message.createdAt}
-                    {message.editedAt ? <span className="ml-1 italic">(edited)</span> : null}
+                    {message.editedAt ? <span className="ml-1 italic">{t({ id: 'im.edited' })}</span> : null}
                   </p>
                   {message.userId === imConfig?.userId ? (
                     <button
@@ -1039,10 +1043,10 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
               onChange={(event) => setMessageType(event.target.value as ImMessageType)}
               value={messageType}
             >
-              <option value="text">text</option>
-              <option value="image">image</option>
-              <option value="file">file</option>
-              <option value="system">system</option>
+              <option value="text">{t({ id: 'im.type.text' })}</option>
+              <option value="image">{t({ id: 'im.type.image' })}</option>
+              <option value="file">{t({ id: 'im.type.file' })}</option>
+              <option value="system">{t({ id: 'im.type.system' })}</option>
             </select>
           </label>
           {(messageType === 'image' || messageType === 'file') && (

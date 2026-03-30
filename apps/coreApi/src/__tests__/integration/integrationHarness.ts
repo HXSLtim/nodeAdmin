@@ -1,6 +1,6 @@
 import { execFileSync, spawn, type ChildProcess } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import request, { type SuperTest, type Test } from 'supertest';
+import request from 'supertest';
 
 const REPO_ROOT = process.cwd();
 const DATABASE_URL = 'postgres://nodeadmin:nodeadmin@127.0.0.1:55432/nodeadmin';
@@ -10,13 +10,15 @@ const PORT = '11459';
 export interface IntegrationContext {
   baseUrl: string;
   close: () => Promise<void>;
-  http: SuperTest<Test>;
+  http: ReturnType<typeof request>;
   issueDevToken: (userId: string, roles?: string[], tenantId?: string) => Promise<string>;
   uniqueId: (prefix: string) => string;
 }
 
-export async function createIntegrationContext(): Promise<IntegrationContext> {
-  ensureIntegrationEnv();
+export async function createIntegrationContext(
+  envOverrides?: Record<string, string>
+): Promise<IntegrationContext> {
+  ensureIntegrationEnv(envOverrides);
   ensureInfrastructure();
   buildCoreApi();
   const serverProcess = await startCoreApiServer();
@@ -46,7 +48,7 @@ export async function createIntegrationContext(): Promise<IntegrationContext> {
   };
 }
 
-function ensureIntegrationEnv(): void {
+function ensureIntegrationEnv(envOverrides?: Record<string, string>): void {
   process.env.DATABASE_URL = DATABASE_URL;
   process.env.REDIS_URL = REDIS_URL;
   process.env.PORT = PORT;
@@ -56,6 +58,10 @@ function ensureIntegrationEnv(): void {
   process.env.AUTH_ENABLE_DEV_TOKEN_ISSUE = 'true';
   process.env.KAFKA_BROKERS = '';
   process.env.OTEL_ENABLED = 'false';
+
+  for (const [key, value] of Object.entries(envOverrides ?? {})) {
+    process.env[key] = value;
+  }
 }
 
 function ensureInfrastructure(): void {

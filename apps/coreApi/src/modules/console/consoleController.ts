@@ -79,17 +79,11 @@ export class ConsoleController {
     const activeCount = tenants.filter((t: any) => t.is_active).length;
     const onlineConnections = this.connectionRegistry.totalCount();
 
-    let totalUsers = 0;
     let totalConversations = 0;
     let todayMessages = 0;
 
     try {
       if (this.databaseService.drizzle) {
-        const usersResult = await this.databaseService.drizzle.execute({
-          sql: 'SELECT COUNT(*)::int AS count FROM users',
-        } as any);
-        totalUsers = Number(usersResult.rows?.[0]?.count ?? 0);
-
         const conversationsResult = await this.databaseService.drizzle.execute({
           sql: 'SELECT COUNT(*)::int AS count FROM conversations',
         } as any);
@@ -242,5 +236,31 @@ export class ConsoleController {
       pageSize,
       total,
     };
+  }
+
+  @Get('recent-messages')
+  @ApiOperation({ summary: 'Get globally recent messages for dashboard' })
+  async getRecentMessages(@CurrentUser() identity: AuthIdentity) {
+    if (!this.databaseService.drizzle) {
+      return { items: [] };
+    }
+
+    try {
+      const result = await this.databaseService.drizzle.execute({
+        sql: `
+          SELECT m.message_id as id, m.user_id as "userId", m.content, m.created_at as "createdAt",
+                 m.conversation_id as "conversationId"
+          FROM messages m
+          WHERE m.tenant_id = $1
+          ORDER BY m.created_at DESC
+          LIMIT 10
+        `,
+        bindings: [identity.tenantId],
+      } as any);
+
+      return { items: result.rows ?? [] };
+    } catch {
+      return { items: [] };
+    }
   }
 }

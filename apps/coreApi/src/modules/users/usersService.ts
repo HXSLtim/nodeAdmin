@@ -117,7 +117,7 @@ export class UsersService {
 
       const sets: string[] = [];
       const params: unknown[] = [];
-      let paramIdx = 1;
+      let paramIdx = 0;
 
       if (data.name !== undefined) {
         sets.push(`name = $${++paramIdx}`);
@@ -129,7 +129,7 @@ export class UsersService {
       }
       if (data.isActive !== undefined) {
         sets.push(`is_active = $${++paramIdx}`);
-        params.push(data.isActive);
+        params.push(data.isActive ? 1 : 0);
       }
 
       if (sets.length > 0) {

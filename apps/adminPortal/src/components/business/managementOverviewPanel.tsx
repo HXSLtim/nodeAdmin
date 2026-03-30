@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Timeline, TimelineItem } from '@/components/ui/timeline';
+import { Timeline } from '@/components/ui/timeline';
 import { NavIcon } from '@/app/layout/navIcon';
 import { useApiClient } from '@/hooks/useApiClient';
 
@@ -50,6 +50,18 @@ interface AuditLogResponse {
   total: number;
 }
 
+interface MessageRow {
+  id: string;
+  userId: string;
+  content: string;
+  createdAt: string;
+  conversationId: string;
+}
+
+interface RecentMessagesResponse {
+  items: MessageRow[];
+}
+
 const statBgClasses = [
   'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400',
   'bg-green-100 text-green-600 dark:bg-green-900/40 dark:text-green-400',
@@ -81,68 +93,145 @@ export function ManagementOverviewPanel(): JSX.Element {
     queryKey: ['recent-audit-logs'],
   });
 
+  const messagesQuery = useQuery({
+    queryFn: () => apiClient.get<RecentMessagesResponse>('/api/v1/console/recent-messages'),
+    queryKey: ['recent-messages'],
+  });
+
   const stats = overviewQuery.data?.stats ?? [];
   const health = healthQuery.data;
-  const recentActivities = auditQuery.data?.items ?? [];
+  const recentLogs = auditQuery.data?.items ?? [];
+  const recentMessages = messagesQuery.data?.items ?? [];
+
+  // Combine and sort activities
+  const activities = [
+    ...recentLogs.map((log) => ({
+      id: `log-${log.id}`,
+      type: 'log',
+      user: log.userId,
+      action: log.action,
+      time: new Date(log.createdAt),
+      raw: log,
+    })),
+    ...recentMessages.map((msg) => ({
+      id: `msg-${msg.id}`,
+      type: 'message',
+      user: msg.userId,
+      action: 'im.send',
+      time: new Date(msg.createdAt),
+      content: msg.content,
+      conversationId: msg.conversationId,
+    })),
+  ].sort((a, b) => b.time.getTime() - a.time.getTime()).slice(0, 10);
 
   const isOverviewPending = overviewQuery.isLoading;
   const isHealthPending = healthQuery.isLoading;
-  const isAuditPending = auditQuery.isLoading;
+  const isAuditPending = auditQuery.isLoading || messagesQuery.isLoading;
 
   const renderTrendChart = () => {
-    // Simple SVG mock chart
-    const data = [40, 70, 45, 90, 65, 80, 95];
-    const max = Math.max(...data);
-    const points = data
+    // Simple SVG mock chart with two lines (Messages and Connections)
+    const msgData = [40, 70, 45, 90, 65, 80, 95];
+    const connData = [20, 30, 25, 40, 35, 45, 50];
+    
+    const max = 100;
+    const getPoints = (data: number[]) => data
       .map((val, i) => `${(i * 100) / (data.length - 1)},${100 - (val * 100) / max}`)
       .join(' ');
+
+    const msgPoints = getPoints(msgData);
+    const connPoints = getPoints(connData);
+
+    const weekDays = [
+      t({ id: 'day.monday' }),
+      t({ id: 'day.tuesday' }),
+      t({ id: 'day.wednesday' }),
+      t({ id: 'day.thursday' }),
+      t({ id: 'day.friday' }),
+      t({ id: 'day.saturday' }),
+      t({ id: 'day.sunday' }),
+    ];
 
     return (
       <Card className="col-span-full lg:col-span-3">
         <CardHeader>
           <CardTitle className="text-base">{t({ id: 'overview.trends' })}</CardTitle>
-          <CardDescription>Message volume trend (Last 7 days)</CardDescription>
+          <CardDescription>{t({ id: 'overview.trends.desc' })}</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="h-[200px] w-full pt-4">
+          <div className="h-[200px] w-full pt-4 relative">
             <svg
               className="h-full w-full overflow-visible"
               preserveAspectRatio="none"
               viewBox="0 0 100 100"
             >
               <defs>
-                <linearGradient id="chartGradient" x1="0" x2="0" y1="0" y2="1">
+                <linearGradient id="msgGradient" x1="0" x2="0" y1="0" y2="1">
                   <stop offset="0%" stopColor="rgb(59, 130, 246)" stopOpacity="0.2" />
                   <stop offset="100%" stopColor="rgb(59, 130, 246)" stopOpacity="0" />
                 </linearGradient>
+                <linearGradient id="connGradient" x1="0" x2="0" y1="0" y2="1">
+                  <stop offset="0%" stopColor="rgb(16, 185, 129)" stopOpacity="0.2" />
+                  <stop offset="100%" stopColor="rgb(16, 185, 129)" stopOpacity="0" />
+                </linearGradient>
               </defs>
+              
+              {/* Grid lines */}
+              {[0, 25, 50, 75, 100].map((y) => (
+                <line
+                  key={y}
+                  x1="0"
+                  x2="100"
+                  y1={y}
+                  y2={y}
+                  className="stroke-muted/10"
+                  strokeWidth="0.5"
+                />
+              ))}
+
+              {/* Message line */}
+              <polygon fill="url(#msgGradient)" points={`0,100 ${msgPoints} 100,100`} />
               <polyline
-                className="text-primary"
+                className="text-blue-500"
                 fill="none"
-                points={points}
+                points={msgPoints}
                 stroke="currentColor"
                 strokeWidth="2"
               />
-              <polygon fill="url(#chartGradient)" points={`0,100 ${points} 100,100`} />
-              {data.map((_, i) => (
+
+              {/* Connection line */}
+              <polygon fill="url(#connGradient)" points={`0,100 ${connPoints} 100,100`} />
+              <polyline
+                className="text-emerald-500"
+                fill="none"
+                points={connPoints}
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeDasharray="2 1"
+              />
+              
+              {msgData.map((_, i) => (
                 <line
                   className="stroke-muted/20"
                   key={i}
-                  x1={(i * 100) / (data.length - 1)}
-                  x2={(i * 100) / (data.length - 1)}
+                  x1={(i * 100) / (msgData.length - 1)}
+                  x2={(i * 100) / (msgData.length - 1)}
                   y1="0"
                   y2="100"
                 />
               ))}
             </svg>
             <div className="mt-2 flex justify-between text-[10px] text-muted-foreground">
-              <span>Mon</span>
-              <span>Tue</span>
-              <span>Wed</span>
-              <span>Thu</span>
-              <span>Fri</span>
-              <span>Sat</span>
-              <span>Sun</span>
+              {weekDays.map(day => <span key={day}>{day}</span>)}
+            </div>
+            <div className="absolute top-0 right-0 flex gap-4 text-[10px] pr-4">
+              <div className="flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-blue-500" />
+                <span>{t({ id: 'overview.trends.messages' })}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                <span>{t({ id: 'overview.trends.connections' })}</span>
+              </div>
             </div>
           </div>
         </CardContent>
@@ -161,6 +250,23 @@ export function ManagementOverviewPanel(): JSX.Element {
       default:
         return 'bg-gray-500';
     }
+  };
+
+  const getActivityTitle = (activity: any) => {
+    if (activity.type === 'message') {
+      return `${activity.user}: ${activity.content.slice(0, 30)}${activity.content.length > 30 ? '...' : ''}`;
+    }
+    
+    let actionText = activity.action;
+    if (activity.action === 'auth.login') actionText = t({ id: 'audit.action.login' });
+    else if (activity.action.endsWith('.create'))
+      actionText = `${t({ id: 'audit.action.created' })} ${activity.action.split('.')[0]}`;
+    else if (activity.action.endsWith('.update'))
+      actionText = `${t({ id: 'audit.action.updated' })} ${activity.action.split('.')[0]}`;
+    else if (activity.action.endsWith('.delete'))
+      actionText = `${t({ id: 'audit.action.deleted' })} ${activity.action.split('.')[0]}`;
+
+    return `${activity.user} ${actionText}`;
   };
 
   return (
@@ -211,11 +317,11 @@ export function ManagementOverviewPanel(): JSX.Element {
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="text-base">{t({ id: 'overview.quickActions' })}</CardTitle>
-            <CardDescription>Common administrative tasks</CardDescription>
+            <CardDescription>{t({ id: 'overview.quickActions.desc' })}</CardDescription>
           </CardHeader>
           <CardContent className="grid grid-cols-1 gap-3">
             <Button
-              className="justify-start gap-2"
+              className="justify-start gap-2 h-11"
               onClick={() => navigate('/users')}
               variant="outline"
             >
@@ -223,7 +329,7 @@ export function ManagementOverviewPanel(): JSX.Element {
               {t({ id: 'users.create' })}
             </Button>
             <Button
-              className="justify-start gap-2"
+              className="justify-start gap-2 h-11"
               onClick={() => navigate('/tenants')}
               variant="outline"
             >
@@ -231,7 +337,7 @@ export function ManagementOverviewPanel(): JSX.Element {
               {t({ id: 'tenant.create' })}
             </Button>
             <Button
-              className="justify-start gap-2"
+              className="justify-start gap-2 h-11"
               onClick={() => navigate('/audit')}
               variant="outline"
             >
@@ -248,10 +354,10 @@ export function ManagementOverviewPanel(): JSX.Element {
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
               <CardTitle className="text-base">{t({ id: 'overview.recentActivity' })}</CardTitle>
-              <CardDescription>Latest system operations</CardDescription>
+              <CardDescription>{t({ id: 'overview.recentActivity.messages' })}</CardDescription>
             </div>
             <Button onClick={() => navigate('/audit')} size="sm" variant="ghost">
-              View All
+              {t({ id: 'common.viewAll' })}
             </Button>
           </CardHeader>
           <CardContent>
@@ -268,29 +374,16 @@ export function ManagementOverviewPanel(): JSX.Element {
                 ))}
               </div>
             ) : (
-              <Timeline className="mt-2">
-                {recentActivities.map((log) => {
-                  let actionText = log.action;
-                  if (log.action === 'auth.login') actionText = t({ id: 'audit.action.login' });
-                  else if (log.action === 'user.create')
-                    actionText = `${t({ id: 'audit.action.create' })} user`;
-                  else if (log.action === 'user.update')
-                    actionText = `${t({ id: 'audit.action.update' })} user`;
-
-                  return (
-                    <TimelineItem
-                      description={new Date(log.createdAt).toLocaleString()}
-                      key={log.id}
-                      title={`${log.userId} ${actionText}`}
-                    />
-                  );
-                })}
-                {recentActivities.length === 0 && (
-                  <p className="py-4 text-center text-sm text-muted-foreground">
-                    {t({ id: 'audit.empty' })}
-                  </p>
-                )}
-              </Timeline>
+              <Timeline
+                emptyMessage={t({ id: 'audit.empty' })}
+                isError={false}
+                isLoading={false}
+                items={activities.map((activity) => ({
+                  id: activity.id,
+                  subtitle: activity.time.toLocaleString(),
+                  title: getActivityTitle(activity),
+                }))}
+              />
             )}
           </CardContent>
         </Card>
@@ -299,7 +392,7 @@ export function ManagementOverviewPanel(): JSX.Element {
         <Card>
           <CardHeader>
             <CardTitle className="text-base">{t({ id: 'overview.systemStatus' })}</CardTitle>
-            <CardDescription>Infrastructure health check</CardDescription>
+            <CardDescription>{t({ id: 'overview.systemStatus.desc' })}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             {isHealthPending ? (
@@ -313,8 +406,8 @@ export function ManagementOverviewPanel(): JSX.Element {
               </div>
             ) : health ? (
               <div className="space-y-4">
-                <div className="flex items-center justify-between rounded-lg border border-border p-3">
-                  <span className="text-sm font-medium">Database</span>
+                <div className="flex items-center justify-between rounded-lg border border-border p-3 transition-colors hover:bg-muted/50">
+                  <span className="text-sm font-medium">{t({ id: 'overview.health.database' })}</span>
                   <Badge
                     className={getStatusColor(health.checks.database.status)}
                     variant="secondary"
@@ -322,26 +415,26 @@ export function ManagementOverviewPanel(): JSX.Element {
                     {health.checks.database.status.toUpperCase()}
                   </Badge>
                 </div>
-                <div className="flex items-center justify-between rounded-lg border border-border p-3">
-                  <span className="text-sm font-medium">Redis</span>
+                <div className="flex items-center justify-between rounded-lg border border-border p-3 transition-colors hover:bg-muted/50">
+                  <span className="text-sm font-medium">{t({ id: 'overview.health.redis' })}</span>
                   <Badge className={getStatusColor(health.checks.redis.status)} variant="secondary">
                     {health.checks.redis.status.toUpperCase()}
                   </Badge>
                 </div>
-                <div className="flex items-center justify-between rounded-lg border border-border p-3">
-                  <span className="text-sm font-medium">Kafka</span>
+                <div className="flex items-center justify-between rounded-lg border border-border p-3 transition-colors hover:bg-muted/50">
+                  <span className="text-sm font-medium">{t({ id: 'overview.health.kafka' })}</span>
                   <Badge className={getStatusColor(health.checks.kafka.status)} variant="secondary">
                     {health.checks.kafka.status.toUpperCase()}
                   </Badge>
                 </div>
 
-                <div className="pt-2">
+                <div className="pt-2 border-t border-border mt-4">
                   <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>Uptime</span>
+                    <span>{t({ id: 'overview.health.uptime' })}</span>
                     <span>{stats.find((s) => s.label === 'overview.stat.uptime')?.value}</span>
                   </div>
                   <div className="mt-1 flex justify-between text-xs text-muted-foreground">
-                    <span>Version</span>
+                    <span>{t({ id: 'overview.health.versionShort' })}</span>
                     <span>v{health.version}</span>
                   </div>
                 </div>
