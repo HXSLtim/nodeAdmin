@@ -40,11 +40,90 @@ async function wasApplied(client, filename) {
   return result.rowCount > 0;
 }
 
+/**
+ * Split SQL into individual statements, respecting dollar-quoted strings
+ * and single-quoted strings so that semicolons inside function bodies
+ * are not treated as statement delimiters.
+ */
+function splitStatements(sql) {
+  const statements = [];
+  let current = '';
+  let i = 0;
+
+  while (i < sql.length) {
+    // Single-line comment — consume to end of line
+    if (sql[i] === '-' && sql[i + 1] === '-') {
+      while (i < sql.length && sql[i] !== '\n') i++;
+      continue;
+    }
+
+    // Block comment — consume to */
+    if (sql[i] === '/' && sql[i + 1] === '*') {
+      i += 2;
+      while (i < sql.length && !(sql[i] === '*' && sql[i + 1] === '/')) i++;
+      i += 2;
+      continue;
+    }
+
+    // Dollar-quoted string — find matching $tag$
+    const dollarMatch = sql.slice(i).match(/^\$([a-zA-Z_]\w*)?\$/);
+    if (dollarMatch) {
+      const tag = dollarMatch[0];
+      current += tag;
+      i += tag.length;
+      const endIdx = sql.indexOf(tag, i);
+      if (endIdx === -1) {
+        current += sql.slice(i);
+        break;
+      }
+      current += sql.slice(i, endIdx + tag.length);
+      i = endIdx + tag.length;
+      continue;
+    }
+
+    // Single-quoted string
+    if (sql[i] === "'") {
+      current += "'";
+      i++;
+      while (i < sql.length) {
+        if (sql[i] === "'") {
+          current += "'";
+          i++;
+          if (sql[i] !== "'") break; // doubled quote = escaped
+        } else {
+          current += sql[i];
+          i++;
+        }
+      }
+      continue;
+    }
+
+    // Semicolon — statement boundary
+    if (sql[i] === ';') {
+      const trimmed = current.trim();
+      if (trimmed) statements.push(trimmed);
+      current = '';
+      i++;
+      continue;
+    }
+
+    current += sql[i];
+    i++;
+  }
+
+  const trimmed = current.trim();
+  if (trimmed) statements.push(trimmed);
+  return statements;
+}
+
 async function applyMigration(client, migration) {
   await client.query('BEGIN');
 
   try {
-    await client.query(migration.sql);
+    const statements = splitStatements(migration.sql);
+    for (const stmt of statements) {
+      await client.query(stmt);
+    }
     await client.query('INSERT INTO schema_migrations (filename) VALUES ($1);', [
       migration.filename,
     ]);
