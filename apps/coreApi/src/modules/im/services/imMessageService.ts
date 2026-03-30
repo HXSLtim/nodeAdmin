@@ -232,6 +232,8 @@ export class ImMessageService implements OnModuleInit, OnModuleDestroy {
 
         const optimisticMessage: StoredMessage = {
           ...pendingMessage,
+          deletedAt: null,
+          editedAt: null,
           messageType: pendingMessage.messageType ?? 'text',
           metadata: pendingMessage.metadata ?? null,
           sequenceId,
@@ -632,5 +634,93 @@ export class ImMessageService implements OnModuleInit, OnModuleDestroy {
       .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '')
       .replace(/<\/?[^>]+(>|$)/g, '')
       .trim();
+  }
+
+  async editMessage(
+    context: SocketContext,
+    messageId: string,
+    content: string,
+    identity: AuthIdentity
+  ): Promise<StoredMessage> {
+    const sanitizedContent = this.sanitizeContent(content);
+    if (!sanitizedContent) {
+      throw new WsException('Edited message content is empty after sanitization.');
+    }
+
+    const updated = await this.messageRepository.updateContent(
+      identity.tenantId,
+      messageId,
+      sanitizedContent
+    );
+
+    if (!updated) {
+      throw new WsException('Message not found or already deleted.');
+    }
+
+    if (updated.userId !== identity.userId) {
+      throw new WsException('You can only edit your own messages.');
+    }
+
+    return updated;
+  }
+
+  async deleteMessage(
+    context: SocketContext,
+    messageId: string,
+    identity: AuthIdentity
+  ): Promise<StoredMessage> {
+    // First fetch to verify ownership before soft-deleting
+    const latest = await this.messageRepository.getLatest(
+      identity.tenantId,
+      context.conversationId,
+      200
+    );
+
+    const target = latest.find((m) => m.messageId === messageId);
+    if (!target) {
+      throw new WsException('Message not found.');
+    }
+
+    if (target.userId !== identity.userId) {
+      throw new WsException('You can only delete your own messages.');
+    }
+
+    const deleted = await this.messageRepository.softDelete(identity.tenantId, messageId);
+    if (!deleted) {
+      throw new WsException('Message not found or already deleted.');
+    }
+
+    return deleted;
+  }
+
+  async markAsRead(
+    context: SocketContext,
+    lastReadMessageId: string,
+    identity: AuthIdentity
+  ): Promise<{ conversationId: string; lastReadMessageId: string; userId: string }> {
+    // Find the sequence ID for the referenced message
+    const latest = await this.messageRepository.getLatest(
+      identity.tenantId,
+      context.conversationId,
+      200
+    );
+
+    const target = latest.find((m) => m.messageId === lastReadMessageId);
+    if (!target) {
+      throw new WsException('Referenced message not found.');
+    }
+
+    await this.messageRepository.upsertReadReceipt(
+      identity.tenantId,
+      context.conversationId,
+      identity.userId,
+      target.sequenceId
+    );
+
+    return {
+      conversationId: context.conversationId,
+      lastReadMessageId,
+      userId: identity.userId,
+    };
   }
 }

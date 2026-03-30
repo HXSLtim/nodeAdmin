@@ -7,6 +7,8 @@ export interface StoredMessage {
   content: string;
   conversationId: string;
   createdAt: string;
+  deletedAt: string | null;
+  editedAt: string | null;
   messageId: string;
   messageType: ImMessageType;
   metadata: MessageMetadata | null;
@@ -16,7 +18,7 @@ export interface StoredMessage {
   userId: string;
 }
 
-export type PendingMessage = Omit<StoredMessage, 'messageType' | 'metadata' | 'sequenceId'> & {
+export type PendingMessage = Omit<StoredMessage, 'messageType' | 'metadata' | 'sequenceId' | 'deletedAt' | 'editedAt'> & {
   messageType?: ImMessageType;
   metadata?: MessageMetadata | null;
 };
@@ -50,6 +52,8 @@ export class InMemoryMessageStore {
     const currentSequence = this.nextSequenceByStream.get(streamKey) ?? 0;
     const storedMessage: StoredMessage = {
       ...message,
+      deletedAt: null,
+      editedAt: null,
       messageType: message.messageType ?? 'text',
       metadata: message.metadata ?? null,
       sequenceId: currentSequence + 1,
@@ -79,6 +83,41 @@ export class InMemoryMessageStore {
     const streamKey = this.toStreamKey(tenantId, conversationId);
     const currentMessages = this.messagesByStream.get(streamKey) ?? [];
     return currentMessages.slice(-limit);
+  }
+
+  updateContent(
+    tenantId: string,
+    conversationId: string,
+    messageId: string,
+    content: string
+  ): StoredMessage | null {
+    const streamKey = this.toStreamKey(tenantId, conversationId);
+    const messageById = this.messageByIdByStream.get(streamKey);
+    if (!messageById) return null;
+
+    const msg = messageById.get(messageId);
+    if (!msg) return null;
+
+    msg.content = content;
+    msg.editedAt = new Date().toISOString();
+    return msg;
+  }
+
+  softDelete(
+    tenantId: string,
+    conversationId: string,
+    messageId: string
+  ): StoredMessage | null {
+    const streamKey = this.toStreamKey(tenantId, conversationId);
+    const messageById = this.messageByIdByStream.get(streamKey);
+    if (!messageById) return null;
+
+    const msg = messageById.get(messageId);
+    if (!msg) return null;
+
+    msg.content = '';
+    msg.deletedAt = new Date().toISOString();
+    return msg;
   }
 
   private toStreamKey(tenantId: string, conversationId: string): string {

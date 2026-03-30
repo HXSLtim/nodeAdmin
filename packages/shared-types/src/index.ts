@@ -10,6 +10,8 @@ export interface ImMessage {
   content: string;
   conversationId: string;
   createdAt: string;
+  deletedAt: string | null;
+  editedAt: string | null;
   messageId: string;
   messageType: ImMessageType;
   metadata: MessageMetadata | null;

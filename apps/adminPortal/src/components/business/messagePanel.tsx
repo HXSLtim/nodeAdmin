@@ -12,6 +12,8 @@ import {
   ImSocketMessage,
   ImTypingEvent,
   useImSocket,
+  type ImMessageDeletedEvent,
+  type ImMessageEditedEvent,
   type ImPresenceEvent,
 } from '@/hooks/useImSocket';
 import { className } from '@/lib/className';
@@ -95,6 +97,10 @@ function readRolesFromEnv(): string[] {
 }
 
 function renderMessageBody(message: ImSocketMessage): JSX.Element {
+  if (message.deletedAt) {
+    return <p className="text-sm italic text-muted-foreground">This message was deleted.</p>;
+  }
+
   if (message.messageType === 'image') {
     return (
       <div className="space-y-2">
@@ -166,6 +172,8 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
   const [viewportHeight, setViewportHeight] = useState(320);
   const [pendingImage, setPendingImage] = useState<PendingImage | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState('');
 
   const messageViewportRef = useRef<HTMLDivElement | null>(null);
   const typingIdleTimerRef = useRef<number | null>(null);
@@ -390,11 +398,27 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
     });
   }, []);
 
-  const { emitTyping, emitWithAck } = useImSocket({
+  const handleMessageEdited = useCallback(
+    (event: ImMessageEditedEvent) => {
+      upsertMessage(event.message);
+    },
+    [upsertMessage]
+  );
+
+  const handleMessageDeleted = useCallback(
+    (event: ImMessageDeletedEvent) => {
+      upsertMessage(event.message);
+    },
+    [upsertMessage]
+  );
+
+  const { emitDelete, emitEdit, emitMarkAsRead, emitTyping, emitWithAck } = useImSocket({
     accessToken,
     conversationId: imConfig?.conversationId ?? '',
     onConnectionStateChange: setConnectionState,
     onConversationHistory: handleConversationHistory,
+    onMessageEdited: handleMessageEdited,
+    onMessageDeleted: handleMessageDeleted,
     onMessageReceived: handleMessageReceived,
     onPresenceChanged: handlePresenceChanged,
     onTypingChanged: handleTypingChanged,
@@ -530,6 +554,22 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
     setPendingImage(null);
   }, [pendingImage]);
 
+  const stopTyping = useCallback(() => {
+    if (!imConfig) {
+      return;
+    }
+
+    emitTyping({
+      conversationId: imConfig.conversationId,
+      isTyping: false,
+    });
+
+    if (typingIdleTimerRef.current !== null) {
+      window.clearTimeout(typingIdleTimerRef.current);
+      typingIdleTimerRef.current = null;
+    }
+  }, [emitTyping, imConfig]);
+
   const uploadAndSendImage = useCallback(async () => {
     if (!pendingImage || !imConfig || !canSendMessage) return;
 
@@ -595,22 +635,6 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
     enqueueOfflinePayload,
     stopTyping,
   ]);
-
-  const stopTyping = useCallback(() => {
-    if (!imConfig) {
-      return;
-    }
-
-    emitTyping({
-      conversationId: imConfig.conversationId,
-      isTyping: false,
-    });
-
-    if (typingIdleTimerRef.current !== null) {
-      window.clearTimeout(typingIdleTimerRef.current);
-      typingIdleTimerRef.current = null;
-    }
-  }, [emitTyping, imConfig]);
 
   useEffect(() => {
     return () => {
@@ -858,18 +882,103 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
           <ul className="flex flex-col gap-2">
             {virtualItems.map((message) => (
               <li
-                className="rounded-md bg-card p-2"
+                className="group rounded-md bg-card p-2"
                 key={message.messageId}
                 style={{ minHeight: virtualRowHeightPx - 8 }}
               >
                 <div className="mb-1 flex items-center justify-between gap-2">
                   <p className="text-xs font-semibold">{message.userId}</p>
-                  <Badge variant={message.messageType === 'system' ? 'secondary' : 'default'}>
-                    {message.messageType}
-                  </Badge>
+                  <div className="flex items-center gap-1">
+                    {!message.deletedAt && message.userId === imConfig?.userId && canSendMessage && (
+                      <>
+                        <button
+                          className="rounded p-0.5 text-xs text-muted-foreground opacity-0 transition-opacity hover:bg-muted group-hover:opacity-100"
+                          onClick={() => {
+                            setEditingMessageId(message.messageId);
+                            setEditContent(message.content);
+                          }}
+                          type="button"
+                        >
+                          <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                            <path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        </button>
+                        <button
+                          className="rounded p-0.5 text-xs text-destructive opacity-0 transition-opacity hover:bg-muted group-hover:opacity-100"
+                          onClick={() => {
+                            emitDelete({
+                              conversationId: message.conversationId,
+                              messageId: message.messageId,
+                            });
+                          }}
+                          type="button"
+                        >
+                          <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                            <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        </button>
+                      </>
+                    )}
+                    <Badge variant={message.messageType === 'system' ? 'secondary' : 'default'}>
+                      {message.messageType}
+                    </Badge>
+                  </div>
                 </div>
-                {renderMessageBody(message)}
-                <p className="mt-2 text-xs text-muted-foreground">{message.createdAt}</p>
+                {editingMessageId === message.messageId ? (
+                  <div className="flex gap-2">
+                    <Input
+                      autoFocus
+                      className="flex-1 text-sm"
+                      onChange={(e) => setEditContent(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          if (editContent.trim()) {
+                            emitEdit({
+                              conversationId: message.conversationId,
+                              content: editContent.trim(),
+                              messageId: message.messageId,
+                            });
+                          }
+                          setEditingMessageId(null);
+                        }
+                        if (e.key === 'Escape') {
+                          setEditingMessageId(null);
+                        }
+                      }}
+                      value={editContent}
+                    />
+                    <Button
+                      onClick={() => setEditingMessageId(null)}
+                      size="sm"
+                      variant="secondary"
+                    >
+                      {t({ id: 'common.cancel' })}
+                    </Button>
+                  </div>
+                ) : (
+                  renderMessageBody(message)
+                )}
+                <div className="mt-2 flex items-center justify-between">
+                  <p className="text-xs text-muted-foreground">
+                    {message.createdAt}
+                    {message.editedAt ? <span className="ml-1 italic">(edited)</span> : null}
+                  </p>
+                  {message.userId === imConfig?.userId ? (
+                    <button
+                      className="text-[10px] text-muted-foreground hover:underline"
+                      onClick={() => {
+                        emitMarkAsRead({
+                          conversationId: message.conversationId,
+                          lastReadMessageId: message.messageId,
+                        });
+                      }}
+                      type="button"
+                    >
+                      {t({ id: 'im.markAsRead' })}
+                    </button>
+                  ) : null}
+                </div>
               </li>
             ))}
           </ul>

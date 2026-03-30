@@ -14,6 +14,8 @@ type MessageRow = {
   content: string;
   conversation_id: string;
   created_at: Date;
+  deleted_at: Date | null;
+  edited_at: Date | null;
   message_id: string;
   message_type: string;
   metadata_json: string | null;
@@ -237,6 +239,86 @@ export class ImMessageRepository implements OnModuleDestroy {
     });
   }
 
+  async updateContent(
+    tenantId: string,
+    messageId: string,
+    content: string
+  ): Promise<StoredMessage | null> {
+    if (!this.pool) {
+      return this.inMemoryStore.updateContent(
+        tenantId,
+        '',
+        messageId,
+        content
+      );
+    }
+
+    return this.runWithTenant(tenantId, async (client) => {
+      const result = await client.query<MessageRow>(
+        `
+          UPDATE messages
+          SET content = $1, edited_at = NOW()
+          WHERE tenant_id = $2 AND message_id = $3 AND deleted_at IS NULL
+          RETURNING content, conversation_id, created_at, deleted_at, edited_at,
+                    message_id, message_type, metadata_json, sequence_id,
+                    tenant_id, trace_id, user_id;
+        `,
+        [content, tenantId, messageId]
+      );
+
+      if (!result.rowCount || result.rowCount === 0) return null;
+      return this.toStoredMessage(result.rows[0]);
+    });
+  }
+
+  async softDelete(
+    tenantId: string,
+    messageId: string
+  ): Promise<StoredMessage | null> {
+    if (!this.pool) {
+      return this.inMemoryStore.softDelete(tenantId, '', messageId);
+    }
+
+    return this.runWithTenant(tenantId, async (client) => {
+      const result = await client.query<MessageRow>(
+        `
+          UPDATE messages
+          SET content = '', deleted_at = NOW()
+          WHERE tenant_id = $1 AND message_id = $2 AND deleted_at IS NULL
+          RETURNING content, conversation_id, created_at, deleted_at, edited_at,
+                    message_id, message_type, metadata_json, sequence_id,
+                    tenant_id, trace_id, user_id;
+        `,
+        [tenantId, messageId]
+      );
+
+      if (!result.rowCount || result.rowCount === 0) return null;
+      return this.toStoredMessage(result.rows[0]);
+    });
+  }
+
+  async upsertReadReceipt(
+    tenantId: string,
+    conversationId: string,
+    userId: string,
+    sequenceId: number
+  ): Promise<void> {
+    if (!this.pool) return;
+
+    await this.runWithTenant(tenantId, async (client) => {
+      await client.query(
+        `
+          INSERT INTO message_reads (tenant_id, conversation_id, user_id, last_read_sequence_id, updated_at)
+          VALUES ($1, $2, $3, $4, NOW())
+          ON CONFLICT (tenant_id, conversation_id, user_id)
+          DO UPDATE SET last_read_sequence_id = GREATEST(message_reads.last_read_sequence_id, $4),
+                        updated_at = NOW();
+        `,
+        [tenantId, conversationId, userId, sequenceId]
+      );
+    });
+  }
+
   private async runWithTenant<T>(
     tenantId: string,
     work: (client: PoolClient) => Promise<T>
@@ -266,6 +348,8 @@ export class ImMessageRepository implements OnModuleDestroy {
       content: row.content,
       conversationId: row.conversation_id,
       createdAt: row.created_at.toISOString(),
+      deletedAt: row.deleted_at?.toISOString() ?? null,
+      editedAt: row.edited_at?.toISOString() ?? null,
       messageId: row.message_id,
       messageType: this.normalizeMessageType(row.message_type),
       metadata: this.parseMetadata(row.metadata_json),

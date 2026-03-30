@@ -67,6 +67,8 @@
   "im.uploading": "上传中...",
   "im.imagePreviewError": "预览失败",
   "im.dragDropHint": "拖拽图片到此处上传",
+  "im.messageDeleted": "此消息已删除。",
+  "im.markAsRead": "标记已读",
 
   "users.title": "用户管理",
   "users.desc": "管理系统用户、分配角色。",

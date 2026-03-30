@@ -24,10 +24,14 @@ import { AuthIdentity } from '../auth/authIdentity';
 import { JoinConversationDto } from './dto/joinConversationDto';
 import { SendMessageDto } from './dto/sendMessageDto';
 import { TypingStatusDto } from './dto/typingStatusDto';
+import { EditMessageDto } from './dto/editMessageDto';
+import { DeleteMessageDto } from './dto/deleteMessageDto';
+import { MarkAsReadDto } from './dto/markAsReadDto';
 import { WsTenantGuard } from './guards/wsTenantGuard';
 import { ImConversationService } from './services/imConversationService';
 import { ImMessageService } from './services/imMessageService';
 import { ImPresenceService } from './services/imPresenceService';
+import { StoredMessage } from '../../infrastructure/inMemoryMessageStore';
 
 @WebSocketGateway({
   cors: {
@@ -295,6 +299,103 @@ export class ImGateway
       tenantId: identity.tenantId,
       userId: identity.userId,
     });
+
+    return { ok: true };
+  }
+
+  @SubscribeMessage('editMessage')
+  @UseGuards(WsTenantGuard)
+  async editMessage(
+    @ConnectedSocket() client: Socket,
+    @MessageBody(
+      new ValidationPipe({
+        exceptionFactory: (errors) => new WsException(errors),
+        forbidNonWhitelisted: true,
+        transform: true,
+        whitelist: true,
+      })
+    )
+    payload: EditMessageDto
+  ): Promise<{ ok: true; message: StoredMessage }> {
+    const identity = this.requireIdentity(client);
+    const context = this.conversationService.getContext(client.id);
+    if (!context || context.conversationId !== payload.conversationId) {
+      throw new WsException('Please join the matching conversation before editing messages.');
+    }
+
+    const updated = await this.messageService.editMessage(
+      context,
+      payload.messageId,
+      payload.content,
+      identity
+    );
+
+    const roomKey = this.conversationService.toRoomKey(context.tenantId, context.conversationId);
+    this.server.to(roomKey).emit('messageEdited', updated);
+
+    return { ok: true, message: updated };
+  }
+
+  @SubscribeMessage('deleteMessage')
+  @UseGuards(WsTenantGuard)
+  async deleteMessage(
+    @ConnectedSocket() client: Socket,
+    @MessageBody(
+      new ValidationPipe({
+        exceptionFactory: (errors) => new WsException(errors),
+        forbidNonWhitelisted: true,
+        transform: true,
+        whitelist: true,
+      })
+    )
+    payload: DeleteMessageDto
+  ): Promise<{ ok: true; message: StoredMessage }> {
+    const identity = this.requireIdentity(client);
+    const context = this.conversationService.getContext(client.id);
+    if (!context || context.conversationId !== payload.conversationId) {
+      throw new WsException('Please join the matching conversation before deleting messages.');
+    }
+
+    const deleted = await this.messageService.deleteMessage(
+      context,
+      payload.messageId,
+      identity
+    );
+
+    const roomKey = this.conversationService.toRoomKey(context.tenantId, context.conversationId);
+    this.server.to(roomKey).emit('messageDeleted', deleted);
+
+    return { ok: true, message: deleted };
+  }
+
+  @SubscribeMessage('markAsRead')
+  @UseGuards(WsTenantGuard)
+  async markAsRead(
+    @ConnectedSocket() client: Socket,
+    @MessageBody(
+      new ValidationPipe({
+        exceptionFactory: (errors) => new WsException(errors),
+        forbidNonWhitelisted: true,
+        transform: true,
+        whitelist: true,
+      })
+    )
+    payload: MarkAsReadDto
+  ): Promise<{ ok: true }> {
+    const identity = this.requireIdentity(client);
+    const context = this.conversationService.getContext(client.id);
+    if (!context || context.conversationId !== payload.conversationId) {
+      throw new WsException('Please join the matching conversation before marking as read.');
+    }
+
+    const receipt = await this.messageService.markAsRead(
+      context,
+      payload.lastReadMessageId,
+      identity
+    );
+
+    const roomKey = this.conversationService.toRoomKey(context.tenantId, context.conversationId);
+    this.server.to(roomKey).emit('readReceiptUpdated', receipt);
 
     return { ok: true };
   }

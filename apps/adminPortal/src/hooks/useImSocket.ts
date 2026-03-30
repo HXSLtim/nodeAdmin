@@ -35,18 +35,38 @@ export interface ImPresenceEvent {
   userId: string;
 }
 
+export interface ImMessageEditedEvent {
+  message: ImSocketMessage;
+}
+
+export interface ImMessageDeletedEvent {
+  message: ImSocketMessage;
+}
+
+export interface ImReadReceiptEvent {
+  conversationId: string;
+  lastReadMessageId: string;
+  userId: string;
+}
+
 interface UseImSocketOptions {
   accessToken: string | null;
   conversationId: string;
   onConnectionStateChange: (connectionState: SocketConnectionState) => void;
   onConversationHistory: (history: ImSocketMessage[]) => void;
+  onMessageEdited?: (event: ImMessageEditedEvent) => void;
+  onMessageDeleted?: (event: ImMessageDeletedEvent) => void;
   onMessageReceived: (message: ImSocketMessage) => void;
+  onReadReceiptUpdated?: (event: ImReadReceiptEvent) => void;
   onTypingChanged?: (event: ImTypingEvent) => void;
   onPresenceChanged?: (event: ImPresenceEvent) => void;
   socketUrl: string;
 }
 
 export function useImSocket(options: UseImSocketOptions): {
+  emitDelete: (payload: { conversationId: string; messageId: string }) => void;
+  emitEdit: (payload: { conversationId: string; messageId: string; content: string }) => void;
+  emitMarkAsRead: (payload: { conversationId: string; lastReadMessageId: string }) => void;
   emitTyping: (payload: { conversationId: string; isTyping: boolean }) => void;
   emitWithAck: (
     payload: ImSendMessagePayload,
@@ -58,7 +78,10 @@ export function useImSocket(options: UseImSocketOptions): {
     conversationId,
     onConnectionStateChange,
     onConversationHistory,
+    onMessageEdited,
+    onMessageDeleted,
     onMessageReceived,
+    onReadReceiptUpdated,
     onTypingChanged,
     onPresenceChanged,
     socketUrl,
@@ -108,6 +131,15 @@ export function useImSocket(options: UseImSocketOptions): {
 
     socket.on('conversationHistory', onConversationHistory);
     socket.on('messageReceived', onMessageReceived);
+    if (onMessageEdited) {
+      socket.on('messageEdited', onMessageEdited);
+    }
+    if (onMessageDeleted) {
+      socket.on('messageDeleted', onMessageDeleted);
+    }
+    if (onReadReceiptUpdated) {
+      socket.on('readReceiptUpdated', onReadReceiptUpdated);
+    }
     if (onTypingChanged) {
       socket.on('typingChanged', onTypingChanged);
     }
@@ -116,6 +148,15 @@ export function useImSocket(options: UseImSocketOptions): {
     }
 
     return () => {
+      if (onMessageEdited) {
+        socket.off('messageEdited', onMessageEdited);
+      }
+      if (onMessageDeleted) {
+        socket.off('messageDeleted', onMessageDeleted);
+      }
+      if (onReadReceiptUpdated) {
+        socket.off('readReceiptUpdated', onReadReceiptUpdated);
+      }
       if (onTypingChanged) {
         socket.off('typingChanged', onTypingChanged);
       }
@@ -175,7 +216,37 @@ export function useImSocket(options: UseImSocketOptions): {
     []
   );
 
+  const emitEdit = useCallback(
+    (payload: { conversationId: string; messageId: string; content: string }) => {
+      const socket = socketRef.current;
+      if (!socket) return;
+      socket.emit('editMessage', payload);
+    },
+    []
+  );
+
+  const emitDelete = useCallback(
+    (payload: { conversationId: string; messageId: string }) => {
+      const socket = socketRef.current;
+      if (!socket) return;
+      socket.emit('deleteMessage', payload);
+    },
+    []
+  );
+
+  const emitMarkAsRead = useCallback(
+    (payload: { conversationId: string; lastReadMessageId: string }) => {
+      const socket = socketRef.current;
+      if (!socket) return;
+      socket.emit('markAsRead', payload);
+    },
+    []
+  );
+
   return {
+    emitDelete,
+    emitEdit,
+    emitMarkAsRead,
     emitTyping,
     emitWithAck,
   };

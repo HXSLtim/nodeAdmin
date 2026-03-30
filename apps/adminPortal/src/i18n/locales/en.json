@@ -67,6 +67,9 @@
   "im.uploading": "Uploading...",
   "im.imagePreviewError": "Preview failed",
   "im.dragDropHint": "Drop image here to upload",
+  "im.messageDeleted": "This message was deleted.",
+  "im.markAsRead": "Mark as read",
+  "im.edited": "(edited)",
 
   "users.title": "User Management",
   "users.desc": "Manage system users and assign roles.",
