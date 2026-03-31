@@ -6,12 +6,12 @@ ON CONFLICT (code) DO NOTHING;
 
 INSERT INTO menus (id, parent_id, name, path, icon, sort_order, permission_code, is_visible)
 VALUES (
-  gen_random_uuid()::text,
-  NULL,
-  'Backlog',
+  'menu-backlog',
+  'menu-group-devtools',
+  '需求管理',
   '/backlog',
   'list',
-  110,
+  2,
   'backlog:view',
   1
 )

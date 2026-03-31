@@ -432,6 +432,46 @@ describe('MenusService', () => {
       expect(result[0].children).toHaveLength(1);
     });
 
+    it('should include visible ancestor groups for assigned child menus', async () => {
+      const rows = [
+        {
+          id: 'group-1',
+          parent_id: null,
+          name: '开发工具',
+          path: null,
+          icon: 'code',
+          sort_order: 3,
+          permission_code: null,
+          is_visible: true,
+          created_at: new Date('2026-03-31T00:00:00.000Z'),
+        },
+        {
+          id: 'menu-1',
+          parent_id: 'group-1',
+          name: '代码分析',
+          path: '/modernizer',
+          icon: 'search',
+          sort_order: 1,
+          permission_code: 'modernizer:view',
+          is_visible: true,
+          created_at: new Date('2026-03-31T00:00:01.000Z'),
+        },
+      ];
+      const mockPool = createMockPool([{ rows, rowCount: 2 }]);
+      (service as any).pool = mockPool;
+
+      const result = await service.getUserMenus('default', 'u-1');
+
+      expect(mockPool.query).toHaveBeenCalledWith(
+        expect.stringContaining('WITH RECURSIVE accessible_menus AS'),
+        ['default', 'u-1']
+      );
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('group-1');
+      expect(result[0].children).toHaveLength(1);
+      expect(result[0].children![0].id).toBe('menu-1');
+    });
+
     it('should scope user menu queries by tenant to avoid cross-tenant leakage', async () => {
       const mockPool = createMockPool([{ rows: [], rowCount: 0 }]);
       (service as any).pool = mockPool;

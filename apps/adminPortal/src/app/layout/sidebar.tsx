@@ -1,10 +1,11 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { NavLink, useLocation } from 'react-router-dom';
 import { className } from '@/lib/className';
 import { useMenuStore } from '@/stores/useMenuStore';
 import { usePermissionStore } from '@/stores/usePermissionStore';
 import { useUiStore } from '@/stores/useUiStore';
+import type { MenuItem, AppPermission } from '@nodeadmin/shared-types';
 import { isNavItemActive, navItems } from './navConfig';
 import { NavIcon } from './navIcon';
 
@@ -19,13 +20,21 @@ export function Sidebar(): JSX.Element {
   const menus = useMenuStore((s) => s.menus);
   const menusLoaded = useMenuStore((s) => s.loaded);
 
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+
+  const toggleGroup = (id: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setExpandedGroups((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
   const visibleNavItems = navItems.filter((item) => permissions[item.permission]);
 
   // Auto-collapse sidebar on tablet (768–1023px)
   useEffect(() => {
     const mql = window.matchMedia('(min-width: 768px) and (max-width: 1023px)');
     if (mql.matches) {
-      useUiStore.getState().toggleSidebar();
+      useUiStore.setState({ sidebarCollapsed: true });
     }
     const handler = (e: MediaQueryListEvent) => {
       if (e.matches) {
@@ -38,7 +47,7 @@ export function Sidebar(): JSX.Element {
 
   function linkClass(isActive: boolean): string {
     return className(
-      'flex h-10 items-center rounded-md text-sm font-medium transition-colors',
+      'group relative flex h-10 items-center rounded-md text-sm font-medium transition-colors',
       sidebarCollapsed ? 'justify-center px-2' : 'gap-3 px-3',
       isActive
         ? 'bg-primary text-primary-foreground shadow-sm'
@@ -49,30 +58,65 @@ export function Sidebar(): JSX.Element {
   const sidebarBase =
     'flex shrink-0 flex-col border-r bg-[hsl(var(--sidebar))] text-[hsl(var(--sidebar-foreground))] transition-all duration-200';
 
-  function renderMenuItem(
-    menu: {
-      icon: string;
-      name: string;
-      path: string;
-      children?: { icon: string; name: string; path: string }[];
-    },
-    depth = 0
-  ): JSX.Element {
+  function renderMenuItem(menu: MenuItem, depth = 0): JSX.Element | null {
+    if (menu.permission_code && !permissions[menu.permission_code as AppPermission]) {
+      return null;
+    }
+
     const hasChildren = menu.children && menu.children.length > 0;
+    const isExpanded = expandedGroups[menu.id];
     const isActive = isNavItemActive(location.pathname, menu.path);
+    const displayName = t({ id: menu.name, defaultMessage: menu.name });
 
     return (
-      <div key={menu.path + menu.name}>
-        <NavLink
-          className={() => linkClass(isActive)}
-          onClick={() => setMobileMenuOpen(false)}
-          style={{ paddingLeft: `${depth * 12 + 8}px` }}
-          to={menu.path}
-        >
-          <NavIcon name={menu.icon} />
-          {!sidebarCollapsed ? <span className="truncate">{menu.name}</span> : null}
-        </NavLink>
-        {hasChildren && !sidebarCollapsed
+      <div key={menu.id}>
+        {hasChildren ? (
+          <div
+            className={className(linkClass(isActive), 'cursor-pointer')}
+            onClick={(e) => toggleGroup(menu.id, e)}
+            style={{ paddingLeft: !sidebarCollapsed ? `${depth * 12 + 12}px` : undefined }}
+          >
+            <NavIcon name={menu.icon} />
+            {!sidebarCollapsed ? (
+              <>
+                <span className="flex-1 truncate">{displayName}</span>
+                <svg
+                  className={className(
+                    'h-4 w-4 transition-transform',
+                    isExpanded ? 'rotate-90' : ''
+                  )}
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M9 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </>
+            ) : (
+              <span className="absolute left-full ml-2 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-xs text-popover-foreground shadow-md group-hover:block z-50">
+                {displayName}
+              </span>
+            )}
+          </div>
+        ) : (
+          <NavLink
+            className={() => linkClass(isActive)}
+            onClick={() => setMobileMenuOpen(false)}
+            style={{ paddingLeft: !sidebarCollapsed ? `${depth * 12 + 12}px` : undefined }}
+            to={menu.path}
+          >
+            <NavIcon name={menu.icon} />
+            {!sidebarCollapsed ? (
+              <span className="truncate">{displayName}</span>
+            ) : (
+              <span className="absolute left-full ml-2 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-xs text-popover-foreground shadow-md group-hover:block z-50">
+                {displayName}
+              </span>
+            )}
+          </NavLink>
+        )}
+        {hasChildren && !sidebarCollapsed && isExpanded
           ? menu.children!.map((child) => renderMenuItem(child, depth + 1))
           : null}
       </div>
@@ -107,12 +151,11 @@ export function Sidebar(): JSX.Element {
                 <NavIcon name={item.icon} />
                 {!sidebarCollapsed ? (
                   <span className="truncate">{t({ id: item.labelId })}</span>
-                ) : null}
-                {sidebarCollapsed ? (
-                  <span className="absolute left-full ml-2 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-xs text-popover-foreground shadow-md group-hover:block">
+                ) : (
+                  <span className="absolute left-full ml-2 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-xs text-popover-foreground shadow-md group-hover:block z-50">
                     {t({ id: item.labelId })}
                   </span>
-                ) : null}
+                )}
               </NavLink>
             ))}
       </nav>
@@ -122,7 +165,7 @@ export function Sidebar(): JSX.Element {
         <NavLink
           className={({ isActive }) =>
             className(
-              'flex h-9 items-center rounded-md text-sm transition-colors hover:bg-accent',
+              'group relative flex h-9 items-center rounded-md text-sm transition-colors hover:bg-accent',
               sidebarCollapsed ? 'justify-center px-2' : 'gap-2 px-3',
               isActive ? 'bg-accent text-accent-foreground' : 'text-muted-foreground'
             )
@@ -146,7 +189,11 @@ export function Sidebar(): JSX.Element {
           </svg>
           {!sidebarCollapsed ? (
             <span className="truncate">{t({ id: 'profile.title' })}</span>
-          ) : null}
+          ) : (
+            <span className="absolute left-full ml-2 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-xs text-popover-foreground shadow-md group-hover:block z-50">
+              {t({ id: 'profile.title' })}
+            </span>
+          )}
         </NavLink>
         <p className="mb-2 text-center text-xs text-muted-foreground">{t({ id: 'version' })}</p>
         <button

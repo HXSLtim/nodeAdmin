@@ -1,13 +1,20 @@
 import { useEffect, type ReactNode } from 'react';
+import { useApiClient } from '@/hooks/useApiClient';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { useMenuStore } from '@/stores/useMenuStore';
 import { usePermissionStore } from '@/stores/usePermissionStore';
 import { useUiStore } from '@/stores/useUiStore';
+import type { MenuItem } from '@nodeadmin/shared-types';
 import { Header } from './header';
 import { Sidebar } from './sidebar';
 
 export function AppLayout({ children }: { children: ReactNode }): JSX.Element {
   const theme = useUiStore((s) => s.theme);
   const setPermissionsFromRoles = usePermissionStore((s) => s.setPermissionsFromRoles);
+  const apiClient = useApiClient();
+  const userId = useAuthStore((s) => s.userId);
+  const tenantId = useAuthStore((s) => s.tenantId);
+  const setMenus = useMenuStore((s) => s.setMenus);
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark');
@@ -29,6 +36,19 @@ export function AppLayout({ children }: { children: ReactNode }): JSX.Element {
       : ['admin'];
     setPermissionsFromRoles(fallback);
   }, [setPermissionsFromRoles]);
+
+  useEffect(() => {
+    if (userId && tenantId) {
+      apiClient
+        .get<MenuItem[]>(`/api/v1/menus/user/${userId}?tenantId=${tenantId}`)
+        .then((menus) => {
+          setMenus(menus);
+        })
+        .catch((err) => {
+          console.error('Failed to fetch menus:', err);
+        });
+    }
+  }, [userId, tenantId, apiClient, setMenus]);
 
   return (
     <div className="flex h-screen overflow-hidden bg-background text-foreground">

@@ -170,13 +170,24 @@ export class MenusService {
   async getUserMenus(tenantId: string, userId: string): Promise<MenuItem[]> {
     if (!this.pool) return [];
     const result = await this.pool.query(
-      `SELECT DISTINCT m.id, m.parent_id, m.name, m.path, m.icon, m.sort_order, m.permission_code, m.is_visible, m.created_at
-       FROM menus m
-       INNER JOIN role_menus rm ON rm.menu_id = m.id
-       INNER JOIN user_roles ur ON ur.role_id = rm.role_id
-       INNER JOIN roles r ON r.id = ur.role_id
-       WHERE r.tenant_id = $1 AND ur.user_id = $2 AND m.is_visible = true
-       ORDER BY m.sort_order, m.created_at`,
+      `WITH RECURSIVE accessible_menus AS (
+         SELECT DISTINCT m.id, m.parent_id, m.name, m.path, m.icon, m.sort_order, m.permission_code, m.is_visible, m.created_at
+         FROM menus m
+         INNER JOIN role_menus rm ON rm.menu_id = m.id
+         INNER JOIN user_roles ur ON ur.role_id = rm.role_id
+         INNER JOIN roles r ON r.id = ur.role_id
+         WHERE r.tenant_id = $1 AND ur.user_id = $2 AND m.is_visible = true
+
+         UNION
+
+         SELECT parent.id, parent.parent_id, parent.name, parent.path, parent.icon, parent.sort_order, parent.permission_code, parent.is_visible, parent.created_at
+         FROM menus parent
+         INNER JOIN accessible_menus child ON child.parent_id = parent.id
+         WHERE parent.is_visible = true
+       )
+       SELECT id, parent_id, name, path, icon, sort_order, permission_code, is_visible, created_at
+       FROM accessible_menus
+       ORDER BY sort_order, created_at`,
       [tenantId, userId]
     );
     return this.buildTree(result.rows);
@@ -196,6 +207,21 @@ export class MenusService {
         roots.push(node);
       }
     }
-    return roots;
+    return this.sortTree(roots);
+  }
+
+  private sortTree(nodes: any[]): MenuItem[] {
+    nodes.sort(
+      (left, right) =>
+        left.sort_order - right.sort_order || left.created_at.getTime() - right.created_at.getTime()
+    );
+
+    for (const node of nodes) {
+      if (node.children) {
+        node.children = this.sortTree(node.children);
+      }
+    }
+
+    return nodes;
   }
 }

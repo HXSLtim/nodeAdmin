@@ -30,6 +30,7 @@ INSERT INTO permissions (id, code, name, module, description) VALUES
   ('perm-tenant-view', 'tenant:view', '查看租户', 'tenant', NULL),
   ('perm-tenant-manage', 'tenant:manage', '管理租户', 'tenant', NULL),
   ('perm-release-view', 'release:view', '查看发布', 'release', NULL),
+  ('perm-modernizer-view', 'modernizer:view', '查看代码分析', 'modernizer', NULL),
   ('perm-settings-view', 'settings:view', '查看设置', 'settings', NULL),
   ('perm-audit-view', 'audit:view', '查看审计日志', 'audit', NULL)
 ON CONFLICT (code) DO NOTHING;
@@ -50,13 +51,23 @@ SELECT 'role-viewer', id FROM permissions WHERE code LIKE '%:view'
 ON CONFLICT DO NOTHING;
 
 -- Default menus
-INSERT INTO menus (id, name, path, icon, sort_order, permission_code, is_visible) VALUES
-  ('menu-overview', '概览', '/overview', 'bar', 0, 'overview:view', 1),
-  ('menu-im', '即时通讯', '/im', 'chat', 1, 'im:view', 1),
-  ('menu-users', '用户管理', '/users', 'users', 2, 'user:view', 1),
-  ('menu-roles', '角色管理', '/roles', 'shield', 3, 'role:view', 1),
-  ('menu-menus', '菜单管理', '/menus', 'menu', 4, 'menu:view', 1),
-  ('menu-tenants', '租户管理', '/tenants', 'building', 5, 'tenant:view', 1),
-  ('menu-release', '发布控制', '/release', 'rocket', 6, 'release:view', 1),
-  ('menu-settings', '系统设置', '/settings', 'gear', 7, 'settings:view', 1)
+INSERT INTO menus (id, parent_id, name, path, icon, sort_order, permission_code, is_visible) VALUES
+  ('menu-group-overview', NULL, '平台概览', NULL, 'barChart', 0, NULL, 1),
+  ('menu-overview', 'menu-group-overview', '概览', '/overview', 'bar', 0, 'overview:view', 1),
+  ('menu-im', 'menu-group-overview', '即时通讯', '/im', 'chat', 1, 'im:view', 1),
+
+  ('menu-group-access', NULL, '用户与权限', NULL, 'users', 1, NULL, 1),
+  ('menu-users', 'menu-group-access', '用户管理', '/users', 'users', 0, 'user:view', 1),
+  ('menu-roles', 'menu-group-access', '角色管理', '/roles', 'shield', 1, 'role:view', 1),
+
+  ('menu-group-system', NULL, '系统管理', NULL, 'settings', 2, NULL, 1),
+  ('menu-audit', 'menu-group-system', '审计日志', '/audit', 'fileSearch', 0, 'audit:view', 1),
+  ('menu-menus', 'menu-group-system', '菜单管理', '/menus', 'menu', 1, 'menu:view', 1),
+  ('menu-tenants', 'menu-group-system', '租户管理', '/tenants', 'building', 2, 'tenant:view', 1),
+
+  ('menu-group-devtools', NULL, '开发工具', NULL, 'code', 3, NULL, 1),
+  ('menu-release', 'menu-group-devtools', '发布控制', '/release', 'rocket', 0, 'release:view', 1),
+  ('menu-modernizer', 'menu-group-devtools', '代码分析', '/modernizer', 'search', 1, 'modernizer:view', 1),
+
+  ('menu-settings', NULL, '系统设置', '/settings', 'gear', 4, 'settings:view', 1)
 ON CONFLICT DO NOTHING;
