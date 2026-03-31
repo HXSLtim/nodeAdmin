@@ -1,0 +1,43 @@
+name: 'Wait for Infrastructure'
+description: 'Wait for Docker infrastructure services to become ready'
+
+inputs:
+  ports:
+    description: 'Space-separated list of TCP ports to wait for'
+    required: false
+    default: '55432 56379 9092'
+  database-url:
+    description: 'PostgreSQL connection string for readiness check'
+    required: false
+    default: 'postgres://nodeadmin:nodeadmin@localhost:55432/nodeadmin'
+  max-retries:
+    description: 'Maximum number of retry attempts per check'
+    required: false
+    default: '30'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Wait for TCP ports and PostgreSQL
+      shell: bash
+      run: |
+        for port in ${{ inputs.ports }}; do
+          echo "Waiting for port $port..."
+          for i in $(seq 1 ${{ inputs.max-retries }}); do
+            if nc -z localhost $port 2>/dev/null; then
+              echo "Port $port ready"
+              break
+            fi
+            sleep 1
+          done
+        done
+
+        echo "Waiting for PostgreSQL to accept connections..."
+        for i in $(seq 1 ${{ inputs.max-retries }}); do
+          if node -e "const{Client}=require('pg');const c=new Client('${{ inputs.database-url }}');c.connect().then(()=>c.end().then(()=>process.exit(0))).catch(()=>process.exit(1))" 2>/dev/null; then
+            echo "PostgreSQL accepting connections"
+            break
+          fi
+          echo "  retry $i/${{ inputs.max-retries }}..."
+          sleep 2
+        done

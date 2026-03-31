@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as fs from 'node:fs';
+import * as path from 'node:path';
 
 vi.mock('node:fs', () => ({
   existsSync: vi.fn(),
@@ -8,6 +9,10 @@ vi.mock('node:fs', () => ({
 }));
 
 import { DocSyncService } from './docSyncService';
+
+const projectRoot = path.join(path.sep, 'fake', 'project');
+const srcDir = path.join(projectRoot, 'apps', 'coreApi', 'src');
+const modulesDir = path.join(srcDir, 'modules');
 
 function createDirEntry(name: string) {
   return {
@@ -34,9 +39,7 @@ describe('DocSyncService', () => {
   });
 
   it('extracts controller routes and renders them into markdown', () => {
-    const srcDir = '/fake/project/apps/coreApi/src';
-    const modulesDir = '/fake/project/apps/coreApi/src/modules';
-    const usersModuleDir = '/fake/project/apps/coreApi/src/modules/users';
+    const usersModuleDir = path.join(modulesDir, 'users');
 
     vi.mocked(fs.existsSync).mockImplementation((target) => {
       if (typeof target !== 'string') {
@@ -70,7 +73,7 @@ describe('DocSyncService', () => {
       }
     `);
 
-    const markdown = service.generateDocs('/fake/project');
+    const markdown = service.generateDocs(projectRoot);
 
     expect(markdown).toContain('**Total endpoints: 2**');
     expect(markdown).toContain('| GET | `/api/v1/users` | List users | UsersController |');
@@ -82,15 +85,12 @@ describe('DocSyncService', () => {
   it('returns a fallback document when the source directory does not exist', () => {
     vi.mocked(fs.existsSync).mockReturnValue(false);
 
-    const markdown = service.generateDocs('/fake/project');
+    const markdown = service.generateDocs(projectRoot);
 
     expect(markdown).toContain('No source directory found.');
   });
 
   it('returns an empty table when the modules directory does not exist', () => {
-    const srcDir = '/fake/project/apps/coreApi/src';
-    const modulesDir = '/fake/project/apps/coreApi/src/modules';
-
     vi.mocked(fs.existsSync).mockImplementation((target) => {
       if (typeof target !== 'string') {
         return false;
@@ -99,16 +99,13 @@ describe('DocSyncService', () => {
       return target === srcDir;
     });
 
-    const markdown = service.generateDocs('/fake/project');
+    const markdown = service.generateDocs(projectRoot);
 
     expect(markdown).toContain('**Total endpoints: 0**');
     expect(vi.mocked(fs.readdirSync)).not.toHaveBeenCalledWith(modulesDir, expect.anything());
   });
 
   it('ignores non-directory entries in the modules folder', () => {
-    const srcDir = '/fake/project/apps/coreApi/src';
-    const modulesDir = '/fake/project/apps/coreApi/src/modules';
-
     vi.mocked(fs.existsSync).mockImplementation((target) => {
       if (typeof target !== 'string') {
         return false;
@@ -125,16 +122,14 @@ describe('DocSyncService', () => {
       return [];
     });
 
-    const markdown = service.generateDocs('/fake/project');
+    const markdown = service.generateDocs(projectRoot);
 
     expect(markdown).toContain('**Total endpoints: 0**');
   });
 
   it('sorts generated endpoints by path and method', () => {
-    const srcDir = '/fake/project/apps/coreApi/src';
-    const modulesDir = '/fake/project/apps/coreApi/src/modules';
-    const aDir = '/fake/project/apps/coreApi/src/modules/a';
-    const bDir = '/fake/project/apps/coreApi/src/modules/b';
+    const aDir = path.join(modulesDir, 'a');
+    const bDir = path.join(modulesDir, 'b');
 
     vi.mocked(fs.existsSync).mockImplementation((target) => {
       if (typeof target !== 'string') {
@@ -167,7 +162,7 @@ describe('DocSyncService', () => {
         }
       `);
 
-    const markdown = service.generateDocs('/fake/project');
+    const markdown = service.generateDocs(projectRoot);
     const alphaGetIndex = markdown.indexOf('| GET | `/api/v1/alpha` | GET /alpha | AController |');
     const alphaPostIndex = markdown.indexOf(
       '| POST | `/api/v1/alpha` | POST /alpha | AController |'
@@ -182,9 +177,7 @@ describe('DocSyncService', () => {
   });
 
   it('supports controllers without a prefix and preserves explicit summaries', () => {
-    const srcDir = '/fake/project/apps/coreApi/src';
-    const modulesDir = '/fake/project/apps/coreApi/src/modules';
-    const miscDir = '/fake/project/apps/coreApi/src/modules/misc';
+    const miscDir = path.join(modulesDir, 'misc');
 
     vi.mocked(fs.existsSync).mockImplementation((target) => {
       if (typeof target !== 'string') {
@@ -209,7 +202,7 @@ describe('DocSyncService', () => {
       }
     `);
 
-    const markdown = service.generateDocs('/fake/project');
+    const markdown = service.generateDocs(projectRoot);
 
     expect(markdown).toContain('| GET | `/api/v1` | Ping root | MiscController |');
   });

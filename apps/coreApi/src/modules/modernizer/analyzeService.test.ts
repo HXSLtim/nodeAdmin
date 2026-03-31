@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as fs from 'node:fs';
+import * as path from 'node:path';
 
 vi.mock('node:fs', () => ({
   existsSync: vi.fn(),
@@ -8,6 +9,9 @@ vi.mock('node:fs', () => ({
 }));
 
 import { AnalyzeService } from './analyzeService';
+
+const projectRoot = path.join(path.sep, 'fake', 'project');
+const srcDir = path.join(projectRoot, 'apps', 'coreApi', 'src');
 
 function createFileEntry(name: string) {
   return {
@@ -23,15 +27,15 @@ function mockSourceFiles(files: Record<string, string>): void {
       return false;
     }
 
-    return target === '/fake/project/src' || target in files;
+    return target === srcDir || target in files;
   });
 
   vi.mocked(fs.readdirSync).mockImplementation((target) => {
-    if (target !== '/fake/project/src') {
+    if (target !== srcDir) {
       return [];
     }
 
-    return Object.keys(files).map((filePath) => createFileEntry(filePath.split('/').at(-1) ?? ''));
+    return Object.keys(files).map((filePath) => createFileEntry(path.basename(filePath)));
   });
 
   vi.mocked(fs.readFileSync).mockImplementation((target) => {
@@ -54,7 +58,7 @@ describe('AnalyzeService', () => {
   it('returns an empty result when the src directory does not exist', () => {
     vi.mocked(fs.existsSync).mockReturnValue(false);
 
-    expect(service.analyze('/fake/project')).toEqual({
+    expect(service.analyze(projectRoot)).toEqual({
       issues: [],
       summary: {
         byCategory: {},
@@ -65,10 +69,10 @@ describe('AnalyzeService', () => {
 
   it('detects the console-log analysis category', () => {
     mockSourceFiles({
-      '/fake/project/src/app.ts': 'console.log("hello");\n',
+      [path.join(srcDir, 'app.ts')]: 'console.log("hello");\n',
     });
 
-    const result = service.analyze('/fake/project');
+    const result = service.analyze(projectRoot);
 
     expect(result.issues).toEqual([
       expect.objectContaining({
@@ -83,10 +87,10 @@ describe('AnalyzeService', () => {
 
   it('detects the todo analysis category for TODO and FIXME comments', () => {
     mockSourceFiles({
-      '/fake/project/src/todo.ts': '// TODO: revisit\n// FIXME: broken\n',
+      [path.join(srcDir, 'todo.ts')]: '// TODO: revisit\n// FIXME: broken\n',
     });
 
-    const result = service.analyze('/fake/project');
+    const result = service.analyze(projectRoot);
 
     expect(result.issues.map((issue) => issue.category)).toEqual(['todo', 'todo']);
     expect(result.summary.byCategory.todo).toBe(2);
@@ -94,10 +98,10 @@ describe('AnalyzeService', () => {
 
   it('detects the missing-validation analysis category', () => {
     mockSourceFiles({
-      '/fake/project/src/controller.ts': '@Body() payload: RawPayload\n',
+      [path.join(srcDir, 'controller.ts')]: '@Body() payload: RawPayload\n',
     });
 
-    const result = service.analyze('/fake/project');
+    const result = service.analyze(projectRoot);
 
     expect(result.issues).toEqual([
       expect.objectContaining({
@@ -111,10 +115,10 @@ describe('AnalyzeService', () => {
 
   it('detects the unused-import analysis category', () => {
     mockSourceFiles({
-      '/fake/project/src/unused.ts': "import { UnusedThing } from './dep';\nconst value = 1;\n",
+      [path.join(srcDir, 'unused.ts')]: "import { UnusedThing } from './dep';\nconst value = 1;\n",
     });
 
-    const result = service.analyze('/fake/project');
+    const result = service.analyze(projectRoot);
 
     expect(result.issues).toEqual([
       expect.objectContaining({

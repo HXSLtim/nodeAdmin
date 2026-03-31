@@ -1,0 +1,38 @@
+name: 'Setup Test Stack'
+description: 'Start Docker infrastructure, wait for readiness, and apply migrations'
+
+inputs:
+  services:
+    description: 'Space-separated list of docker compose services'
+    required: false
+    default: 'postgres redis zookeeper kafka'
+  ports:
+    description: 'Space-separated list of TCP ports to wait for'
+    required: false
+    default: '55432 56379 9092'
+  database-url:
+    description: 'PostgreSQL connection string'
+    required: false
+    default: 'postgres://nodeadmin:nodeadmin@localhost:55432/nodeadmin'
+  migrate:
+    description: 'Whether to run database migrations (true/false)'
+    required: false
+    default: 'true'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Start Infrastructure
+      shell: bash
+      run: docker compose up -d ${{ inputs.services }}
+
+    - name: Wait for Services
+      uses: ./.github/actions/wait-for-infra
+      with:
+        ports: ${{ inputs.ports }}
+        database-url: ${{ inputs.database-url }}
+
+    - name: Apply Migrations
+      if: inputs.migrate == 'true'
+      shell: bash
+      run: npm run db:migrate -w coreApi

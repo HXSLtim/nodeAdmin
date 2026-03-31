@@ -42,14 +42,15 @@ export class AnalyzeService {
   analyze(projectRoot?: string): AnalysisResult {
     const root = projectRoot ?? this.resolveProjectRoot();
     const issues: AnalysisIssue[] = [];
+    const coreApiRoot = path.join(root, 'apps', 'coreApi');
 
-    const srcDir = path.join(root, 'src');
+    const srcDir = path.join(coreApiRoot, 'src');
     if (!fs.existsSync(srcDir)) {
       this.logger.warn(`Source directory not found: ${srcDir}`);
       return { issues: [], summary: { total: 0, byCategory: {} } };
     }
 
-    this.scanDirectory(srcDir, issues, root);
+    this.scanDirectory(srcDir, issues, coreApiRoot);
 
     const byCategory: Record<string, number> = {};
     for (const issue of issues) {
@@ -64,7 +65,7 @@ export class AnalyzeService {
 
   private resolveProjectRoot(): string {
     // __dirname = .../apps/coreApi/src/modules/modernizer
-    return path.resolve(__dirname, '..', '..', '..', '..');
+    return path.resolve(__dirname, '..', '..', '..', '..', '..');
   }
 
   private scanDirectory(dir: string, issues: AnalysisIssue[], root: string): void {
