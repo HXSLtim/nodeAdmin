@@ -294,6 +294,46 @@ export class AuthService {
     return normalizedValue.length > 0 ? normalizedValue : null;
   }
 
+  async resetPassword(
+    email: string,
+    newPassword: string,
+    tenantId: string
+  ): Promise<void> {
+    if (!this.pool) throw new UnauthorizedException('Database not available.');
+
+    const result = await this.pool.query<{ id: string; is_active: number }>(
+      'SELECT id, is_active FROM users WHERE tenant_id = $1 AND email = $2',
+      [email, tenantId]
+    );
+
+    const user = result.rows[0];
+    if (!user) {
+      throw new UnauthorizedException('User not found.');
+    }
+
+    if (!user.is_active) {
+      throw new UnauthorizedException('Account is disabled.');
+    }
+
+    const newPasswordHash = await hash(newPassword, 12);
+
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query(`SELECT set_config('app.current_tenant', $1, true)`, [tenantId]);
+      await client.query('UPDATE users SET password_hash = $1, updated_at = now() WHERE id = $2', [
+        newPasswordHash,
+        user.id,
+      ]);
+      await client.query('COMMIT');
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
   // ─── SMS Login ────────────────────────────────────────────────
 
   async sendSmsCode(phone: string): Promise<{ success: boolean }> {
@@ -479,5 +519,41 @@ export class AuthService {
       email: null,
       name: null,
     };
+  }
+
+  // ─── OAuth Account Management ──────────────────────────────────
+
+  async listOAuthAccounts(
+    userId: string
+  ): Promise<{ provider: string; providerId: string; createdAt: string }[]> {
+    if (!this.pool) throw new UnauthorizedException('Database not available.');
+
+    const result = await this.pool.query<{
+      provider: string;
+      provider_id: string;
+      created_at: string;
+    }>(
+      'SELECT provider, provider_id, created_at FROM oauth_accounts WHERE user_id = $1',
+      [userId]
+    );
+
+    return result.rows.map((row) => ({
+      createdAt: row.created_at,
+      provider: row.provider,
+      providerId: row.provider_id,
+    }));
+  }
+
+  async unlinkOAuthAccount(userId: string, provider: string): Promise<void> {
+    if (!this.pool) throw new UnauthorizedException('Database not available.');
+
+    const result = await this.pool.query(
+      'DELETE FROM oauth_accounts WHERE user_id = $1 AND provider = $2',
+      [userId, provider]
+    );
+
+    if (result.rowCount === 0) {
+      throw new UnauthorizedException('Linked account not found.');
+    }
   }
 }

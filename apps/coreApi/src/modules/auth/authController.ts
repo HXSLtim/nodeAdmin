@@ -1,4 +1,4 @@
-import { Body, Controller, ForbiddenException, Post } from '@nestjs/common';
+import { Body, Controller, Delete, ForbiddenException, Get, Param, Post } from '@nestjs/common';
 import { ApiOperation, ApiSecurity, ApiTags } from '@nestjs/swagger';
 import { runtimeConfig } from '../../app/runtimeConfig';
 import { AuditLogService } from '../../infrastructure/audit/auditLogService';
@@ -6,6 +6,7 @@ import { AuthService } from './authService';
 import { CurrentUser } from './currentUser.decorator';
 import { AuthIdentity } from './authIdentity';
 import { ChangePasswordDto } from './dto/changePasswordDto';
+import { ResetPasswordDto } from './dto/resetPasswordDto';
 import { IssueDevTokenDto } from './dto/issueDevTokenDto';
 import { LoginDto } from './dto/loginDto';
 import { RefreshTokenDto } from './dto/refreshTokenDto';
@@ -85,6 +86,13 @@ export class AuthController {
       dto.currentPassword,
       dto.newPassword
     );
+    return { success: true };
+  }
+
+  @Post('reset-password')
+  @ApiOperation({ summary: 'Reset password via email', security: [] })
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    await this.authService.resetPassword(dto.email, dto.newPassword, dto.tenantId);
     return { success: true };
   }
 
@@ -172,5 +180,24 @@ export class AuthController {
       name,
       ...tokens,
     };
+  }
+
+  @Get('oauth-accounts')
+  @ApiSecurity('bearer')
+  @ApiOperation({ summary: 'List linked OAuth accounts' })
+  async listOAuthAccounts(@CurrentUser() user: AuthIdentity) {
+    const accounts = await this.authService.listOAuthAccounts(user.userId);
+    return { accounts };
+  }
+
+  @Delete('oauth-accounts/:provider')
+  @ApiSecurity('bearer')
+  @ApiOperation({ summary: 'Unlink an OAuth provider' })
+  async unlinkOAuthAccount(
+    @Param('provider') provider: string,
+    @CurrentUser() user: AuthIdentity
+  ) {
+    await this.authService.unlinkOAuthAccount(user.userId, provider);
+    return { success: true };
   }
 }
