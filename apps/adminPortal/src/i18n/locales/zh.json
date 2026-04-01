@@ -40,6 +40,10 @@
   "auth.logout": "退出登录",
   "auth.logoutConfirm": "确定要退出登录吗？",
   "auth.passwordMismatch": "两次输入的密码不一致",
+  "auth.forgotPassword": "忘记密码？",
+  "auth.resetPassword": "重置密码",
+  "auth.resetPasswordSuccess": "密码重置成功，请使用新密码登录。",
+  "auth.resetPasswordFailed": "密码重置失败，请重试。",
 
   "overview.welcome": "欢迎回来，管理员",
   "overview.welcomeDesc": "以下是平台当前状态概览。",

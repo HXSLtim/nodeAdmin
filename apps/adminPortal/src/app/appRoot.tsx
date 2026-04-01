@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes, useParams } from 'react-router-dom';
 import { LoginPage } from '@/components/business/loginPage';
+import { ResetPasswordPage } from '@/components/business/resetPasswordPage';
 import { ManagementOverviewPanel } from '@/components/business/managementOverviewPanel';
 import { MenuManagementPanel } from '@/components/business/menuManagementPanel';
 import { MessagePanel } from '@/components/business/messagePanel';
@@ -34,6 +35,7 @@ export function AppRoot(): JSX.Element {
       {/* Public routes */}
       <Route element={<LoginPage />} path="/login" />
       <Route element={<RegisterPage />} path="/register" />
+      <Route element={<ResetPasswordPage />} path="/reset-password" />
 
       {/* Protected routes */}
       <Route

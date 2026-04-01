@@ -40,6 +40,10 @@
   "auth.logout": "Logout",
   "auth.logoutConfirm": "Are you sure you want to logout?",
   "auth.passwordMismatch": "Passwords do not match",
+  "auth.forgotPassword": "Forgot password?",
+  "auth.resetPassword": "Reset Password",
+  "auth.resetPasswordSuccess": "Password reset successfully. You can now log in with your new password.",
+  "auth.resetPasswordFailed": "Failed to reset password. Please try again.",
 
   "overview.welcome": "Welcome back, Administrator",
   "overview.welcomeDesc": "Here's your platform status at a glance.",

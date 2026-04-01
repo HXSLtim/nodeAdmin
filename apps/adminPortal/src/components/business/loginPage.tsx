@@ -388,6 +388,12 @@ export function LoginPage(): JSX.Element {
         </div>
 
         <p className="mt-4 text-center text-sm text-muted-foreground">
+          <Link className="text-primary underline hover:no-underline" to="/reset-password">
+            {t({ id: 'auth.forgotPassword' })}
+          </Link>
+        </p>
+
+        <p className="text-center text-sm text-muted-foreground">
           {t({ id: 'auth.noAccount' })}{' '}
           <Link className="text-primary underline hover:no-underline" to="/register">
             {t({ id: 'auth.goRegister' })}
