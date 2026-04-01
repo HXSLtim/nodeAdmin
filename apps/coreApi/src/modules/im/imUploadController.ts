@@ -1,4 +1,12 @@
-import { BadRequestException, Controller, Logger, Post, Req } from '@nestjs/common';
+import {
+  BadRequestException,
+  Controller,
+  Logger,
+  PayloadTooLargeException,
+  Post,
+  Req,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ApiOperation, ApiSecurity, ApiTags } from '@nestjs/swagger';
 import { FastifyRequest } from 'fastify';
 import { randomUUID } from 'node:crypto';
@@ -26,9 +34,26 @@ export class ImUploadController {
     @Req() request: FastifyRequest,
     @CurrentUser() user: AuthIdentity
   ): Promise<UploadResult> {
-    const data = await request.file({
-      limits: { fileSize: runtimeConfig.upload.maxFileSize },
-    });
+    if (!user?.tenantId || !user?.userId) {
+      throw new UnauthorizedException('Authentication required.');
+    }
+
+    let data;
+    try {
+      data = await request.file({
+        limits: { fileSize: runtimeConfig.upload.maxFileSize },
+      });
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        'code' in error &&
+        error.code === 'FST_REQ_FILE_TOO_LARGE'
+      ) {
+        throw new PayloadTooLargeException('Uploaded file exceeds the size limit.');
+      }
+
+      throw error;
+    }
 
     if (!data) {
       throw new BadRequestException('No file uploaded.');
