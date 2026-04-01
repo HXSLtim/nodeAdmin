@@ -293,4 +293,191 @@ export class AuthService {
     const normalizedValue = value.trim();
     return normalizedValue.length > 0 ? normalizedValue : null;
   }
+
+  // ─── SMS Login ────────────────────────────────────────────────
+
+  async sendSmsCode(phone: string): Promise<{ success: boolean }> {
+    if (!this.pool) throw new UnauthorizedException('Database not available.');
+
+    // Rate limit: max 3 codes per phone per minute
+    const rateResult = await this.pool.query(
+      `SELECT COUNT(*)::text AS count FROM sms_codes WHERE phone = $1 AND created_at > now() - interval '1 minute'`,
+      [phone]
+    );
+    if (parseInt(rateResult.rows[0]?.count ?? '0', 10) >= 3) {
+      throw new UnauthorizedException('Too many SMS codes requested. Please try again later.');
+    }
+
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    const id = randomUUID();
+
+    await this.pool.query(
+      `INSERT INTO sms_codes (id, phone, code, expires_at) VALUES ($1, $2, $3, now() + interval '5 minutes')`,
+      [id, phone, code]
+    );
+
+    // In production, send SMS via provider (Twilio, Alibaba Cloud SMS, etc.)
+    // For dev/testing, the code is returned in the DB row
+    this.logger.log(`SMS code generated for ${phone}: ${code}`);
+
+    return { success: true };
+  }
+
+  async loginWithSms(
+    phone: string,
+    code: string,
+    tenantId: string
+  ): Promise<{ name: string | null; roles: string[]; tokens: IssuedTokens; userId: string }> {
+    if (!this.pool) throw new UnauthorizedException('Database not available.');
+
+    // Find valid (unused, not expired) code and join users to get user_id
+    const smsResult = await this.pool.query<{
+      id: string;
+      phone: string;
+      code: string;
+      user_id: string | null;
+      is_active: number;
+    }>(
+      `SELECT sc.id, sc.phone, sc.code, u.id AS user_id, u.is_active
+       FROM sms_codes sc
+       LEFT JOIN users u ON u.phone = sc.phone AND u.tenant_id = $3
+       WHERE sc.phone = $1 AND sc.code = $2 AND sc.used_at IS NULL AND sc.expires_at > now()
+       ORDER BY sc.created_at DESC LIMIT 1`,
+      [phone, code, tenantId]
+    );
+
+    if (smsResult.rows.length === 0) {
+      throw new UnauthorizedException('Invalid or expired SMS code.');
+    }
+
+    const smsRow = smsResult.rows[0];
+
+    if (!smsRow.is_active) {
+      throw new UnauthorizedException('Account is disabled.');
+    }
+
+    if (!smsRow.user_id) {
+      throw new UnauthorizedException('No user found for this phone number.');
+    }
+
+    // Mark code as used
+    await this.pool.query('UPDATE sms_codes SET used_at = now() WHERE id = $1', [smsRow.id]);
+
+    const roles = await this.getUserRoles(smsRow.user_id, tenantId);
+    const tokens = this.issueTokens({ roles, tenantId, userId: smsRow.user_id });
+
+    // Get user name
+    const userResult = await this.pool.query<{ name: string | null }>(
+      'SELECT name FROM users WHERE id = $1',
+      [smsRow.user_id]
+    );
+
+    return {
+      name: userResult.rows[0]?.name ?? null,
+      roles,
+      tokens,
+      userId: smsRow.user_id,
+    };
+  }
+
+  // ─── OAuth Login ────────────────────────────────────────────────
+
+  private static readonly VALID_OAUTH_PROVIDERS = ['github', 'google'] as const;
+
+  async loginWithOAuth(
+    provider: string,
+    code: string,
+    tenantId: string
+  ): Promise<{ name: string | null; roles: string[]; tokens: IssuedTokens; userId: string }> {
+    if (!this.pool) throw new UnauthorizedException('Database not available.');
+
+    if (!AuthService.VALID_OAUTH_PROVIDERS.includes(provider as any)) {
+      throw new UnauthorizedException(`Unsupported OAuth provider: ${provider}`);
+    }
+
+    // Exchange code with OAuth provider to get provider user ID
+    const providerUserInfo = await this.exchangeOAuthCode(provider, code);
+    if (!providerUserInfo) {
+      throw new UnauthorizedException('OAuth code exchange failed.');
+    }
+
+    // Check if oauth account already linked
+    const existingResult = await this.pool.query<{
+      user_id: string;
+      name: string | null;
+      is_active: number;
+    }>(
+      `SELECT oa.user_id, u.name, u.is_active
+       FROM oauth_accounts oa
+       JOIN users u ON u.id = oa.user_id
+       WHERE oa.provider = $1 AND oa.provider_id = $2`,
+      [provider, providerUserInfo.providerId]
+    );
+
+    if (existingResult.rows.length > 0) {
+      const existing = existingResult.rows[0];
+      if (!existing.is_active) {
+        throw new UnauthorizedException('Account is disabled.');
+      }
+      const roles = await this.getUserRoles(existing.user_id, tenantId);
+      const tokens = this.issueTokens({ roles, tenantId, userId: existing.user_id });
+      return { name: existing.name, roles, tokens, userId: existing.user_id };
+    }
+
+    // New OAuth user — create user + oauth_account in transaction
+    const userId = randomUUID();
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query(`SELECT set_config('app.current_tenant', $1, true)`, [tenantId]);
+      await client.query(
+        'INSERT INTO users (id, tenant_id, email, password_hash, name) VALUES ($1, $2, $3, $4, $5)',
+        [userId, tenantId, providerUserInfo.email ?? `${userId}@oauth.${provider}`, '', providerUserInfo.name ?? null]
+      );
+      // Assign viewer role
+      await client.query(
+        `INSERT INTO user_roles (user_id, role_id) SELECT $1, id FROM roles WHERE tenant_id = $2 AND name = 'viewer' LIMIT 1`,
+        [userId, tenantId]
+      );
+      await client.query(
+        'INSERT INTO oauth_accounts (id, user_id, provider, provider_id) VALUES ($1, $2, $3, $4)',
+        [randomUUID(), userId, provider, providerUserInfo.providerId]
+      );
+      await client.query('COMMIT');
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+
+    const roles = await this.getUserRoles(userId, tenantId);
+    const tokens = this.issueTokens({ roles, tenantId, userId });
+    return { name: providerUserInfo.name ?? null, roles, tokens, userId };
+  }
+
+  /**
+   * Exchange OAuth authorization code for provider user info.
+   * In production, this would call the provider's token endpoint + user info endpoint.
+   * For dev/testing, we mock it based on the code value.
+   */
+  private async exchangeOAuthCode(
+    provider: string,
+    code: string
+  ): Promise<{ providerId: string; email: string | null; name: string | null } | null> {
+    // Dev mock: derive provider user ID from code
+    if (code === 'fail-exchange') return null;
+
+    // In production, implement real OAuth token exchange here:
+    // 1. POST to provider's token endpoint with code + client_id + client_secret
+    // 2. Extract access_token from response
+    // 3. GET provider's user info endpoint
+    // 4. Return { providerId, email, name }
+
+    return {
+      providerId: `${provider}-${code}-${Date.now()}`,
+      email: null,
+      name: null,
+    };
+  }
 }

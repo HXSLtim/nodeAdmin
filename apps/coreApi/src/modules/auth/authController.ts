@@ -10,6 +10,9 @@ import { IssueDevTokenDto } from './dto/issueDevTokenDto';
 import { LoginDto } from './dto/loginDto';
 import { RefreshTokenDto } from './dto/refreshTokenDto';
 import { RegisterDto } from './dto/registerDto';
+import { SendSmsDto } from './dto/sendSmsDto';
+import { SmsLoginDto } from './dto/smsLoginDto';
+import { OAuthLoginDto } from './dto/oauthLoginDto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -102,6 +105,71 @@ export class AuthController {
 
     return {
       identity: { roles, tenantId: payload.tenantId, userId: payload.userId },
+      ...tokens,
+    };
+  }
+
+  @Post('sms/send')
+  @ApiOperation({ summary: 'Send SMS verification code', security: [] })
+  async sendSms(@Body() dto: SendSmsDto) {
+    const result = await this.authService.sendSmsCode(dto.phone);
+    return result;
+  }
+
+  @Post('login/sms')
+  @ApiOperation({ summary: 'Login with SMS verification code', security: [] })
+  async loginWithSms(@Body() dto: SmsLoginDto) {
+    const { name, roles, tokens, userId } = await this.authService.loginWithSms(
+      dto.phone,
+      dto.code,
+      dto.tenantId
+    );
+
+    try {
+      await this.auditLogService.record({
+        action: 'auth.sms_login',
+        targetId: userId,
+        targetType: 'user',
+        tenantId: dto.tenantId,
+        traceId: tokens.accessToken.slice(0, 12),
+        userId,
+      });
+    } catch {
+      // Don't block login if audit fails
+    }
+
+    return {
+      identity: { roles, tenantId: dto.tenantId, userId },
+      name,
+      ...tokens,
+    };
+  }
+
+  @Post('login/oauth/:provider')
+  @ApiOperation({ summary: 'Login with OAuth provider (github, google)', security: [] })
+  async loginWithOAuth(@Body() dto: OAuthLoginDto) {
+    const { name, roles, tokens, userId } = await this.authService.loginWithOAuth(
+      dto.provider,
+      dto.code,
+      dto.tenantId
+    );
+
+    try {
+      await this.auditLogService.record({
+        action: `auth.oauth_login.${dto.provider}`,
+        targetId: userId,
+        targetType: 'user',
+        tenantId: dto.tenantId,
+        traceId: tokens.accessToken.slice(0, 12),
+        userId,
+      });
+    } catch {
+      // Don't block login if audit fails
+    }
+
+    return {
+      identity: { roles, tenantId: dto.tenantId, userId },
+      name,
       ...tokens,
     };
   }
