@@ -14,7 +14,8 @@
     "noEmit": true,
     "types": [
       "vite/client",
-      "node"
+      "node",
+      "@testing-library/jest-dom/vitest"
     ],
     "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,

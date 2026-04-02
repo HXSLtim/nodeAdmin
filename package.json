@@ -35,6 +35,7 @@
     "smoke:tls": "node scripts/smokeTlsTermination.cjs",
     "smoke:im": "node scripts/smokeImFlow.cjs",
     "test:coreApi": "vitest run",
+    "test:adminPortal": "vitest run --config apps/adminPortal/vitest.config.ts",
     "test:coreApi:integration": "vitest run --config vitest.integration.config.ts",
     "load:k6": "docker compose --profile loadtest run --rm k6",
     "load:k6:smoke": "docker compose --profile loadtest run --rm k6 --tag scenario=api_smoke --env K6_SCENARIO=smoke",

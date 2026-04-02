@@ -3,7 +3,6 @@ import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { LoginPage } from '../loginPage';
-import { ApiClient } from '@/lib/apiClient';
 
 // Mock react-intl
 vi.mock('react-intl', () => ({
@@ -26,7 +25,7 @@ vi.mock('react-router-dom', async (importOriginal) => {
 
 // Mock Zustand stores
 vi.mock('@/stores/useUiStore', () => ({
-  useUiStore: vi.fn((selector) => 
+  useUiStore: vi.fn((selector) =>
     selector({
       theme: 'light',
       setTheme: vi.fn(),
@@ -49,7 +48,7 @@ const mockGet = vi.fn();
 
 vi.mock('@/lib/apiClient', () => {
   return {
-    ApiClient: vi.fn().mockImplementation(function() {
+    ApiClient: vi.fn().mockImplementation(function () {
       return {
         get: mockGet,
         post: mockPost,
@@ -89,9 +88,9 @@ describe('LoginPage', () => {
         <LoginPage />
       </MemoryRouter>
     );
-    
+
     await user.click(screen.getByText('auth.sms'));
-    
+
     expect(screen.getByLabelText('auth.sms.phone')).toBeInTheDocument();
     expect(screen.getByLabelText('auth.sms.code')).toBeInTheDocument();
     expect(screen.queryByLabelText('auth.password')).not.toBeInTheDocument();
@@ -106,12 +105,12 @@ describe('LoginPage', () => {
         <LoginPage />
       </MemoryRouter>
     );
-    
+
     await user.click(screen.getByText('auth.sms'));
-    
+
     const phoneInput = screen.getByLabelText('auth.sms.phone');
     await user.type(phoneInput, '+1234567890');
-    
+
     const sendButton = screen.getByText('auth.sms.sendCode');
     await user.click(sendButton);
 
@@ -137,14 +136,14 @@ describe('LoginPage', () => {
         <LoginPage />
       </MemoryRouter>
     );
-    
+
     const emailInput = screen.getByLabelText('auth.email') as HTMLInputElement;
     await user.type(emailInput, 'test@example.com');
     expect(emailInput.value).toBe('test@example.com');
-    
+
     await user.click(screen.getByText('auth.sms'));
     expect(screen.queryByLabelText('auth.email')).not.toBeInTheDocument();
-    
+
     await user.click(screen.getByText('auth.email'));
     const emailInputAgain = screen.getByLabelText('auth.email') as HTMLInputElement;
     expect(emailInputAgain.value).toBe('test@example.com');
@@ -156,7 +155,7 @@ describe('LoginPage', () => {
       accessToken: 'token',
       identity: { tenantId: 'default', userId: 'id' },
       refreshToken: 'refresh',
-      tokenType: 'Bearer'
+      tokenType: 'Bearer',
     });
 
     render(
@@ -164,10 +163,10 @@ describe('LoginPage', () => {
         <LoginPage />
       </MemoryRouter>
     );
-    
+
     await user.type(screen.getByLabelText('auth.email'), 'user@test.com');
     await user.type(screen.getByLabelText('auth.password'), 'password123');
-    
+
     const loginButton = screen.getByRole('button', { name: 'auth.login' });
     await user.click(loginButton);
 
@@ -175,7 +174,7 @@ describe('LoginPage', () => {
       expect(mockPost).toHaveBeenCalledWith('/api/v1/auth/login', {
         email: 'user@test.com',
         password: 'password123',
-        tenantId: 'default'
+        tenantId: 'default',
       });
     });
     expect(mockNavigate).toHaveBeenCalledWith('/overview', { replace: true });
