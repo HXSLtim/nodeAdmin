@@ -71,7 +71,7 @@ test.describe('Overview Dashboard', () => {
   test('shows loading state while dashboard data is fetching', async ({ page }) => {
     test.slow();
 
-    await page.route('**/api/v1/console/overview', async (route) => {
+    await page.context().route('**/api/v1/console/overview', async (route) => {
       await new Promise((resolve) => setTimeout(resolve, 1200));
       await route.continue();
     });
@@ -81,5 +81,7 @@ test.describe('Overview Dashboard', () => {
     await expect(page.locator('.animate-pulse').first()).toBeVisible();
     await expect(page.getByText(/Welcome back, Administrator/i)).toBeVisible();
     await expect(page.getByText(/Online Users/i)).toBeVisible();
+
+    await page.context().unroute('**/api/v1/console/overview');
   });
 });

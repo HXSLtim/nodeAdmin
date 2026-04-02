@@ -21,7 +21,7 @@ test.describe('Authentication Flow', () => {
       await tenantLocator.fill('default');
     }
 
-    await page.getByRole('button', { name: /Login/i }).click();
+    await page.getByRole('button', { name: /^Login$/ }).click();
 
     // Should redirect to overview
     await expect(page).toHaveURL(/\/overview/);
@@ -46,7 +46,7 @@ test.describe('Authentication Flow', () => {
       await tenantLocator.fill('default');
     }
 
-    await page.getByRole('button', { name: /Login/i }).click();
+    await page.getByRole('button', { name: /^Login$/ }).click();
 
     await expect(page.getByText(/Login failed/i)).toBeVisible();
     await expect(page).toHaveURL(/\/login/);
