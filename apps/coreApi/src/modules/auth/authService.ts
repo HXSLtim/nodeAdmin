@@ -294,11 +294,7 @@ export class AuthService {
     return normalizedValue.length > 0 ? normalizedValue : null;
   }
 
-  async resetPassword(
-    email: string,
-    newPassword: string,
-    tenantId: string
-  ): Promise<void> {
+  async resetPassword(email: string, newPassword: string, tenantId: string): Promise<void> {
     if (!this.pool) throw new UnauthorizedException('Database not available.');
 
     const result = await this.pool.query<{ id: string; is_active: number }>(
@@ -472,7 +468,13 @@ export class AuthService {
       await client.query(`SELECT set_config('app.current_tenant', $1, true)`, [tenantId]);
       await client.query(
         'INSERT INTO users (id, tenant_id, email, password_hash, name) VALUES ($1, $2, $3, $4, $5)',
-        [userId, tenantId, providerUserInfo.email ?? `${userId}@oauth.${provider}`, '', providerUserInfo.name ?? null]
+        [
+          userId,
+          tenantId,
+          providerUserInfo.email ?? `${userId}@oauth.${provider}`,
+          '',
+          providerUserInfo.name ?? null,
+        ]
       );
       // Assign viewer role
       await client.query(
@@ -532,10 +534,7 @@ export class AuthService {
       provider: string;
       provider_id: string;
       created_at: string;
-    }>(
-      'SELECT provider, provider_id, created_at FROM oauth_accounts WHERE user_id = $1',
-      [userId]
-    );
+    }>('SELECT provider, provider_id, created_at FROM oauth_accounts WHERE user_id = $1', [userId]);
 
     return result.rows.map((row) => ({
       createdAt: row.created_at,

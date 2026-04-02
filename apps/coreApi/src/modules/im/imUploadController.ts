@@ -44,11 +44,7 @@ export class ImUploadController {
         limits: { fileSize: runtimeConfig.upload.maxFileSize },
       });
     } catch (error) {
-      if (
-        error instanceof Error &&
-        'code' in error &&
-        error.code === 'FST_REQ_FILE_TOO_LARGE'
-      ) {
+      if (error instanceof Error && 'code' in error && error.code === 'FST_REQ_FILE_TOO_LARGE') {
         throw new PayloadTooLargeException('Uploaded file exceeds the size limit.');
       }
 

@@ -127,7 +127,11 @@ function checkUnusedImports(lines: string[], filePath: string, issues: AnalysisI
       const names = namedImports
         .split(',')
         .map((n: string) =>
-          n.trim().split(/\s+as\s+/).pop()!.trim()
+          n
+            .trim()
+            .split(/\s+as\s+/)
+            .pop()!
+            .trim()
         )
         .filter(Boolean);
 

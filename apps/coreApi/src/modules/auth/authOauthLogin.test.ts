@@ -75,9 +75,9 @@ describe('AuthService OAuth Login', () => {
     const mockPool = createMockPool();
     (service as unknown as { pool: MockPool }).pool = mockPool;
 
-    await expect(
-      service.loginWithOAuth('github', 'fail-exchange', 'tenant-1')
-    ).rejects.toThrow(/exchange/i);
+    await expect(service.loginWithOAuth('github', 'fail-exchange', 'tenant-1')).rejects.toThrow(
+      /exchange/i
+    );
     expect(mockPool.query).not.toHaveBeenCalled();
   });
 });

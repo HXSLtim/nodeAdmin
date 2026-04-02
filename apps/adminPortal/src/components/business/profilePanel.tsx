@@ -25,14 +25,12 @@ function LinkedAccountsSection(): JSX.Element {
 
   const { data: accounts = [] } = useQuery({
     queryKey: ['oauth-accounts'],
-    queryFn: () =>
-      apiClient.get<{ accounts: OAuthAccount[] }>('/api/v1/auth/oauth-accounts'),
+    queryFn: () => apiClient.get<{ accounts: OAuthAccount[] }>('/api/v1/auth/oauth-accounts'),
     select: (data) => data.accounts ?? [],
   });
 
   const unlinkMutation = useMutation({
-    mutationFn: (provider: string) =>
-      apiClient.del(`/api/v1/auth/oauth-accounts/${provider}`),
+    mutationFn: (provider: string) => apiClient.del(`/api/v1/auth/oauth-accounts/${provider}`),
     onSuccess: (_, provider) => {
       queryClient.invalidateQueries({ queryKey: ['oauth-accounts'] });
       toast.success(
@@ -53,7 +51,10 @@ function LinkedAccountsSection(): JSX.Element {
       {OAUTH_PROVIDERS.map((provider) => {
         const isLinked = linkedProviders.has(provider);
         return (
-          <div key={provider} className="flex items-center justify-between rounded-md border border-border px-3 py-2">
+          <div
+            key={provider}
+            className="flex items-center justify-between rounded-md border border-border px-3 py-2"
+          >
             <div className="flex items-center gap-2">
               <span className="text-sm font-medium text-foreground">
                 {t({ id: `profile.provider.${provider}` })}
@@ -65,7 +66,14 @@ function LinkedAccountsSection(): JSX.Element {
             {isLinked ? (
               <Button
                 onClick={() => {
-                  if (window.confirm(t({ id: 'profile.unlinkConfirm' }, { provider: t({ id: `profile.provider.${provider}` }) }))) {
+                  if (
+                    window.confirm(
+                      t(
+                        { id: 'profile.unlinkConfirm' },
+                        { provider: t({ id: `profile.provider.${provider}` }) }
+                      )
+                    )
+                  ) {
                     unlinkMutation.mutate(provider);
                   }
                 }}

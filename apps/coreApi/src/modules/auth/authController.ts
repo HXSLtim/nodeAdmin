@@ -193,10 +193,7 @@ export class AuthController {
   @Delete('oauth-accounts/:provider')
   @ApiSecurity('bearer')
   @ApiOperation({ summary: 'Unlink an OAuth provider' })
-  async unlinkOAuthAccount(
-    @Param('provider') provider: string,
-    @CurrentUser() user: AuthIdentity
-  ) {
+  async unlinkOAuthAccount(@Param('provider') provider: string, @CurrentUser() user: AuthIdentity) {
     await this.authService.unlinkOAuthAccount(user.userId, provider);
     return { success: true };
   }
