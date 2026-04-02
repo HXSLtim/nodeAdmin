@@ -16,3 +16,6 @@ uploads/
 .codex/
 .gemini/
 apps/adminPortal/test-results/
+.playwright-mcp/
+*.png
+!docs/**/*.png
