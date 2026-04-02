@@ -110,7 +110,7 @@ export function BacklogPanel(): JSX.Element {
       apiClient.get<PaginatedResponse<BacklogSprint>>('/api/v1/backlog/sprints?pageSize=100'),
   });
 
-  const usersQuery = useQuery<PaginatedResponse<any>>({
+  const usersQuery = useQuery<PaginatedResponse<{ id: string; name: string; email: string }>>({
     queryKey: ['users', 'all'],
     queryFn: () => apiClient.get<PaginatedResponse<any>>('/api/v1/users?pageSize=100'),
   });

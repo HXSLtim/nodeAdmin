@@ -43,7 +43,7 @@ export type AppPermission =
   | 'roles:manage'
   | 'roles:view'
   | 'settings:view'
-  | 'tenant:view'
+  | 'tenants:view'
   | 'users:manage'
   | 'users:view';
 
@@ -133,11 +133,7 @@ export interface AuditLogItem {
 
 // ─── Modernizer Types ──────────────────────────────────────────────
 
-export type AnalysisCategory =
-  | 'console-log'
-  | 'todo'
-  | 'missing-validation'
-  | 'unused-import';
+export type AnalysisCategory = 'console-log' | 'todo' | 'missing-validation' | 'unused-import';
 
 export type AnalysisSeverity = 'info' | 'warning' | 'error';
 

@@ -84,6 +84,17 @@ export class ConnectionRegistry {
     return total;
   }
 
+  /** Returns the number of unique online users across all active socket contexts. */
+  totalUniqueUsers(): number {
+    const uniqueUsers = new Set<string>();
+
+    for (const context of this.contextBySocketId.values()) {
+      uniqueUsers.add(`${context.tenantId}:${context.userId}`);
+    }
+
+    return uniqueUsers.size;
+  }
+
   private decrementTenant(tenantId: string): void {
     const current = this.countByTenantId.get(tenantId) ?? 0;
     if (current <= 1) {

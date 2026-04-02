@@ -39,6 +39,20 @@ export const navItems: NavItem[] = [
     permission: 'audit:view',
   },
   {
+    icon: 'bell',
+    key: 'notifications',
+    labelId: 'nav.notifications',
+    path: '/notifications',
+    permission: 'audit:view',
+  },
+  {
+    icon: 'bar',
+    key: 'metrics',
+    labelId: 'nav.metrics',
+    path: '/metrics',
+    permission: 'audit:view',
+  },
+  {
     icon: 'menuIcon',
     key: 'menus',
     labelId: 'nav.menus',
@@ -50,7 +64,7 @@ export const navItems: NavItem[] = [
     key: 'tenant',
     labelId: 'nav.tenants',
     path: '/tenants',
-    permission: 'tenant:view',
+    permission: 'tenants:view',
   },
   {
     icon: 'rocket',

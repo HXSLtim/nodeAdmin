@@ -13,8 +13,10 @@ import { ProfilePanel } from '@/components/business/profilePanel';
 import { TenantControlPanel } from '@/components/business/tenantControlPanel';
 import { UserManagementPanel } from '@/components/business/userManagementPanel';
 import { AuditLogPanel } from '@/components/business/auditLogPanel';
+import { SystemMetricsPanel } from '@/components/business/systemMetricsPanel';
 import { ModernizerPanel } from '@/components/business/modernizerPanel';
 import { BacklogPanel } from '@/components/business/backlogPanel';
+import { NotificationPanel } from '@/components/business/notificationPanel';
 import { AppLayout } from './layout/appLayout';
 import { AuthGuard } from './authGuard';
 import { ModuleErrorBoundary } from './moduleErrorBoundary';
@@ -107,6 +109,26 @@ export function AppRoot(): JSX.Element {
                 <Route
                   element={
                     <RouteModule>
+                      <RequirePermission permission="audit:view">
+                        <SystemMetricsPanel />
+                      </RequirePermission>
+                    </RouteModule>
+                  }
+                  path="/metrics"
+                />
+                <Route
+                  element={
+                    <RouteModule>
+                      <RequirePermission permission="audit:view">
+                        <NotificationPanel />
+                      </RequirePermission>
+                    </RouteModule>
+                  }
+                  path="/notifications"
+                />
+                <Route
+                  element={
+                    <RouteModule>
                       <RequirePermission permission="menus:view">
                         <MenuManagementPanel />
                       </RequirePermission>
@@ -117,7 +139,7 @@ export function AppRoot(): JSX.Element {
                 <Route
                   element={
                     <RouteModule>
-                      <RequirePermission permission="tenant:view">
+                      <RequirePermission permission="tenants:view">
                         <TenantControlPanel />
                       </RequirePermission>
                     </RouteModule>

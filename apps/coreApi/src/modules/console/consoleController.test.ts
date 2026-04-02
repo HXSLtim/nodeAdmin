@@ -11,6 +11,7 @@ function createMockAuditLogService() {
 function createMockConnectionRegistry() {
   return {
     totalCount: vi.fn(),
+    totalUniqueUsers: vi.fn(),
   };
 }
 
@@ -22,9 +23,7 @@ function createMockConversationRepository() {
 
 function createMockDatabaseService() {
   return {
-    drizzle: {
-      execute: vi.fn(),
-    },
+    drizzle: null,
   };
 }
 
@@ -98,23 +97,49 @@ describe('ConsoleController', () => {
       { id: 'tenant-1', is_active: true },
       { id: 'tenant-2', is_active: false },
     ]);
-    connectionRegistry.totalCount.mockReturnValue(5);
-    databaseService.drizzle.execute
-      .mockResolvedValueOnce({ rows: [{ count: 10 }] })
-      .mockResolvedValueOnce({ rows: [{ count: 25 }] });
+    connectionRegistry.totalUniqueUsers.mockReturnValue(3);
+    vi.spyOn(controller as never, 'countAllConversations').mockResolvedValue(10);
+    vi.spyOn(controller as never, 'countTodayMessages').mockResolvedValue(25);
+    vi.spyOn(controller as never, 'buildOverviewTodos').mockResolvedValue([
+      'Follow up high-priority backlog tasks',
+    ]);
     vi.spyOn(process, 'uptime').mockReturnValue(7500);
 
     const result = await controller.getOverview();
 
     expect(result).toEqual({
       stats: [
-        { label: 'overview.stat.onlineUsers', value: '5' },
+        { label: 'overview.stat.onlineUsers', value: '3' },
         { label: 'overview.stat.totalConversations', value: '10' },
         { label: 'overview.stat.todayMessages', value: '25' },
         { label: 'overview.stat.activeTenants', value: '1' },
         { label: 'overview.stat.uptime', value: expect.any(String) },
       ],
-      todos: [],
+      todos: ['Follow up high-priority backlog tasks'],
+    });
+  });
+
+  it('keeps overview responsive when tenant loading fails and surfaces an actionable todo', async () => {
+    tenantsService.list.mockRejectedValue(new Error('tenants unavailable'));
+    connectionRegistry.totalUniqueUsers.mockReturnValue(0);
+    vi.spyOn(controller as never, 'countAllConversations').mockResolvedValue(7);
+    vi.spyOn(controller as never, 'countTodayMessages').mockResolvedValue(0);
+    vi.spyOn(controller as never, 'buildOverviewTodos').mockResolvedValue([
+      'Investigate tenant service availability for overview metrics',
+    ]);
+    vi.spyOn(process, 'uptime').mockReturnValue(120);
+
+    const result = await controller.getOverview();
+
+    expect(result).toEqual({
+      stats: [
+        { label: 'overview.stat.onlineUsers', value: '0' },
+        { label: 'overview.stat.totalConversations', value: '7' },
+        { label: 'overview.stat.todayMessages', value: '0' },
+        { label: 'overview.stat.activeTenants', value: 'N/A' },
+        { label: 'overview.stat.uptime', value: expect.any(String) },
+      ],
+      todos: ['Investigate tenant service availability for overview metrics'],
     });
   });
 
@@ -123,9 +148,9 @@ describe('ConsoleController', () => {
       { id: 'tenant-1', is_active: true, name: 'Tenant One' },
       { id: 'tenant-2', is_active: false, name: 'Tenant Two' },
     ]);
-    databaseService.drizzle.execute
-      .mockResolvedValueOnce({ rows: [{ count: 3 }] })
-      .mockResolvedValueOnce({ rows: [{ count: 0 }] });
+    vi.spyOn(controller as never, 'countRolesForTenant')
+      .mockResolvedValueOnce(3)
+      .mockResolvedValueOnce(0);
 
     const result = await controller.getTenants();
 
@@ -171,20 +196,25 @@ describe('ConsoleController', () => {
     }
   });
 
-  it('returns recent conversations for the default tenant', async () => {
+  it('returns recent conversations for the authenticated tenant when query tenantId is omitted', async () => {
     conversationRepository.listByTenant.mockResolvedValue([
       {
         conversationId: 'conversation-1',
         createdAt: new Date('2026-03-30T09:00:00.000Z'),
         lastMessageAt: new Date('2026-03-30T10:00:00.000Z'),
-        tenantId: 'default',
+        tenantId: 'tenant-9',
         title: 'General',
       },
     ]);
 
-    const result = await controller.getConversations();
+    const result = await controller.getConversations({
+      jti: 'jti-1',
+      roles: ['viewer'],
+      tenantId: 'tenant-9',
+      userId: 'user-1',
+    });
 
-    expect(conversationRepository.listByTenant).toHaveBeenCalledWith('default', 50);
+    expect(conversationRepository.listByTenant).toHaveBeenCalledWith('tenant-9', 50);
     expect(result).toEqual({
       rows: [
         {
@@ -195,6 +225,22 @@ describe('ConsoleController', () => {
         },
       ],
     });
+  });
+
+  it('allows an explicit tenantId query for conversations', async () => {
+    conversationRepository.listByTenant.mockResolvedValue([]);
+
+    await controller.getConversations(
+      {
+        jti: 'jti-1',
+        roles: ['admin'],
+        tenantId: 'tenant-auth',
+        userId: 'user-1',
+      },
+      'tenant-query'
+    );
+
+    expect(conversationRepository.listByTenant).toHaveBeenCalledWith('tenant-query', 50);
   });
 
   it('returns the permission map for parsed role input', () => {
@@ -250,6 +296,49 @@ describe('ConsoleController', () => {
       page: 2,
       pageSize: 100,
       total: 1,
+    });
+  });
+
+  it('returns paginated recent messages for the current tenant', async () => {
+    vi.spyOn(controller as never, 'listRecentMessages').mockResolvedValue({
+      items: [
+        {
+          content: 'hello',
+          conversationId: 'conversation-1',
+          createdAt: new Date('2026-04-01T10:00:00.000Z'),
+          id: 'message-1',
+          userId: 'user-1',
+        },
+      ],
+      total: 25,
+    });
+
+    const result = await controller.getRecentMessages(
+      {
+        jti: 'jti-1',
+        roles: ['admin'],
+        tenantId: 'tenant-1',
+        userId: 'user-1',
+      },
+      '2',
+      '200'
+    );
+
+    expect((controller as never).listRecentMessages).toHaveBeenCalledWith('tenant-1', 2, 100);
+
+    expect(result).toEqual({
+      items: [
+        {
+          content: 'hello',
+          conversationId: 'conversation-1',
+          createdAt: new Date('2026-04-01T10:00:00.000Z'),
+          id: 'message-1',
+          userId: 'user-1',
+        },
+      ],
+      page: 2,
+      pageSize: 100,
+      total: 25,
     });
   });
 });

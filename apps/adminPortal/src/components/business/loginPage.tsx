@@ -82,21 +82,16 @@ export function LoginPage(): JSX.Element {
         (import.meta.env.VITE_CORE_API_BASE_URL as string | undefined)?.trim() ??
         `http://${window.location.hostname}:11451`;
       const client = new ApiClient({ baseUrl: apiBaseUrl });
-      // Mock API call for now (gracefully handle 404/not found as backend is in progress)
       const data = await client.post<{
         accessToken: string;
         identity: { tenantId: string; userId: string };
         refreshToken: string;
         tokenType: string;
-      }>('/api/v1/auth/login/sms', { phone, code, tenantId });
+      }>('/api/v1/auth/sms/login', { phone, code, tenantId });
       setAuthFromLogin(data);
       navigate('/overview', { replace: true });
-    } catch (err: any) {
-      if (err.status === 404) {
-        setError("SMS Login API not implemented yet (Phase 5 Mock)");
-      } else {
-        setError(t({ id: 'auth.loginFailed' }));
-      }
+    } catch {
+      setError(t({ id: 'auth.loginFailed' }));
     } finally {
       setLoading(false);
     }
@@ -105,19 +100,17 @@ export function LoginPage(): JSX.Element {
   const handleSendSms = async () => {
     if (!phone) return;
     setSmsSending(true);
+    setError('');
     try {
       const apiBaseUrl =
         (import.meta.env.VITE_CORE_API_BASE_URL as string | undefined)?.trim() ??
         `http://${window.location.hostname}:11451`;
       const client = new ApiClient({ baseUrl: apiBaseUrl });
-      // Mock API call
       await client.post('/api/v1/auth/sms/send', { phone });
       setSmsSent(true);
       setTimeout(() => setSmsSent(false), 3000);
     } catch {
-      // Mock success even if endpoint is 404
-      setSmsSent(true);
-      setTimeout(() => setSmsSent(false), 3000);
+      setError(t({ id: 'auth.smsSendFailed' }));
     } finally {
       setSmsSending(false);
     }
@@ -170,7 +163,9 @@ export function LoginPage(): JSX.Element {
         <div className="mb-6 flex rounded-md bg-muted p-1">
           <button
             className={`flex-1 rounded-sm py-1.5 text-sm font-medium transition-all ${
-              loginType === 'email' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'
+              loginType === 'email'
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground'
             }`}
             onClick={() => setLoginType('email')}
           >
@@ -178,7 +173,9 @@ export function LoginPage(): JSX.Element {
           </button>
           <button
             className={`flex-1 rounded-sm py-1.5 text-sm font-medium transition-all ${
-              loginType === 'sms' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'
+              loginType === 'sms'
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground'
             }`}
             onClick={() => setLoginType('sms')}
           >
@@ -276,11 +273,7 @@ export function LoginPage(): JSX.Element {
                 />
               )}
             </FormField>
-            <Button
-              className="w-full"
-              disabled={loading}
-              type="submit"
-            >
+            <Button className="w-full" disabled={loading} type="submit">
               {loading ? t({ id: 'common.loading' }) : t({ id: 'auth.login' })}
             </Button>
           </form>
@@ -337,11 +330,7 @@ export function LoginPage(): JSX.Element {
                 />
               )}
             </FormField>
-            <Button
-              className="w-full"
-              disabled={loading}
-              type="submit"
-            >
+            <Button className="w-full" disabled={loading} type="submit">
               {loading ? t({ id: 'common.loading' }) : t({ id: 'auth.login' })}
             </Button>
           </form>
@@ -352,7 +341,9 @@ export function LoginPage(): JSX.Element {
             <span className="w-full border-t border-border" />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-card px-2 text-muted-foreground">{t({ id: 'auth.orDivider' })}</span>
+            <span className="bg-card px-2 text-muted-foreground">
+              {t({ id: 'auth.orDivider' })}
+            </span>
           </div>
         </div>
 

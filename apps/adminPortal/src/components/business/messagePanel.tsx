@@ -7,6 +7,7 @@ import type { ImMessageType, ImPresenceStatus } from '@nodeadmin/shared-types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Spinner } from '@/components/ui/spinner';
 import {
   ImSendMessagePayload,
   ImSocketMessage,
@@ -15,7 +16,6 @@ import {
   type ImMessageDeletedEvent,
   type ImMessageEditedEvent,
   type ImPresenceEvent,
-  type ImPresenceStatusEvent,
 } from '@/hooks/useImSocket';
 import { className } from '@/lib/className';
 import { useApiClient } from '@/hooks/useApiClient';
@@ -26,6 +26,96 @@ import { useSocketStore } from '@/stores/useSocketStore';
 import { useUiStore } from '@/stores/useUiStore';
 import { ImagePreviewOverlay } from './imagePreviewOverlay';
 
+// --- Sub-components ---
+
+interface MessageBodyProps {
+  message: ImSocketMessage;
+  isMe: boolean;
+}
+
+function MessageBody({ message, isMe }: MessageBodyProps): JSX.Element {
+  const { formatMessage: t } = useIntl();
+
+  if (message.deletedAt) {
+    return <p className="text-sm italic opacity-70">{t({ id: 'im.messageDeleted' })}</p>;
+  }
+
+  switch (message.messageType) {
+    case 'image':
+      return (
+        <div className="space-y-2">
+          {message.metadata?.url ? (
+            <div className="relative group/img overflow-hidden rounded-md border border-black/10 bg-muted/20 min-h-[100px] flex items-center justify-center">
+              <img
+                alt={message.metadata.fileName || 'image'}
+                className="max-h-60 max-w-full object-contain transition-transform group-hover/img:scale-105"
+                src={message.metadata.url}
+                loading="lazy"
+              />
+            </div>
+          ) : null}
+          {message.content && <p className="break-all text-sm">{message.content}</p>}
+        </div>
+      );
+    case 'file':
+      return (
+        <div className="flex items-center gap-3 p-1 rounded-lg">
+          <div
+            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${isMe ? 'bg-white/20' : 'bg-primary/10'}`}
+          >
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+              />
+            </svg>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="truncate text-sm font-medium">
+              {message.metadata?.fileName || t({ id: 'im.attachedFile' })}
+            </p>
+            <div className="flex items-center gap-2 mt-0.5">
+              {message.metadata?.url && (
+                <a
+                  className={className(
+                    'text-[10px] font-bold uppercase tracking-wider hover:underline',
+                    isMe ? 'text-white' : 'text-primary'
+                  )}
+                  href={message.metadata.url}
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  {t({ id: 'im.openFile' })}
+                </a>
+              )}
+              {message.metadata?.fileSizeBytes && (
+                <span className="text-[10px] opacity-60">
+                  {(message.metadata.fileSizeBytes / 1024 / 1024).toFixed(2)} MB
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    case 'system':
+      return (
+        <div className="flex justify-center w-full my-1">
+          <span className="rounded-full bg-muted/50 px-3 py-1 text-[10px] text-muted-foreground italic">
+            {message.content}
+          </span>
+        </div>
+      );
+    default:
+      return (
+        <p className="break-all text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
+      );
+  }
+}
+
+// --- Main Component ---
+
 interface MessagePanelProps {
   conversationIdOverride?: string;
 }
@@ -33,8 +123,8 @@ interface MessagePanelProps {
 const maxSendAttempts = 3;
 const ackTimeoutMs = 2000;
 const retryDelayMs = 300;
-const virtualRowHeightPx = 100; // Increased for bubble layout
-const virtualOverscan = 8;
+const virtualRowHeightPx = 100;
+const virtualOverscan = 10;
 const typingExpirationMs = 3000;
 
 interface RuntimeImConfig {
@@ -58,6 +148,7 @@ interface ConversationListResponse {
     lastMessagePreview: string;
     name: string;
     unreadCount: number;
+    updatedAt: string;
   }>;
 }
 
@@ -97,60 +188,6 @@ function readRolesFromEnv(): string[] {
   return roles.length > 0 ? roles : ['admin'];
 }
 
-function renderMessageBody(
-  message: ImSocketMessage,
-  t: (id: { id: string }) => string,
-  isMe: boolean
-): JSX.Element {
-  if (message.deletedAt) {
-    return <p className="text-sm italic opacity-70">{t({ id: 'im.messageDeleted' })}</p>;
-  }
-
-  if (message.messageType === 'image') {
-    return (
-      <div className="space-y-2">
-        {message.metadata?.url ? (
-          <img
-            alt={message.metadata.fileName || 'image'}
-            className="max-h-48 rounded-md border border-black/10 object-contain"
-            src={message.metadata.url}
-          />
-        ) : null}
-        <p className="break-all text-sm">{message.content}</p>
-      </div>
-    );
-  }
-
-  if (message.messageType === 'file') {
-    return (
-      <div className="space-y-1 text-sm">
-        <p className="font-medium">{message.metadata?.fileName || t({ id: 'im.attachedFile' })}</p>
-        {message.metadata?.url ? (
-          <a
-            className={className('underline', isMe ? 'text-primary-foreground' : 'text-primary')}
-            href={message.metadata.url}
-            rel="noreferrer"
-            target="_blank"
-          >
-            {t({ id: 'im.openFile' })}
-          </a>
-        ) : null}
-        <p className="break-all opacity-80">{message.content}</p>
-      </div>
-    );
-  }
-
-  if (message.messageType === 'system') {
-    return (
-      <p className="text-xs italic text-muted-foreground text-center w-full my-2">
-        {message.content}
-      </p>
-    );
-  }
-
-  return <p className="break-all text-sm leading-relaxed">{message.content}</p>;
-}
-
 export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX.Element {
   const { formatMessage: t } = useIntl();
   const connectionState = useSocketStore((state) => state.connectionState);
@@ -178,17 +215,18 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
   const [typingUsers, setTypingUsers] = useState<TypingMap>({});
   const [offlineQueueCount, setOfflineQueueCount] = useState(0);
   const [presenceMembers, setPresenceMembers] = React.useState<Set<string>>(new Set());
-  const [, setPresenceStatusMap] = React.useState<Map<string, ImPresenceStatus>>(new Map());
   const [myPresenceStatus, setMyPresenceStatus] = useState<ImPresenceStatus>('online');
   const [viewportHeight, setViewportHeight] = useState(320);
   const [pendingImage, setPendingImage] = useState<PendingImage | null>(null);
   const [uploading, setUploading] = useState(false);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
+  const [dragOver, setDragOver] = useState(false);
 
   const messageViewportRef = useRef<HTMLDivElement | null>(null);
   const typingIdleTimerRef = useRef<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const lastTypingEmitRef = useRef<number>(0);
   const apiClient = useApiClient();
 
   // Dynamic viewport height via ResizeObserver
@@ -239,13 +277,14 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
       return apiClient.get<ConversationListResponse>(url);
     },
     queryKey: ['console-conversations', imConfig?.tenantId ?? authTenantId],
+    refetchInterval: 10000,
   });
 
   useEffect(() => {
     if (!imConfig) {
-      setBootError('Missing IM runtime config. Please set VITE_IM_* env vars or log in first.');
+      setBootError(t({ id: 'im.bootError.missingConfig' }));
     }
-  }, [imConfig]);
+  }, [imConfig, t]);
 
   const offlineQueueStorageKey = useMemo(() => {
     if (!imConfig) {
@@ -326,7 +365,7 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
         });
 
         if (!payload.accessToken || typeof payload.accessToken !== 'string') {
-          throw new Error('Token issue response is missing accessToken.');
+          throw new Error(t({ id: 'im.bootError.tokenMissing' }));
         }
 
         if (!disposed) {
@@ -334,7 +373,8 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
           setBootError(null);
         }
       } catch (error) {
-        const message = error instanceof Error ? error.message : 'Unable to request access token.';
+        const message =
+          error instanceof Error ? error.message : t({ id: 'im.bootError.tokenFailed' });
         if (!disposed) {
           setBootError(message);
           setConnectionState('disconnected');
@@ -355,6 +395,7 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
     setConnectionState,
     setTenantId,
     setUserId,
+    t,
   ]);
 
   const handleConversationHistory = useCallback(
@@ -367,8 +408,16 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
   const handleMessageReceived = useCallback(
     (message: ImSocketMessage) => {
       upsertMessage(message);
+      // Auto scroll if sticking
+      if (stickToBottom && messageViewportRef.current) {
+        setTimeout(() => {
+          if (messageViewportRef.current) {
+            messageViewportRef.current.scrollTop = messageViewportRef.current.scrollHeight;
+          }
+        }, 50);
+      }
     },
-    [upsertMessage]
+    [upsertMessage, stickToBottom]
   );
 
   const handleTypingChanged = useCallback(
@@ -404,22 +453,13 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
         next.add(event.userId);
       } else if (event.event === 'left') {
         next.delete(event.userId);
-        setPresenceStatusMap((prevMap) => {
-          const nextMap = new Map(prevMap);
-          nextMap.delete(event.userId);
-          return nextMap;
-        });
       }
       return next;
     });
   }, []);
 
-  const handlePresenceStatusChanged = React.useCallback((event: ImPresenceStatusEvent) => {
-    setPresenceStatusMap((prev) => {
-      const next = new Map(prev);
-      next.set(event.userId, event.status);
-      return next;
-    });
+  const handlePresenceStatusChanged = React.useCallback((): void => {
+    // presence status updates are handled via socket events
   }, []);
 
   const handleMessageEdited = useCallback(
@@ -465,6 +505,7 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
         const nextEntries = Object.entries(current).filter(
           (entry) => now - entry[1] <= typingExpirationMs
         );
+        if (nextEntries.length === Object.keys(current).length) return current;
         return Object.fromEntries(nextEntries);
       });
     }, 1000);
@@ -555,8 +596,6 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
     [canSendMessage, imConfig, extractImageFile, handleImageCaptured]
   );
 
-  const [dragOver, setDragOver] = useState(false);
-
   const handleDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
     event.stopPropagation();
@@ -576,21 +615,37 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
     setPendingImage(null);
   }, [pendingImage]);
 
+  const TYPING_THROTTLE_MS = 500;
+
+  const handleTyping = useCallback(
+    (isTyping: boolean) => {
+      if (!canSendMessage || !imConfig) return;
+
+      const now = Date.now();
+      if (isTyping && now - lastTypingEmitRef.current < TYPING_THROTTLE_MS) {
+        return;
+      }
+
+      emitTyping({ conversationId: imConfig.conversationId, isTyping });
+      if (isTyping) {
+        lastTypingEmitRef.current = now;
+      }
+    },
+    [canSendMessage, imConfig, emitTyping]
+  );
+
   const stopTyping = useCallback(() => {
     if (!imConfig) {
       return;
     }
 
-    emitTyping({
-      conversationId: imConfig.conversationId,
-      isTyping: false,
-    });
+    handleTyping(false);
 
     if (typingIdleTimerRef.current !== null) {
       window.clearTimeout(typingIdleTimerRef.current);
       typingIdleTimerRef.current = null;
     }
-  }, [emitTyping, imConfig]);
+  }, [handleTyping, imConfig]);
 
   const uploadAndSendImage = useCallback(async () => {
     if (!pendingImage || !imConfig || !canSendMessage) return;
@@ -626,18 +681,20 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
         } else {
           enqueueOfflinePayload(payload);
           setSendState('failed');
-          setBootError('Image send failed. Added to offline queue for retry.');
+          setBootError(t({ id: 'im.bootError.imageSendFailed' }));
         }
       } else {
         enqueueOfflinePayload(payload);
-        setBootError('Socket is offline. Image queued for automatic sync.');
+        setBootError(t({ id: 'im.bootError.imageOffline' }));
         setSendState('idle');
       }
 
       URL.revokeObjectURL(pendingImage.objectUrl);
       setPendingImage(null);
     } catch (err) {
-      setBootError(err instanceof Error ? err.message : 'Image upload failed.');
+      setBootError(
+        err instanceof Error ? err.message : t({ id: 'im.bootError.imageUploadFailed' })
+      );
       setSendState('failed');
     } finally {
       setUploading(false);
@@ -651,6 +708,7 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
     emitWithAck,
     enqueueOfflinePayload,
     stopTyping,
+    t,
   ]);
 
   useEffect(() => {
@@ -677,7 +735,7 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
 
     if ((messageType === 'image' || messageType === 'file') && assetUrl.trim().length === 0) {
       setSendState('failed');
-      setBootError('Image or file message requires a URL.');
+      setBootError(t({ id: 'im.bootError.assetUrlRequired' }));
       return null;
     }
 
@@ -713,7 +771,7 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
     if (connectionState !== 'connected') {
       enqueueOfflinePayload(payload);
       setContent('');
-      setBootError('Socket is offline. Message queued for automatic sync.');
+      setBootError(t({ id: 'im.bootError.messageOffline' }));
       setSendState('idle');
       return;
     }
@@ -738,7 +796,7 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
 
     enqueueOfflinePayload(payload);
     setSendState('failed');
-    setBootError('Message send failed. Added to offline queue for retry.');
+    setBootError(t({ id: 'im.bootError.messageFailed' }));
   };
 
   const connectionLabel =
@@ -754,7 +812,9 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
       : sendState === 'failed'
         ? 'send failed'
         : undefined;
-  const typingUsersLabel = Object.keys(typingUsers).join(', ');
+
+  const typingUserIds = Object.keys(typingUsers);
+  const typingUsersLabel = typingUserIds.length > 0 ? typingUserIds.join(', ') : undefined;
 
   const totalCount = messages.length;
   const firstVisibleIndex = Math.max(
@@ -790,44 +850,83 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
         />
       ) : null}
 
-      {/* Conversation list — desktop: collapsible, mobile: slide-over */}
+      {/* Conversation list */}
       <aside
         className={className(
-          'shrink-0 rounded-md border border-border bg-background p-3 transition-all duration-200 overflow-hidden',
-          // Mobile: fixed overlay
+          'shrink-0 border-r border-border bg-muted/30 dark:bg-muted/10 transition-all duration-200 overflow-hidden',
           'fixed inset-y-0 left-0 z-40 w-72 md:relative md:z-0 md:shadow-none',
           conversationPanelOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
-          // Desktop: collapsible width
           'md:translate-x-0',
           conversationPanelOpen ? 'md:w-72' : 'md:w-0 md:p-0 md:border-0'
         )}
       >
-        <h3 className="mb-2 text-sm font-semibold">{t({ id: 'im.conversations' })}</h3>
+        <div className="flex items-center justify-between mb-4 px-4 pt-4">
+          <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+            {t({ id: 'im.conversations' })}
+          </h3>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 w-6 p-0 hover:bg-muted"
+            onClick={() => conversationQuery.refetch()}
+          >
+            <svg
+              className={`h-3.5 w-3.5 ${conversationQuery.isFetching ? 'animate-spin' : ''}`}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              />
+            </svg>
+          </Button>
+        </div>
+
         {conversationQuery.isLoading ? (
-          <p className="text-xs text-muted-foreground">{t({ id: 'im.loadingConversations' })}</p>
+          <div className="space-y-3 p-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-12 w-full animate-pulse rounded bg-muted/50" />
+            ))}
+          </div>
         ) : null}
-        {conversationQuery.isError ? (
-          <p className="text-xs text-destructive">{t({ id: 'im.loadConversationsFailed' })}</p>
-        ) : null}
-        <ul className="space-y-2">
+
+        <ul className="space-y-1 overflow-y-auto max-h-[calc(100%-5rem)]">
           {(conversationQuery.data?.rows ?? []).map((conversation) => (
             <li key={conversation.id}>
               <NavLink
                 className={({ isActive }) =>
-                  [
-                    'block rounded-md border border-border px-3 py-2 text-xs',
+                  className(
+                    'block border-l-4 py-3 px-4 transition-all hover:bg-muted/80',
                     isActive
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-card text-card-foreground',
-                  ].join(' ')
+                      ? 'bg-background border-primary text-primary shadow-sm font-bold'
+                      : 'bg-transparent border-transparent text-muted-foreground font-medium'
+                  )
                 }
                 to={`/im/${conversation.id}`}
               >
                 <div className="mb-1 flex items-center justify-between gap-2">
-                  <span className="font-semibold">{conversation.name}</span>
-                  {conversation.unreadCount > 0 ? <Badge>{conversation.unreadCount}</Badge> : null}
+                  <span className="truncate text-sm">{conversation.name}</span>
+                  {conversation.unreadCount > 0 && (
+                    <Badge
+                      variant="destructive"
+                      className="h-5 min-w-[20px] justify-center px-1 text-[10px] animate-in zoom-in"
+                    >
+                      {conversation.unreadCount}
+                    </Badge>
+                  )}
                 </div>
-                <p className="truncate text-[11px] opacity-80">{conversation.lastMessagePreview}</p>
+                <p
+                  className={className(
+                    'truncate text-[11px] opacity-70',
+                    conversation.lastMessagePreview ? 'italic' : 'opacity-40'
+                  )}
+                >
+                  {conversation.lastMessagePreview || t({ id: 'im.noMessages' })}
+                </p>
               </NavLink>
             </li>
           ))}
@@ -835,17 +934,16 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col gap-4 min-h-0 bg-background/50">
-        <header className="flex shrink-0 items-center justify-between px-3 py-2 border-b bg-card md:rounded-t-lg">
-          <div className="flex items-center gap-2">
+        <header className="flex shrink-0 items-center justify-between px-4 py-3 border-b bg-card md:rounded-t-lg shadow-sm">
+          <div className="flex items-center gap-3">
             <button
               aria-label={t({ id: 'im.toggleConversations' })}
-              className="flex h-8 w-8 items-center justify-center rounded-md border border-border hover:bg-accent md:hidden"
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-border hover:bg-accent md:hidden transition-colors"
               onClick={toggleConversationPanel}
               type="button"
             >
               <svg
-                aria-hidden="true"
-                className="h-4 w-4"
+                className="h-5 w-5"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2"
@@ -854,47 +952,87 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
                 <path d="M4 6h16M4 12h16M4 18h16" strokeLinecap="round" />
               </svg>
             </button>
-            <div>
-              <h2 className="text-sm font-semibold md:text-base">{t({ id: 'im.conversation' })}</h2>
-              <div className="text-[10px] text-muted-foreground md:text-xs">
-                {t({ id: 'im.online' }, { count: presenceMembers.size })}
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
+                <svg
+                  className="text-primary h-5 w-5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h2 className="text-sm font-bold md:text-base leading-none mb-1">
+                  {t({ id: 'im.conversation' })}
+                </h2>
+                <div className="flex items-center gap-1.5 text-[10px] md:text-xs">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                  </span>
+                  <span className="text-muted-foreground font-medium">
+                    {t({ id: 'im.online' }, { count: presenceMembers.size })}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
+
           <div className="flex items-center gap-2">
-            {offlineQueueCount > 0 ? (
-              <Badge variant="secondary" className="text-[10px]">
-                {t({ id: 'im.offlineQueue' }, { count: offlineQueueCount })}
-              </Badge>
+            {connectionState === 'connected' ? (
+              <div className="hidden sm:flex items-center gap-2 mr-2">
+                <Badge
+                  variant="outline"
+                  className="text-[10px] capitalize font-medium px-2 py-0.5 border-green-500/30 text-green-600 bg-green-50/50 dark:bg-green-950/20"
+                >
+                  {myPresenceStatus}
+                </Badge>
+              </div>
             ) : null}
+
             <Badge
-              variant={connectionState === 'connected' ? 'default' : 'secondary'}
-              className="text-[10px]"
+              variant={
+                connectionState === 'connected'
+                  ? 'default'
+                  : connectionState === 'reconnecting'
+                    ? 'secondary'
+                    : 'destructive'
+              }
+              className={className(
+                'text-[10px] px-2 py-0.5 font-bold uppercase tracking-tighter',
+                connectionState === 'reconnecting' && 'animate-pulse'
+              )}
             >
               {connectionLabel}
             </Badge>
-            {connectionState === 'connected' ? (
-              <select
-                aria-label={t({ id: 'im.presenceStatus' })}
-                className="rounded border border-border bg-transparent px-1 py-0.5 text-[10px] outline-none"
-                value={myPresenceStatus}
-                onChange={(e) => {
-                  const next = e.target.value as ImPresenceStatus;
-                  setMyPresenceStatus(next);
-                  emitSetPresenceStatus(next);
-                }}
-              >
-                <option value="online">{t({ id: 'im.statusOnline' })}</option>
-                <option value="away">{t({ id: 'im.statusAway' })}</option>
-                <option value="dnd">{t({ id: 'im.statusDnd' })}</option>
-              </select>
-            ) : null}
+
+            <select
+              aria-label={t({ id: 'im.presenceStatus' })}
+              className="hidden md:block rounded-lg border border-border bg-background px-2 py-1 text-[10px] font-bold outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+              value={myPresenceStatus}
+              onChange={(e) => {
+                const next = e.target.value as ImPresenceStatus;
+                setMyPresenceStatus(next);
+                emitSetPresenceStatus(next);
+              }}
+            >
+              <option value="online">{t({ id: 'im.statusOnline' })}</option>
+              <option value="away">{t({ id: 'im.statusAway' })}</option>
+              <option value="dnd">{t({ id: 'im.statusDnd' })}</option>
+            </select>
           </div>
         </header>
 
         <div
           className={className(
-            'min-h-0 flex-1 overflow-y-auto p-3 transition-colors space-y-4',
+            'min-h-0 flex-1 overflow-y-auto p-4 transition-colors relative scroll-smooth',
             dragOver && 'ring-2 ring-primary/50 bg-primary/5'
           )}
           onDragOver={handleDragOver}
@@ -903,56 +1041,72 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
           onScroll={(event) => {
             const node = event.currentTarget;
             const remainingDistance = node.scrollHeight - (node.scrollTop + node.clientHeight);
-            setStickToBottom(remainingDistance < virtualRowHeightPx * 1.5);
+            setStickToBottom(remainingDistance < virtualRowHeightPx * 2);
             setScrollTop(node.scrollTop);
           }}
           ref={messageViewportRef}
         >
           <div style={{ height: topSpacerHeight }} />
-          <ul className="flex flex-col gap-4">
+          <ul className="flex flex-col gap-5">
             {virtualItems.map((message) => {
               const isMe = message.userId === imConfig?.userId;
               const isSystem = message.messageType === 'system';
 
               if (isSystem) {
-                return (
-                  <li key={message.messageId} className="flex justify-center">
-                    <span className="rounded-full bg-muted px-3 py-1 text-[10px] text-muted-foreground italic">
-                      {message.content}
-                    </span>
-                  </li>
-                );
+                return <MessageBody key={message.messageId} message={message} isMe={false} />;
               }
 
               return (
                 <li
                   className={className(
-                    'flex flex-col max-w-[85%] md:max-w-[75%]',
+                    'flex flex-col max-w-[90%] md:max-w-[80%]',
                     isMe ? 'ml-auto items-end' : 'mr-auto items-start'
                   )}
                   key={message.messageId}
                 >
-                  <div className="mb-1 flex items-center gap-2 px-1">
+                  <div className="mb-1.5 flex items-center gap-2 px-1">
                     {!isMe && (
-                      <span className="text-[10px] font-bold opacity-70">{message.userId}</span>
+                      <span className="text-[10px] font-bold text-primary">{message.userId}</span>
                     )}
-                    <span className="text-[10px] opacity-50">{message.createdAt}</span>
+                    <span className="text-[10px] text-muted-foreground opacity-70">
+                      {new Date(message.createdAt).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </span>
+                    {isMe && (
+                      <div className="flex h-3 w-3 items-center justify-center">
+                        <svg
+                          className="h-2.5 w-2.5 text-primary"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="3"
+                            d="M5 13l4 4L19 7"
+                          />
+                        </svg>
+                      </div>
+                    )}
                   </div>
 
                   <div
                     className={className(
-                      'relative group rounded-2xl px-4 py-2 shadow-sm text-sm',
+                      'relative group rounded-2xl px-4 py-2.5 shadow-sm text-sm border transition-shadow hover:shadow-md',
                       isMe
-                        ? 'bg-primary text-primary-foreground rounded-tr-none'
-                        : 'bg-card border border-border text-card-foreground rounded-tl-none'
+                        ? 'bg-primary text-primary-foreground border-primary rounded-tr-none'
+                        : 'bg-card border-border text-card-foreground rounded-tl-none'
                     )}
                   >
                     {editingMessageId === message.messageId ? (
-                      <div className="flex flex-col gap-2 min-w-[200px]">
+                      <div className="flex flex-col gap-3 min-w-[220px]">
                         <textarea
                           autoFocus
-                          className="w-full bg-transparent border-none resize-none focus:outline-none text-sm"
-                          rows={2}
+                          className="w-full bg-transparent border-none resize-none focus:outline-none text-sm font-medium leading-relaxed"
+                          rows={3}
                           onChange={(e) => setEditContent(e.target.value)}
                           onKeyDown={(e) => {
                             if (e.key === 'Enter' && !e.shiftKey) {
@@ -972,30 +1126,49 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
                           }}
                           value={editContent}
                         />
-                        <div className="flex justify-end gap-2 border-t border-white/20 pt-2">
-                          <button
-                            className="text-[10px] opacity-80 hover:opacity-100"
+                        <div className="flex justify-end gap-2 border-t border-white/10 dark:border-white/5 pt-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 text-[10px] font-bold uppercase tracking-widest text-inherit hover:bg-white/10"
                             onClick={() => setEditingMessageId(null)}
                           >
                             {t({ id: 'common.cancel' })}
-                          </button>
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            className="h-7 text-[10px] font-bold uppercase tracking-widest"
+                            onClick={() => {
+                              if (editContent.trim()) {
+                                emitEdit({
+                                  conversationId: message.conversationId,
+                                  content: editContent.trim(),
+                                  messageId: message.messageId,
+                                });
+                              }
+                              setEditingMessageId(null);
+                            }}
+                          >
+                            {t({ id: 'common.save' })}
+                          </Button>
                         </div>
                       </div>
                     ) : (
-                      renderMessageBody(message, t, isMe)
+                      <MessageBody message={message} isMe={isMe} />
                     )}
 
                     {/* Actions on hover */}
                     {!message.deletedAt && isMe && canSendMessage && (
                       <div
                         className={className(
-                          'absolute top-0 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100',
-                          isMe ? '-left-12 pr-2' : '-right-12 pl-2'
+                          'absolute top-0 flex gap-1 opacity-0 transition-all group-hover:opacity-100 scale-90 group-hover:scale-100',
+                          isMe ? '-left-14 pr-2' : '-right-14 pl-2'
                         )}
                       >
                         <button
                           aria-label={t({ id: 'im.editMessage' })}
-                          className="rounded-full bg-muted p-1.5 text-muted-foreground hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          className="rounded-lg bg-card border border-border p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground shadow-sm transition-colors"
                           onClick={() => {
                             setEditingMessageId(message.messageId);
                             setEditContent(message.content);
@@ -1004,8 +1177,7 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
                           type="button"
                         >
                           <svg
-                            aria-hidden="true"
-                            className="h-3 w-3"
+                            className="h-3.5 w-3.5"
                             fill="none"
                             stroke="currentColor"
                             strokeWidth="2"
@@ -1020,7 +1192,7 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
                         </button>
                         <button
                           aria-label={t({ id: 'im.deleteMessage' })}
-                          className="rounded-full bg-muted p-1.5 text-destructive hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          className="rounded-lg bg-card border border-border p-1.5 text-destructive hover:bg-destructive/10 shadow-sm transition-colors"
                           onClick={() => {
                             if (window.confirm(t({ id: 'im.deleteConfirm' }))) {
                               emitDelete({
@@ -1033,8 +1205,7 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
                           type="button"
                         >
                           <svg
-                            aria-hidden="true"
-                            className="h-3 w-3"
+                            className="h-3.5 w-3.5"
                             fill="none"
                             stroke="currentColor"
                             strokeWidth="2"
@@ -1052,7 +1223,7 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
                   </div>
 
                   {message.editedAt && !message.deletedAt && (
-                    <span className="mt-1 text-[10px] opacity-40 italic">
+                    <span className="mt-1 text-[9px] font-bold uppercase tracking-widest opacity-40 italic">
                       {t({ id: 'im.edited' })}
                     </span>
                   )}
@@ -1061,47 +1232,110 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
             })}
           </ul>
           <div style={{ height: bottomSpacerHeight }} />
+
+          {/* Scroll to bottom button */}
+          {!stickToBottom && messages.length > 5 && (
+            <Button
+              className="fixed bottom-32 right-8 h-10 w-10 rounded-full shadow-lg border border-border animate-bounce"
+              onClick={() => {
+                setStickToBottom(true);
+                if (messageViewportRef.current) {
+                  messageViewportRef.current.scrollTop = messageViewportRef.current.scrollHeight;
+                }
+              }}
+              size="icon"
+              variant="secondary"
+            >
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M19 14l-7 7-7-7"
+                />
+              </svg>
+            </Button>
+          )}
         </div>
 
-        {/* Typing and Send Label */}
-        {(typingUsersLabel || sendLabel || bootError) && (
-          <div className="px-4 py-1 text-[10px] animate-pulse">
-            {bootError && <span className="text-destructive mr-2">{bootError}</span>}
-            {sendLabel && <span className="text-muted-foreground mr-2">{sendLabel}</span>}
-            {typingUsersLabel && (
-              <span className="text-primary italic">
-                {t({ id: 'im.typing' }, { users: typingUsersLabel })}
-              </span>
+        {/* Typing and Status Footer */}
+        {(typingUsersLabel || sendLabel || bootError || offlineQueueCount > 0) && (
+          <div className="px-5 py-1.5 flex items-center justify-between bg-muted/20 border-y border-border/50">
+            <div className="flex items-center gap-3">
+              {typingUsersLabel && (
+                <div className="flex items-center gap-2">
+                  <div className="flex gap-0.5">
+                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary" />
+                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary [animation-delay:0.2s]" />
+                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary [animation-delay:0.4s]" />
+                  </div>
+                  <span className="text-[10px] font-bold text-primary uppercase tracking-wider">
+                    {t({ id: 'im.typing' }, { users: typingUsersLabel })}
+                  </span>
+                </div>
+              )}
+              {sendLabel && (
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest animate-pulse">
+                  {sendLabel}
+                </span>
+              )}
+              {bootError && (
+                <span className="text-[10px] font-bold text-destructive uppercase tracking-widest">
+                  {bootError}
+                </span>
+              )}
+            </div>
+
+            {offlineQueueCount > 0 && (
+              <div className="flex items-center gap-1.5">
+                <div className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                <span className="text-[10px] font-bold text-amber-600 uppercase tracking-widest">
+                  {t({ id: 'im.offlineQueue' }, { count: offlineQueueCount })}
+                </span>
+              </div>
             )}
           </div>
         )}
 
         {/* Input Area */}
-        <div className="p-3 border-t bg-card md:rounded-b-lg">
-          <div className="flex flex-col gap-2">
-            {/* Options for mobile - more compact */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
-              <select
-                aria-label={t({ id: 'im.messageType' })}
-                className="h-8 rounded-md border border-input bg-background px-2 text-[10px] outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                onChange={(event) => setMessageType(event.target.value as ImMessageType)}
-                value={messageType}
-              >
-                <option value="text">{t({ id: 'im.type.text' })}</option>
-                <option value="image">{t({ id: 'im.type.image' })}</option>
-                <option value="file">{t({ id: 'im.type.file' })}</option>
-                <option value="system">{t({ id: 'im.type.system' })}</option>
-              </select>
+        <div className="p-4 border-t bg-card md:rounded-b-xl shadow-[0_-2px_10px_rgba(0,0,0,0.02)]">
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-2 px-1">
+              <div className="relative">
+                <select
+                  aria-label={t({ id: 'im.messageType' })}
+                  className="h-8 appearance-none rounded-lg border border-border bg-background pl-2 pr-8 text-[10px] font-bold uppercase tracking-widest outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer"
+                  onChange={(event) => setMessageType(event.target.value as ImMessageType)}
+                  value={messageType}
+                >
+                  <option value="text">{t({ id: 'im.type.text' })}</option>
+                  <option value="image">{t({ id: 'im.type.image' })}</option>
+                  <option value="file">{t({ id: 'im.type.file' })}</option>
+                  <option value="system">{t({ id: 'im.type.system' })}</option>
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-muted-foreground">
+                  <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </div>
+              </div>
+
+              <div className="h-4 w-px bg-border mx-1" />
 
               <Button
                 disabled={!canSendMessage || uploading}
                 onClick={() => fileInputRef.current?.click()}
                 size="sm"
                 variant="ghost"
-                className="h-8 gap-1 text-[10px] px-2"
+                className="h-8 gap-2 text-[10px] font-bold uppercase tracking-widest px-3 hover:bg-primary/5 hover:text-primary transition-all"
               >
                 <svg
-                  className="h-3.5 w-3.5"
+                  className="h-4 w-4"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="2"
@@ -1118,15 +1352,15 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
             </div>
 
             {(messageType === 'image' || messageType === 'file') && (
-              <div className="grid grid-cols-1 gap-2 mb-2 md:grid-cols-2">
+              <div className="grid grid-cols-1 gap-3 animate-in fade-in slide-in-from-top-1 md:grid-cols-2">
                 <Input
-                  className="h-8 text-xs"
+                  className="h-10 text-xs font-medium bg-muted/20 border-dashed"
                   onChange={(event) => setAssetUrl(event.target.value)}
                   placeholder={t({ id: 'im.assetUrlPlaceholder' })}
                   value={assetUrl}
                 />
                 <Input
-                  className="h-8 text-xs"
+                  className="h-10 text-xs font-medium bg-muted/20 border-dashed"
                   onChange={(event) => setFileName(event.target.value)}
                   placeholder={t({ id: 'im.fileNamePlaceholder' })}
                   value={fileName}
@@ -1136,18 +1370,21 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
 
             <div className="flex gap-2">
               <Input
-                className="flex-1 h-11 md:h-10 text-sm rounded-2xl px-4"
+                className="flex-1 h-12 text-sm rounded-xl px-4 border-border bg-background shadow-inner transition-all focus:ring-4 focus:ring-primary/10"
                 onBlur={stopTyping}
                 onChange={(event) => {
                   const nextValue = event.target.value;
                   setContent(nextValue);
                   if (!canSendMessage || !imConfig) return;
-                  emitTyping({ conversationId: imConfig.conversationId, isTyping: true });
-                  if (typingIdleTimerRef.current !== null)
+
+                  handleTyping(true);
+
+                  if (typingIdleTimerRef.current !== null) {
                     window.clearTimeout(typingIdleTimerRef.current);
+                  }
                   typingIdleTimerRef.current = window.setTimeout(() => {
-                    emitTyping({ conversationId: imConfig.conversationId, isTyping: false });
-                  }, 1200);
+                    handleTyping(false);
+                  }, 1500);
                 }}
                 onKeyDown={(event) => {
                   if (event.key === 'Enter' && !event.shiftKey) {
@@ -1160,25 +1397,32 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
                 value={content}
               />
               <Button
-                disabled={!canSendMessage || sendState === 'sending' || sendState === 'retrying'}
+                disabled={
+                  !canSendMessage ||
+                  sendState === 'sending' ||
+                  sendState === 'retrying' ||
+                  !content.trim()
+                }
                 onClick={() => void sendMessage()}
-                className="h-11 md:h-10 rounded-2xl px-6"
+                className="h-12 rounded-xl px-6 font-bold uppercase tracking-widest shadow-lg shadow-primary/20 transition-all hover:translate-y-[-1px] active:translate-y-[1px]"
                 variant="default"
               >
-                {t({ id: 'im.send' })}
+                {sendState === 'sending' ? <Spinner className="h-4 w-4" /> : t({ id: 'im.send' })}
               </Button>
             </div>
           </div>
         </div>
 
         {pendingImage && (
-          <ImagePreviewOverlay
-            fileName={pendingImage.file.name}
-            objectUrl={pendingImage.objectUrl}
-            onCancel={cancelPendingImage}
-            onConfirm={() => void uploadAndSendImage()}
-            uploading={uploading}
-          />
+          <div className="absolute bottom-24 left-4 right-4 z-20 animate-in slide-in-from-bottom-2 duration-300">
+            <ImagePreviewOverlay
+              fileName={pendingImage.file.name}
+              objectUrl={pendingImage.objectUrl}
+              onCancel={cancelPendingImage}
+              onConfirm={() => void uploadAndSendImage()}
+              uploading={uploading}
+            />
+          </div>
         )}
 
         <input
@@ -1194,7 +1438,24 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
         />
 
         {!canSendMessage && (
-          <p className="text-[10px] text-muted-foreground px-4 pb-2">{t({ id: 'im.readonly' })}</p>
+          <div className="bg-muted/30 px-4 py-1.5 flex items-center gap-2">
+            <svg
+              className="h-3 w-3 text-muted-foreground"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+              />
+            </svg>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              {t({ id: 'im.readonly' })}
+            </p>
+          </div>
         )}
       </div>
     </section>

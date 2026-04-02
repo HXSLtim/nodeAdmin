@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { createMockPool, setupTestEnv } from '../../__tests__/helpers';
 import type { MockPool } from '../../__tests__/helpers';
 

@@ -44,8 +44,10 @@ export function AssignTasksDialog({
       onSaved();
       onClose();
     },
-    onError: (error: any) => {
-      const message = error?.response?.data?.message || t({ id: 'backlog.loadFailed' });
+    onError: (error: unknown) => {
+      const message =
+        (error as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        t({ id: 'backlog.loadFailed' });
       toast.error(message);
     },
   });

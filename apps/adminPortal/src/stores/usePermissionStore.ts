@@ -17,7 +17,7 @@ const defaultPermissions: PermissionMap = {
   'roles:manage': false,
   'roles:view': false,
   'settings:view': false,
-  'tenant:view': false,
+  'tenants:view': false,
   'users:manage': false,
   'users:view': false,
 };
@@ -40,7 +40,7 @@ function buildPermissionMap(roles: string[]): PermissionMap {
     'roles:manage': isAdmin,
     'roles:view': isAdmin,
     'settings:view': isAdmin,
-    'tenant:view': isAdmin || roleSet.has('viewer'),
+    'tenants:view': isAdmin || roleSet.has('viewer'),
     'users:manage': isAdmin,
     'users:view': isAdmin,
   };

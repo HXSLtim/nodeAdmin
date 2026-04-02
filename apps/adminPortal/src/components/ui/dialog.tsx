@@ -77,7 +77,7 @@ export function Dialog({ children, onClose, open, title }: DialogProps): JSX.Ele
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 animate-in fade-in duration-150 p-0 md:p-4"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 animate-in fade-in duration-150 p-0 sm:items-center sm:p-4"
       onClick={(e) => {
         if (e.target === overlayRef.current) onClose();
       }}
@@ -86,7 +86,7 @@ export function Dialog({ children, onClose, open, title }: DialogProps): JSX.Ele
       <div
         aria-labelledby={titleId}
         aria-modal="true"
-        className="relative h-full w-full border-border bg-card p-6 shadow-lg animate-in fade-in zoom-in-95 duration-150 md:h-auto md:max-w-lg md:rounded-lg md:border overflow-y-auto"
+        className="relative h-[90vh] w-full border-border bg-card p-6 shadow-lg animate-in fade-in slide-in-from-bottom-4 duration-200 sm:h-auto sm:max-w-lg sm:rounded-lg sm:border sm:slide-in-from-bottom-0 sm:zoom-in-95 overflow-y-auto"
         ref={dialogRef}
         role="dialog"
       >

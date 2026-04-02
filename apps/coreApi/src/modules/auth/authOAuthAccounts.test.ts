@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AuthService } from './authService';
 import { setupTestEnv } from '../../__tests__/helpers';
 
 setupTestEnv();
@@ -40,10 +39,7 @@ describe('AuthService — OAuth Account Management', () => {
 
       const accounts = await service.listOAuthAccounts('user-1');
 
-      expect(mockQuery).toHaveBeenCalledWith(
-        expect.stringContaining('oauth_accounts'),
-        ['user-1']
-      );
+      expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('oauth_accounts'), ['user-1']);
       expect(accounts).toHaveLength(2);
       expect(accounts[0].provider).toBe('github');
       expect(accounts[1].provider).toBe('google');
@@ -66,9 +62,7 @@ describe('AuthService — OAuth Account Management', () => {
       const service = new (AuthService as any)();
       service.pool = null;
 
-      await expect(service.listOAuthAccounts('user-1')).rejects.toThrow(
-        'Database not available.'
-      );
+      await expect(service.listOAuthAccounts('user-1')).rejects.toThrow('Database not available.');
     });
   });
 

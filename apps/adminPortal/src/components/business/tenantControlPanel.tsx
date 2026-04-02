@@ -38,7 +38,11 @@ export function TenantControlPanel(): JSX.Element {
 
   const handleDeleteConfirm = async () => {
     if (deleteTenant) {
-      await deleteMutation.mutateAsync(deleteTenant.id);
+      try {
+        await deleteMutation.mutateAsync(deleteTenant.id);
+      } catch {
+        // Error handled by mutation onError
+      }
       setDeleteTenant(undefined);
     }
   };

@@ -1,11 +1,13 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Logger, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { count, desc, eq, gte, ne } from 'drizzle-orm';
 import { monitorEventLoopDelay } from 'node:perf_hooks';
 import { AuditLogService } from '../../infrastructure/audit/auditLogService';
 import { ConnectionRegistry } from '../../infrastructure/connectionRegistry';
 import { ConversationRepository } from '../../infrastructure/database/conversationRepository';
 import { DatabaseService } from '../../infrastructure/database/databaseService';
-import { TenantsService } from '../tenants/tenantsService';
+import { backlogTasks, conversations, messages, roles } from '../../infrastructure/database/schema';
+import { TenantsService, type TenantRecord } from '../tenants/tenantsService';
 import { CurrentUser } from '../auth/currentUser.decorator';
 import type { AuthIdentity } from '../auth/authIdentity';
 
@@ -19,6 +21,26 @@ interface ConversationListResponse {
   name: string;
   lastMessagePreview: string;
   unreadCount: number;
+}
+
+interface RecentMessageResponse {
+  content: string;
+  conversationId: string;
+  createdAt: Date;
+  id: string;
+  userId: string;
+}
+
+interface RecentMessagesPage {
+  items: RecentMessageResponse[];
+  total: number;
+}
+
+interface OverviewTodoInput {
+  activeTenantCount: number | null;
+  onlineUserCount: number;
+  todayMessages: number | null;
+  totalConversations: number | null;
 }
 
 function formatUptime(seconds: number): string {
@@ -64,6 +86,8 @@ export class MetricsController {
 @ApiBearerAuth()
 @Controller('console')
 export class ConsoleController {
+  private readonly logger = new Logger(ConsoleController.name);
+
   constructor(
     private readonly auditLogService: AuditLogService,
     private readonly connectionRegistry: ConnectionRegistry,
@@ -75,38 +99,40 @@ export class ConsoleController {
   @Get('overview')
   @ApiOperation({ summary: 'Get dashboard overview stats' })
   async getOverview() {
-    const tenants = await this.tenantsService.list();
-    const activeCount = tenants.filter((t: any) => t.is_active).length;
-    const onlineConnections = this.connectionRegistry.totalCount();
-
-    let totalConversations = 0;
-    let todayMessages = 0;
-
+    let activeCount: number | null = null;
     try {
-      if (this.databaseService.drizzle) {
-        const conversationsResult = await this.databaseService.drizzle.execute({
-          sql: 'SELECT COUNT(*)::int AS count FROM conversations',
-        } as any);
-        totalConversations = Number(conversationsResult.rows?.[0]?.count ?? 0);
-
-        const messagesResult = await this.databaseService.drizzle.execute({
-          sql: 'SELECT COUNT(*)::int AS count FROM messages WHERE created_at >= CURRENT_DATE',
-        } as any);
-        todayMessages = Number(messagesResult.rows?.[0]?.count ?? 0);
-      }
-    } catch {
-      // DB not available — keep 0
+      const tenants = await this.tenantsService.list();
+      activeCount = tenants.filter((tenant) => tenant.is_active).length;
+    } catch (error) {
+      this.logger.warn(
+        `Failed to load active tenant count for overview: ${this.formatError(error)}`
+      );
     }
+
+    const onlineUsers = this.connectionRegistry.totalUniqueUsers();
+    const [totalConversations, todayMessages] = await Promise.all([
+      this.countAllConversations(),
+      this.countTodayMessages(),
+    ]);
+    const todos = await this.buildOverviewTodos({
+      activeTenantCount: activeCount,
+      onlineUserCount: onlineUsers,
+      todayMessages,
+      totalConversations,
+    });
 
     return {
       stats: [
-        { label: 'overview.stat.onlineUsers', value: String(onlineConnections) },
-        { label: 'overview.stat.totalConversations', value: String(totalConversations) },
-        { label: 'overview.stat.todayMessages', value: String(todayMessages) },
-        { label: 'overview.stat.activeTenants', value: String(activeCount) },
+        { label: 'overview.stat.onlineUsers', value: String(onlineUsers) },
+        {
+          label: 'overview.stat.totalConversations',
+          value: this.formatMetricValue(totalConversations),
+        },
+        { label: 'overview.stat.todayMessages', value: this.formatMetricValue(todayMessages) },
+        { label: 'overview.stat.activeTenants', value: this.formatMetricValue(activeCount) },
         { label: 'overview.stat.uptime', value: formatUptime(process.uptime()) },
       ],
-      todos: [],
+      todos,
     };
   }
 
@@ -116,25 +142,13 @@ export class ConsoleController {
     const tenants = await this.tenantsService.list();
 
     const tenantsWithRoles = await Promise.all(
-      tenants.map(async (t: any) => {
-        let roleCount = 0;
-        try {
-          if (this.databaseService.drizzle) {
-            const result = await this.databaseService.drizzle.execute({
-              sql: 'SELECT COUNT(*)::int AS count FROM roles WHERE tenant_id = $1',
-              bindings: [t.id],
-            } as any);
-            roleCount = Number(result.rows?.[0]?.count ?? 0);
-          }
-        } catch {
-          // DB not available
-        }
-
+      tenants.map(async (tenant) => {
+        const roleCount = await this.countRolesForTenant(tenant.id);
         return {
-          key: t.id,
-          name: t.name,
+          key: tenant.id,
+          name: tenant.name,
           roleCount,
-          status: t.is_active ? 'active' : 'inactive',
+          status: tenant.is_active ? 'active' : 'inactive',
         };
       })
     );
@@ -159,9 +173,11 @@ export class ConsoleController {
   @Get('conversations')
   @ApiOperation({ summary: 'List recent conversations' })
   async getConversations(
-    @Query('tenantId') tenantId = 'default'
+    @CurrentUser() identity: AuthIdentity,
+    @Query('tenantId') tenantId?: string
   ): Promise<{ rows: ConversationListResponse[] }> {
-    const rows = await this.conversationRepository.listByTenant(tenantId, 50);
+    const effectiveTenantId = tenantId ?? identity.tenantId;
+    const rows = await this.conversationRepository.listByTenant(effectiveTenantId, 50);
 
     return {
       rows: rows.map((row) => ({
@@ -190,9 +206,19 @@ export class ConsoleController {
         'im:send': isAdmin || roles.includes('im:operator'),
         'im:view': isAdmin || roles.includes('im:operator') || roles.includes('viewer'),
         'overview:view': true,
+        'users:view': isAdmin || roles.includes('viewer'),
+        'users:manage': isAdmin,
+        'roles:view': isAdmin || roles.includes('viewer'),
+        'roles:manage': isAdmin,
+        'audit:view': isAdmin || roles.includes('viewer'),
+        'menus:view': isAdmin,
+        'menus:manage': isAdmin,
+        'tenants:view': isAdmin || roles.includes('viewer'),
         'release:view': isAdmin || roles.includes('release:viewer'),
         'settings:view': isAdmin,
-        'tenant:view': isAdmin || roles.includes('viewer'),
+        'modernizer:view': isAdmin,
+        'backlog:view': isAdmin || roles.includes('viewer'),
+        'backlog:manage': isAdmin,
       },
       roles,
     };
@@ -240,27 +266,204 @@ export class ConsoleController {
 
   @Get('recent-messages')
   @ApiOperation({ summary: 'Get globally recent messages for dashboard' })
-  async getRecentMessages(@CurrentUser() identity: AuthIdentity) {
+  async getRecentMessages(
+    @CurrentUser() identity: AuthIdentity,
+    @Query('page') pageRaw?: string,
+    @Query('pageSize') pageSizeRaw?: string
+  ) {
+    const page = this.normalizePage(pageRaw);
+    const pageSize = this.normalizePageSize(pageSizeRaw, 10);
+    const { items, total } = await this.listRecentMessages(identity.tenantId, page, pageSize);
+
+    return {
+      items,
+      page,
+      pageSize,
+      total,
+    };
+  }
+
+  private async countAllConversations(): Promise<number | null> {
     if (!this.databaseService.drizzle) {
-      return { items: [] };
+      return null;
     }
 
     try {
-      const result = await this.databaseService.drizzle.execute({
-        sql: `
-          SELECT m.message_id as id, m.user_id as "userId", m.content, m.created_at as "createdAt",
-                 m.conversation_id as "conversationId"
-          FROM messages m
-          WHERE m.tenant_id = $1
-          ORDER BY m.created_at DESC
-          LIMIT 10
-        `,
-        bindings: [identity.tenantId],
-      } as any);
+      const result = await this.databaseService.drizzle
+        .select({ total: count() })
+        .from(conversations);
 
-      return { items: result.rows ?? [] };
-    } catch {
-      return { items: [] };
+      return Number(result[0]?.total ?? 0);
+    } catch (error) {
+      this.logger.warn(
+        `Failed to count conversations for overview statistics: ${this.formatError(error)}`
+      );
+      return null;
     }
+  }
+
+  private async countTodayMessages(): Promise<number | null> {
+    if (!this.databaseService.drizzle) {
+      return null;
+    }
+
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    try {
+      const result = await this.databaseService.drizzle
+        .select({ total: count() })
+        .from(messages)
+        .where(gte(messages.createdAt, startOfToday));
+
+      return Number(result[0]?.total ?? 0);
+    } catch (error) {
+      this.logger.warn(
+        `Failed to count today's messages for overview statistics: ${this.formatError(error)}`
+      );
+      return null;
+    }
+  }
+
+  private async countRolesForTenant(tenantId: TenantRecord['id']): Promise<number> {
+    if (!this.databaseService.drizzle) {
+      return 0;
+    }
+
+    try {
+      const result = await this.databaseService.drizzle
+        .select({ total: count() })
+        .from(roles)
+        .where(eq(roles.tenantId, tenantId));
+
+      return Number(result[0]?.total ?? 0);
+    } catch {
+      return 0;
+    }
+  }
+
+  private async listRecentMessages(
+    tenantId: AuthIdentity['tenantId'],
+    page: number,
+    pageSize: number
+  ): Promise<RecentMessagesPage> {
+    if (!this.databaseService.drizzle) {
+      return { items: [], total: 0 };
+    }
+
+    try {
+      const [items, totalResult] = await Promise.all([
+        this.databaseService.drizzle
+          .select({
+            content: messages.content,
+            conversationId: messages.conversationId,
+            createdAt: messages.createdAt,
+            id: messages.messageId,
+            userId: messages.userId,
+          })
+          .from(messages)
+          .where(eq(messages.tenantId, tenantId))
+          .orderBy(desc(messages.createdAt))
+          .limit(pageSize)
+          .offset((page - 1) * pageSize),
+        this.databaseService.drizzle
+          .select({ total: count() })
+          .from(messages)
+          .where(eq(messages.tenantId, tenantId)),
+      ]);
+
+      return {
+        items,
+        total: Number(totalResult[0]?.total ?? 0),
+      };
+    } catch (error) {
+      this.logger.warn(
+        `Failed to list recent messages for tenant ${tenantId}: ${this.formatError(error)}`
+      );
+      return { items: [], total: 0 };
+    }
+  }
+
+  private async buildOverviewTodos(input: OverviewTodoInput): Promise<string[]> {
+    const todos = [...(await this.listBacklogTodos()), ...this.buildOperationalTodos(input)];
+
+    return [...new Set(todos)].slice(0, 5);
+  }
+
+  private async listBacklogTodos(): Promise<string[]> {
+    if (!this.databaseService.drizzle) {
+      return [];
+    }
+
+    try {
+      const rows = await this.databaseService.drizzle
+        .select({
+          title: backlogTasks.title,
+        })
+        .from(backlogTasks)
+        .where(ne(backlogTasks.status, 'done'))
+        .orderBy(desc(backlogTasks.createdAt))
+        .limit(3);
+
+      return rows.map((row) => `Backlog: ${row.title}`);
+    } catch (error) {
+      this.logger.warn(`Failed to load backlog todos for overview: ${this.formatError(error)}`);
+      return [];
+    }
+  }
+
+  private buildOperationalTodos(input: OverviewTodoInput): string[] {
+    const todos: string[] = [];
+
+    const missingChecks = this.getReleaseChecks()
+      .checks.filter((check) => !check.done)
+      .map((check) => `Release readiness: ${check.title}`);
+    todos.push(...missingChecks);
+
+    if (input.activeTenantCount === null) {
+      todos.push('Investigate tenant service availability for overview metrics');
+    } else if (input.activeTenantCount === 0) {
+      todos.push('No active tenants are enabled right now');
+    }
+
+    if (input.totalConversations === null) {
+      todos.push('Investigate conversation statistics query failures');
+    } else if (input.totalConversations === 0) {
+      todos.push('No conversations have been created yet');
+    }
+
+    if (input.todayMessages === null) {
+      todos.push("Investigate today's message statistics query failures");
+    } else if (input.todayMessages === 0) {
+      todos.push('No messages have been sent today');
+    }
+
+    if (input.onlineUserCount === 0) {
+      todos.push('No online users are currently connected');
+    }
+
+    return todos;
+  }
+
+  private formatMetricValue(value: number | null): string {
+    return value === null ? 'N/A' : String(value);
+  }
+
+  private normalizePage(rawValue?: string): number {
+    const page = Number(rawValue);
+    return Number.isInteger(page) && page > 0 ? page : 1;
+  }
+
+  private normalizePageSize(rawValue?: string, defaultValue = 20): number {
+    const pageSize = Number(rawValue);
+    if (!Number.isInteger(pageSize) || pageSize <= 0) {
+      return defaultValue;
+    }
+
+    return Math.min(pageSize, 100);
+  }
+
+  private formatError(error: unknown): string {
+    return error instanceof Error ? error.message : 'unknown error';
   }
 }

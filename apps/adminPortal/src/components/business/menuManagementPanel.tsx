@@ -63,9 +63,13 @@ export function MenuManagementPanel(): JSX.Element {
     },
   });
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (deleteTarget) {
-      deleteMutation.mutate(deleteTarget.id);
+      try {
+        await deleteMutation.mutateAsync(deleteTarget.id);
+      } catch {
+        // Error handled by mutation onError
+      }
     }
   };
 

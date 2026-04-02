@@ -28,7 +28,7 @@ interface MockMultipartFile {
 
 function createRequest(fileResult: MockMultipartFile | null | Error) {
   return {
-    file: vi.fn(async (options?: unknown) => {
+    file: vi.fn(async () => {
       if (fileResult instanceof Error) {
         throw fileResult;
       }
@@ -69,10 +69,7 @@ describe('ImUploadController', () => {
       limits: { fileSize: expect.any(Number) },
     });
     expect(mkdir).toHaveBeenCalledWith(expect.stringContaining('tenant-1'), { recursive: true });
-    expect(writeFile).toHaveBeenCalledWith(
-      expect.stringContaining('upload-uuid.png'),
-      buffer
-    );
+    expect(writeFile).toHaveBeenCalledWith(expect.stringContaining('upload-uuid.png'), buffer);
     expect(result).toEqual({
       fileName: 'photo.png',
       fileSizeBytes: buffer.length,

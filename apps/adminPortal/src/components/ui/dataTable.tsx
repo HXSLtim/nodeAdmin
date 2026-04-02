@@ -53,67 +53,69 @@ export function DataTable<T>({
 
   return (
     <>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            {columns.map((col, i) => (
-              <TableHead key={i} className={col.className}>
-                {col.header}
-              </TableHead>
-            ))}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {isLoading
-            ? Array.from({ length: 3 }).map((_, idx) => (
-                <TableRow key={`skeleton-${idx}`}>
-                  {columns.map((_, ci) => (
-                    <TableCell key={ci}>
-                      <div className="h-4 w-full animate-pulse rounded bg-muted" />
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            : null}
-          {isError ? (
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
             <TableRow>
-              <TableCell className="py-8 text-center" colSpan={colSpan}>
-                <p className="text-sm text-destructive">{errorMessage}</p>
-                {onRetry ? (
-                  <button
-                    className="mt-2 text-xs text-primary hover:underline"
-                    onClick={onRetry}
-                    type="button"
-                  >
-                    {retryLabel}
-                  </button>
-                ) : null}
-              </TableCell>
+              {columns.map((col, i) => (
+                <TableHead key={i} className={col.className}>
+                  {col.header}
+                </TableHead>
+              ))}
             </TableRow>
-          ) : null}
-          {!isLoading && !isError && data.length === 0 ? (
-            <TableRow>
-              <TableCell
-                className="py-8 text-center text-sm text-muted-foreground"
-                colSpan={colSpan}
-              >
-                {emptyMessage}
-              </TableCell>
-            </TableRow>
-          ) : null}
-          {!isLoading && !isError && data.length > 0
-            ? data.map((row) => (
-                <TableRow key={rowKey(row)}>
-                  {columns.map((col, ci) => (
-                    <TableCell key={ci} className={col.className}>
-                      {col.cell(row)}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            : null}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {isLoading
+              ? Array.from({ length: 3 }).map((_, idx) => (
+                  <TableRow key={`skeleton-${idx}`}>
+                    {columns.map((_, ci) => (
+                      <TableCell key={ci}>
+                        <div className="h-4 w-full animate-pulse rounded bg-muted" />
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              : null}
+            {isError ? (
+              <TableRow>
+                <TableCell className="py-8 text-center" colSpan={colSpan}>
+                  <p className="text-sm text-destructive">{errorMessage}</p>
+                  {onRetry ? (
+                    <button
+                      className="mt-2 text-xs text-primary hover:underline"
+                      onClick={onRetry}
+                      type="button"
+                    >
+                      {retryLabel}
+                    </button>
+                  ) : null}
+                </TableCell>
+              </TableRow>
+            ) : null}
+            {!isLoading && !isError && data.length === 0 ? (
+              <TableRow>
+                <TableCell
+                  className="py-8 text-center text-sm text-muted-foreground"
+                  colSpan={colSpan}
+                >
+                  {emptyMessage}
+                </TableCell>
+              </TableRow>
+            ) : null}
+            {!isLoading && !isError && data.length > 0
+              ? data.map((row) => (
+                  <TableRow key={rowKey(row)} className="even:bg-muted/20">
+                    {columns.map((col, ci) => (
+                      <TableCell key={ci} className={col.className}>
+                        {col.cell(row)}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              : null}
+          </TableBody>
+        </Table>
+      </div>
       {pagination ? (
         <div className="mt-4 flex items-center justify-between gap-4">
           <Button

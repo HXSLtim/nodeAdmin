@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AuthService } from './authService';
 import { setupTestEnv } from '../../__tests__/helpers';
 
 setupTestEnv();
@@ -28,8 +27,6 @@ function createMockPool(queryResults: any[] = []) {
 }
 
 describe('AuthService — resetPassword', () => {
-  let authService: AuthService;
-
   beforeEach(() => {
     vi.resetModules();
   });
@@ -49,17 +46,16 @@ describe('AuthService — resetPassword', () => {
     await service.resetPassword('user@example.com', 'newPassword123', 'tenant-1');
 
     // Verify user lookup query
-    expect(mockQuery).toHaveBeenCalledWith(
-      expect.stringContaining('SELECT id'),
-      ['user@example.com', 'tenant-1']
-    );
+    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('SELECT id'), [
+      'user@example.com',
+      'tenant-1',
+    ]);
 
     // Verify password update via client transaction
     expect(mockClient.query).toHaveBeenCalledWith('BEGIN');
-    expect(mockClient.query).toHaveBeenCalledWith(
-      expect.stringContaining('set_config'),
-      ['tenant-1']
-    );
+    expect(mockClient.query).toHaveBeenCalledWith(expect.stringContaining('set_config'), [
+      'tenant-1',
+    ]);
     expect(mockClient.query).toHaveBeenCalledWith(
       expect.stringContaining('UPDATE users SET password_hash'),
       expect.arrayContaining(['user-1'])

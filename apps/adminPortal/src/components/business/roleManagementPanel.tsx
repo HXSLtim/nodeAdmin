@@ -5,6 +5,7 @@ import { type RoleItem } from '@nodeadmin/shared-types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { DataTable } from '@/components/ui/dataTable';
 import { ConfirmDialog } from '@/components/ui/dialog';
 import { useToast } from '@/components/ui/toast';
@@ -19,6 +20,7 @@ export function RoleManagementPanel(): JSX.Element {
   const [createFormOpen, setCreateFormOpen] = useState(false);
   const [editRole, setEditRole] = useState<RoleItem | undefined>();
   const [deleteRole, setDeleteRole] = useState<RoleItem | undefined>();
+  const [search, setSearch] = useState('');
 
   const rolesQuery = useQuery({
     queryFn: () => apiClient.get<RoleItem[]>('/api/v1/roles'),
@@ -43,7 +45,12 @@ export function RoleManagementPanel(): JSX.Element {
     }
   };
 
-  const roles = Array.isArray(rolesQuery.data) ? rolesQuery.data : [];
+  const rawRoles = Array.isArray(rolesQuery.data) ? rolesQuery.data : [];
+  const roles = rawRoles.filter(
+    (role) =>
+      role.name.toLowerCase().includes(search.toLowerCase()) ||
+      role.description?.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <section className="relative h-full overflow-y-auto pb-20 md:pb-0">
@@ -62,6 +69,15 @@ export function RoleManagementPanel(): JSX.Element {
           </Button>
         </CardHeader>
 
+        <div className="mb-4">
+          <Input
+            className="h-11 w-full md:h-9 md:w-64"
+            placeholder={t({ id: 'roles.search' })}
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
         <DataTable<RoleItem>
           columns={[
             {

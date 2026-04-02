@@ -65,8 +65,10 @@ export function SprintFormDialog({
       onSaved();
       handleClose();
     },
-    onError: (error: any) => {
-      const message = error?.response?.data?.message || t({ id: 'backlog.saveFailed' });
+    onError: (error: unknown) => {
+      const message =
+        (error as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        t({ id: 'backlog.saveFailed' });
       toast.error(message);
     },
   });

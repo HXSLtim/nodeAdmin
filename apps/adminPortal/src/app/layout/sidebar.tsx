@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
 import { NavLink, useLocation } from 'react-router-dom';
 import { className } from '@/lib/className';
@@ -20,12 +20,23 @@ export function Sidebar(): JSX.Element {
   const menus = useMenuStore((s) => s.menus);
   const menusLoaded = useMenuStore((s) => s.loaded);
 
-  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+  const [userToggled, setUserToggled] = useState<Record<string, boolean>>({});
+
+  // Auto-expand groups that have children; merge with user toggles
+  const expandedGroups = useMemo<Record<string, boolean>>(() => {
+    const result: Record<string, boolean> = {};
+    for (const menu of menus) {
+      if (menu.children && menu.children.length > 0) {
+        result[menu.id] = true;
+      }
+    }
+    return { ...result, ...userToggled };
+  }, [menus, userToggled]);
 
   const toggleGroup = (id: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setExpandedGroups((prev) => ({ ...prev, [id]: !prev[id] }));
+    setUserToggled((prev) => ({ ...prev, [id]: !expandedGroups[id] }));
   };
 
   const visibleNavItems = navItems.filter((item) => permissions[item.permission]);
@@ -127,11 +138,11 @@ export function Sidebar(): JSX.Element {
     <>
       {/* Brand */}
       <div className="flex h-14 items-center border-b px-3">
-        <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-xs font-semibold text-primary-foreground">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary text-xs font-semibold text-primary-foreground">
           NA
         </div>
-        {!sidebarCollapsed ? (
-          <span className="ml-3 text-sm font-semibold">{t({ id: 'brand' })}</span>
+        {!sidebarCollapsed || mobileMenuOpen ? (
+          <span className="ml-3 text-sm font-semibold truncate">{t({ id: 'brand' })}</span>
         ) : null}
       </div>
 

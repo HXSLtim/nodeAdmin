@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { FormField } from '@/components/ui/formField';
 import { useApiClient } from '@/hooks/useApiClient';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { className } from '@/lib/className';
 import type { UserItem, RoleItem } from '@nodeadmin/shared-types';
 
 interface UserFormDialogProps {
@@ -172,22 +173,75 @@ export function UserFormDialog({ onClose, onSaved, open, user }: UserFormDialogP
             />
           </FormField>
 
+          {isEdit && (
+            <div className="flex items-center gap-2 py-2">
+              <input
+                id="user-active"
+                checked={isActive}
+                onChange={(e) => setIsActive(e.target.checked)}
+                type="checkbox"
+                className="h-4 w-4 rounded border-border text-primary focus:ring-primary/20"
+              />
+              <label htmlFor="user-active" className="text-sm font-medium cursor-pointer">
+                {t({ id: 'users.active' })}
+              </label>
+            </div>
+          )}
+
           <FormField label={t({ id: 'users.colRoles' })}>
-            <div className="max-h-32 overflow-y-auto rounded-md border border-border p-3">
-              {rolesQuery.isLoading
-                ? t({ id: 'users.loadingRoles' })
-                : roles.length === 0
-                  ? t({ id: 'users.noRoles' })
-                  : roles.map((role) => (
-                      <label className="flex items-center gap-2 py-1" key={role.id}>
-                        <input
-                          checked={selectedRoleIds.has(role.id)}
-                          onChange={() => toggleRole(role.id)}
-                          type="checkbox"
-                        />
-                        <span className="text-sm">{role.name}</span>
-                      </label>
-                    ))}
+            <div className="max-h-48 overflow-y-auto rounded-lg border border-border bg-muted/10 p-3">
+              {rolesQuery.isLoading ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
+                  <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24">
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                      fill="none"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                    />
+                  </svg>
+                  {t({ id: 'users.loadingRoles' })}
+                </div>
+              ) : roles.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-2 italic">
+                  {t({ id: 'users.noRoles' })}
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {roles.map((role) => (
+                    <label
+                      className={className(
+                        'flex items-center gap-3 rounded-md border border-transparent p-2 transition-all cursor-pointer hover:bg-accent/50',
+                        selectedRoleIds.has(role.id) ? 'bg-primary/5 border-primary/20' : ''
+                      )}
+                      key={role.id}
+                    >
+                      <input
+                        checked={selectedRoleIds.has(role.id)}
+                        className="h-4 w-4 rounded border-border text-primary focus:ring-primary/20"
+                        onChange={() => toggleRole(role.id)}
+                        type="checkbox"
+                      />
+                      <span
+                        className={className(
+                          'text-sm font-medium',
+                          selectedRoleIds.has(role.id) ? 'text-primary' : 'text-muted-foreground'
+                        )}
+                      >
+                        {role.name}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              )}
             </div>
           </FormField>
         </div>

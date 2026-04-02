@@ -2,6 +2,17 @@ import { Injectable, Logger, NotFoundException, ConflictException } from '@nestj
 import { randomUUID } from 'node:crypto';
 import { Pool } from 'pg';
 
+export interface TenantRecord {
+  id: string;
+  name: string;
+  slug: string;
+  logo: string | null;
+  is_active: boolean;
+  config_json: string | null;
+  created_at: Date;
+  updated_at: Date;
+}
+
 @Injectable()
 export class TenantsService {
   private readonly logger = new Logger(TenantsService.name);
@@ -16,17 +27,17 @@ export class TenantsService {
     }
   }
 
-  async list() {
+  async list(): Promise<TenantRecord[]> {
     if (!this.pool) return [];
-    const result = await this.pool.query(
+    const result = await this.pool.query<TenantRecord>(
       'SELECT id, name, slug, logo, is_active, config_json, created_at, updated_at FROM tenants ORDER BY created_at'
     );
     return result.rows;
   }
 
-  async findById(id: string) {
+  async findById(id: string): Promise<TenantRecord> {
     if (!this.pool) throw new NotFoundException('Tenant not found');
-    const result = await this.pool.query(
+    const result = await this.pool.query<TenantRecord>(
       'SELECT id, name, slug, logo, is_active, config_json, created_at, updated_at FROM tenants WHERE id = $1',
       [id]
     );

@@ -7,6 +7,7 @@ interface RegistryTestAccess {
   countByTenantId: Map<string, number>;
   get(socketId: string): SocketContext | undefined;
   remove(socketId: string): void;
+  totalUniqueUsers(): number;
   upsert(socketId: string, context: SocketContext): void;
 }
 
@@ -79,5 +80,16 @@ describe('ConnectionRegistry', () => {
     registry.upsert('socket-a', createContext('tenant-2', 'conversation-2'));
     expect(registry.countByTenant('tenant-1')).toBe(0);
     expect(registry.countByTenant('tenant-2')).toBe(1);
+  });
+
+  it('counts unique online users across sockets instead of raw connections', () => {
+    const registry = new ConnectionRegistry() as unknown as RegistryTestAccess;
+
+    registry.upsert('socket-a', createContext('tenant-1', 'conversation-1', 'user-1'));
+    registry.upsert('socket-b', createContext('tenant-1', 'conversation-2', 'user-1'));
+    registry.upsert('socket-c', createContext('tenant-1', 'conversation-3', 'user-2'));
+    registry.upsert('socket-d', createContext('tenant-2', 'conversation-1', 'user-1'));
+
+    expect(registry.totalUniqueUsers()).toBe(3);
   });
 });
