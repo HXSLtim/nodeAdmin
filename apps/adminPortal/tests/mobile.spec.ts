@@ -58,8 +58,8 @@ test.describe('Mobile Responsive Layout', () => {
 
   test('IM conversation panel behavior on mobile', async ({ page }) => {
     await page.goto('/im');
-    // On mobile, clicking the toggle button in the header should open the conversation list
-    const toggleBtn = page.locator('header button').first();
+    // On mobile, clicking the toggle button in the main header should open the conversation list
+    const toggleBtn = page.getByRole('main').locator('header button').first();
     await toggleBtn.click();
 
     const convList = page.locator('aside').filter({ hasText: /Conversations/i });
