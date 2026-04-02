@@ -10,7 +10,10 @@ test.describe('IM Chat', () => {
 
   test('renders IM panel with conversation header', async ({ page }) => {
     await expect(
-      page.getByRole('main').getByRole('heading', { name: /conversation/i }).first()
+      page
+        .getByRole('main')
+        .getByRole('heading', { name: /conversation/i })
+        .first()
     ).toBeVisible();
   });
 
