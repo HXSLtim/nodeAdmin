@@ -1,0 +1,17 @@
+{
+  "id": "@nodeadmin/plugin-example",
+  "version": "1.0.0",
+  "displayName": "Example Plugin",
+  "description": "A minimal example plugin for testing the nodeAdmin plugin system",
+  "author": { "name": "NodeAdmin Team" },
+  "engines": { "nodeAdmin": ">=1.0.0" },
+  "permissions": ["example:read"],
+  "entrypoints": {
+    "server": "./dist/server/index.js",
+    "ui": "./dist/ui/index.js"
+  },
+  "contributes": {
+    "menus": [{ "name": "Example", "icon": "Puzzle", "route": "/plugins/example" }],
+    "routes": ["/api/v1/plugins/example"]
+  }
+}

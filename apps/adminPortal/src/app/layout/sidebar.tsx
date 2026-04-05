@@ -4,6 +4,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { className } from '@/lib/className';
 import { useMenuStore } from '@/stores/useMenuStore';
 import { usePermissionStore } from '@/stores/usePermissionStore';
+import { usePluginStore } from '@/stores/usePluginStore';
 import { useUiStore } from '@/stores/useUiStore';
 import type { MenuItem, AppPermission } from '@nodeadmin/shared-types';
 import { isNavItemActive, navItems } from './navConfig';
@@ -19,6 +20,8 @@ export function Sidebar(): JSX.Element {
   const permissions = usePermissionStore((s) => s.permissions);
   const menus = useMenuStore((s) => s.menus);
   const menusLoaded = useMenuStore((s) => s.loaded);
+  const enabledPlugins = usePluginStore((s) => s.enabledPlugins);
+  const plugins = usePluginStore((s) => s.plugins);
 
   const [userToggled, setUserToggled] = useState<Record<string, boolean>>({});
 
@@ -71,6 +74,10 @@ export function Sidebar(): JSX.Element {
 
   function renderMenuItem(menu: MenuItem, depth = 0): JSX.Element | null {
     if (menu.permission_code && !permissions[menu.permission_code as AppPermission]) {
+      return null;
+    }
+
+    if (menu.plugin_code && !enabledPlugins.includes(menu.plugin_code)) {
       return null;
     }
 
@@ -150,25 +157,100 @@ export function Sidebar(): JSX.Element {
       <nav className="flex-1 space-y-1 overflow-y-auto p-2">
         {menusLoaded && menus.length > 0
           ? menus.map((menu) => renderMenuItem(menu))
-          : visibleNavItems.map((item) => (
-              <NavLink
-                className={({ isActive }) =>
-                  linkClass(isNavItemActive(location.pathname, item.path) || isActive)
-                }
-                key={item.key}
-                onClick={() => setMobileMenuOpen(false)}
-                to={item.path}
-              >
-                <NavIcon name={item.icon} />
-                {!sidebarCollapsed ? (
-                  <span className="truncate">{t({ id: item.labelId })}</span>
-                ) : (
-                  <span className="absolute left-full ml-2 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-xs text-popover-foreground shadow-md group-hover:block z-50">
-                    {t({ id: item.labelId })}
-                  </span>
-                )}
-              </NavLink>
-            ))}
+          : visibleNavItems
+              .filter((item) => !item.pluginCode || enabledPlugins.includes(item.pluginCode))
+              .map((item) => (
+                <NavLink
+                  className={({ isActive }) =>
+                    linkClass(isNavItemActive(location.pathname, item.path) || isActive)
+                  }
+                  key={item.key}
+                  onClick={() => setMobileMenuOpen(false)}
+                  to={item.path}
+                >
+                  <NavIcon name={item.icon} />
+                  {!sidebarCollapsed ? (
+                    <span className="truncate">{t({ id: item.labelId })}</span>
+                  ) : (
+                    <span className="absolute left-full ml-2 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-xs text-popover-foreground shadow-md group-hover:block z-50">
+                      {t({ id: item.labelId })}
+                    </span>
+                  )}
+                </NavLink>
+              ))}
+
+        {/* Plugin Section */}
+        <div className="mt-4 border-t pt-2">
+          {!sidebarCollapsed && (
+            <div className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              {t({ id: 'nav.plugins', defaultMessage: 'Plugins' })}
+            </div>
+          )}
+          <NavLink
+            className={({ isActive }) =>
+              linkClass(isNavItemActive(location.pathname, '/plugins/marketplace') || isActive)
+            }
+            onClick={() => setMobileMenuOpen(false)}
+            to="/plugins/marketplace"
+          >
+            <NavIcon name="building" />
+            {!sidebarCollapsed ? (
+              <span className="truncate">{t({ id: 'nav.marketplace', defaultMessage: 'Marketplace' })}</span>
+            ) : (
+              <span className="absolute left-full ml-2 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-xs text-popover-foreground shadow-md group-hover:block z-50">
+                {t({ id: 'nav.marketplace', defaultMessage: 'Marketplace' })}
+              </span>
+            )}
+          </NavLink>
+          <NavLink
+            className={({ isActive }) =>
+              linkClass(isNavItemActive(location.pathname, '/plugins/installed') || isActive)
+            }
+            onClick={() => setMobileMenuOpen(false)}
+            to="/plugins/installed"
+          >
+            <NavIcon name="plus" />
+            {!sidebarCollapsed ? (
+              <span className="truncate">{t({ id: 'nav.installed', defaultMessage: 'Installed' })}</span>
+            ) : (
+              <span className="absolute left-full ml-2 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-xs text-popover-foreground shadow-md group-hover:block z-50">
+                {t({ id: 'nav.installed', defaultMessage: 'Installed' })}
+              </span>
+            )}
+          </NavLink>
+        </div>
+
+        {/* Dynamic Plugin Menus */}
+        {plugins
+          .filter((p) => p.enabled && p.manifest?.contributes?.menus)
+          .map((plugin) => (
+            <div className="mt-2 border-t pt-2" key={`group-${plugin.name}`}>
+              {!sidebarCollapsed && (
+                <div className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  {plugin.manifest?.displayName || plugin.name}
+                </div>
+              )}
+              {plugin.manifest!.contributes!.menus!.map((menu, idx) => (
+                <NavLink
+                  className={({ isActive }) =>
+                    linkClass(isNavItemActive(location.pathname, menu.route) || isActive)
+                  }
+                  key={`${plugin.name}-menu-${idx}`}
+                  onClick={() => setMobileMenuOpen(false)}
+                  to={menu.route}
+                >
+                  <NavIcon name={menu.icon || 'rocket'} />
+                  {!sidebarCollapsed ? (
+                    <span className="truncate">{menu.name}</span>
+                  ) : (
+                    <span className="absolute left-full ml-2 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-xs text-popover-foreground shadow-md group-hover:block z-50">
+                      {menu.name}
+                    </span>
+                  )}
+                </NavLink>
+              ))}
+            </div>
+          ))}
       </nav>
 
       {/* Footer */}

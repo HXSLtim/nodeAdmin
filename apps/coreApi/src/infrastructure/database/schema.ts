@@ -1,15 +1,18 @@
 import { randomUUID } from 'node:crypto';
+import type { PluginManifest } from '@nodeadmin/shared-types';
 
 import {
   bigint,
   boolean,
   index,
   integer,
+  jsonb,
   pgTable,
   primaryKey,
   text,
   timestamp,
   uniqueIndex,
+  uuid,
   varchar,
 } from 'drizzle-orm/pg-core';
 
@@ -284,6 +287,74 @@ export const smsCodes = pgTable(
   },
   (table) => ({
     smsPhoneIdx: index('sms_phone_idx').on(table.phone, table.createdAt),
+  })
+);
+
+export const pluginRegistry = pgTable(
+  'plugin_registry',
+  {
+    authorEmail: varchar('author_email', { length: 255 }),
+    authorName: varchar('author_name', { length: 100 }),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    description: text('description'),
+    displayName: varchar('display_name', { length: 200 }).notNull(),
+    downloadCount: integer('download_count').default(0).notNull(),
+    id: varchar('id', { length: 128 }).primaryKey(),
+    isPublic: boolean('is_public').default(true).notNull(),
+    latestVersion: varchar('latest_version', { length: 20 }).notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    pluginRegistryDisplayNameIdx: index('plugin_registry_display_name_idx').on(table.displayName),
+    pluginRegistryPublicIdx: index('plugin_registry_public_idx').on(table.isPublic),
+  })
+);
+
+export const pluginVersions = pgTable(
+  'plugin_versions',
+  {
+    bundleUrl: varchar('bundle_url', { length: 500 }).notNull(),
+    changelog: text('changelog'),
+    id: uuid('id').defaultRandom().primaryKey(),
+    manifest: jsonb('manifest').$type<PluginManifest>().notNull(),
+    minPlatformVersion: varchar('min_platform_version', { length: 20 }),
+    pluginId: varchar('plugin_id', { length: 128 })
+      .notNull()
+      .references(() => pluginRegistry.id, { onDelete: 'cascade' }),
+    publishedAt: timestamp('published_at', { withTimezone: true }).defaultNow().notNull(),
+    serverPackage: varchar('server_package', { length: 500 }).notNull(),
+    version: varchar('version', { length: 20 }).notNull(),
+  },
+  (table) => ({
+    pluginVersionsPluginPublishedIdx: index('plugin_versions_plugin_published_idx').on(
+      table.pluginId,
+      table.publishedAt
+    ),
+    pluginVersionsPluginVersionUnique: uniqueIndex('plugin_versions_plugin_version_uniq').on(
+      table.pluginId,
+      table.version
+    ),
+  })
+);
+
+export const tenantPlugins = pgTable(
+  'tenant_plugins',
+  {
+    autoUpdate: boolean('auto_update').default(true).notNull(),
+    config: jsonb('config').$type<Record<string, unknown>>().default({}).notNull(),
+    enabled: boolean('enabled').default(true).notNull(),
+    enabledAt: timestamp('enabled_at', { withTimezone: true }).defaultNow().notNull(),
+    installedAt: timestamp('installed_at', { withTimezone: true }).defaultNow().notNull(),
+    installedVersion: varchar('installed_version', { length: 20 }),
+    pluginName: varchar('plugin_name', { length: 64 }).notNull(),
+    tenantId: varchar('tenant_id', { length: 128 })
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+  },
+  (table) => ({
+    tenantPluginsEnabledIdx: index('tenant_plugins_enabled_idx').on(table.tenantId, table.enabled),
+    tenantPluginsPluginNameIdx: index('tenant_plugins_plugin_name_idx').on(table.pluginName),
+    pk: primaryKey({ columns: [table.tenantId, table.pluginName], name: 'tenant_plugins_pk' }),
   })
 );
 

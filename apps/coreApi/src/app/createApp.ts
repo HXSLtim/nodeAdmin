@@ -27,8 +27,10 @@ export async function createApp(): Promise<NestFastifyApplication> {
 
   await startTelemetry();
 
+  const rootModule = await AppModule.forRootAsync();
+
   const app = await NestFactory.create<NestFastifyApplication>(
-    AppModule,
+    rootModule,
     new FastifyAdapter({
       logger: {
         level: process.env.LOG_LEVEL?.trim() || 'info',

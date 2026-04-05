@@ -6,6 +6,7 @@ export interface NavItem {
   labelId: string;
   path: string;
   permission: AppPermission;
+  pluginCode?: string;
 }
 
 export const navItems: NavItem[] = [
@@ -16,7 +17,14 @@ export const navItems: NavItem[] = [
     path: '/overview',
     permission: 'overview:view',
   },
-  { icon: 'chat', key: 'im', labelId: 'nav.im', path: '/im', permission: 'im:view' },
+  {
+    icon: 'chat',
+    key: 'im',
+    labelId: 'nav.im',
+    path: '/im',
+    permission: 'im:view',
+    pluginCode: 'im',
+  },
   {
     icon: 'users',
     key: 'users',
@@ -86,6 +94,7 @@ export const navItems: NavItem[] = [
     labelId: 'nav.modernizer',
     path: '/modernizer',
     permission: 'modernizer:view',
+    pluginCode: 'modernizer',
   },
   {
     icon: 'list',
@@ -93,6 +102,7 @@ export const navItems: NavItem[] = [
     labelId: 'nav.backlog',
     path: '/backlog',
     permission: 'backlog:view',
+    pluginCode: 'backlog',
   },
 ];
 

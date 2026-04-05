@@ -98,6 +98,7 @@ export interface MenuItem {
   parent_id: string | null;
   path: string;
   permission_code: string | null;
+  plugin_code: string | null;
   sort_order: number;
 }
 
@@ -183,3 +184,5 @@ export interface BacklogSprint {
   created_at: string;
   updated_at: string;
 }
+
+export * from './plugin';

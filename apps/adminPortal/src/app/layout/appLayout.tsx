@@ -1,5 +1,6 @@
 import { useEffect, type ReactNode } from 'react';
 import { useApiClient } from '@/hooks/useApiClient';
+import { usePlugins } from '@/hooks/usePlugins';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useMenuStore } from '@/stores/useMenuStore';
 import { usePermissionStore } from '@/stores/usePermissionStore';
@@ -15,6 +16,9 @@ export function AppLayout({ children }: { children: ReactNode }): JSX.Element {
   const userId = useAuthStore((s) => s.userId);
   const tenantId = useAuthStore((s) => s.tenantId);
   const setMenus = useMenuStore((s) => s.setMenus);
+
+  // Use the plugin hook to fetch and sync plugins to store
+  usePlugins();
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark');

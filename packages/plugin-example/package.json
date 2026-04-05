@@ -1,0 +1,8 @@
+{
+  "name": "@nodeadmin/plugin-example",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Minimal example plugin for nodeAdmin plugin system",
+  "main": "./dist/server/index.js",
+  "types": "./dist/server/index.d.ts"
+}

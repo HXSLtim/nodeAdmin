@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, type DynamicModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { OutboxPublisherService } from '../infrastructure/outbox/outboxPublisherService';
@@ -15,28 +15,50 @@ import { RolesModule } from '../modules/roles/rolesModule';
 import { TenantsModule } from '../modules/tenants/tenantsModule';
 import { BacklogModule } from '../modules/backlog/backlogModule';
 import { ModernizerModule } from '../modules/modernizer/modernizerModule';
+import { PluginGuard } from '../modules/plugin/pluginGuard';
+import { PluginLoaderModule } from '../modules/plugin/pluginLoaderModule';
+import { PluginModule } from '../modules/plugin/pluginModule';
+import { PluginRegistryService } from '../modules/plugin/pluginRegistryService';
 import { UsersModule } from '../modules/users/usersModule';
 
+const APP_IMPORTS = [
+  ConfigModule.forRoot({ cache: true, isGlobal: true }),
+  InfrastructureModule,
+  AuthModule,
+  HealthModule,
+  ImModule,
+  ConsoleModule,
+  UsersModule,
+  RolesModule,
+  PermissionsModule,
+  MenusModule,
+  TenantsModule,
+  ModernizerModule,
+  BacklogModule,
+  PluginModule,
+];
+
+const APP_PROVIDERS = [
+  OutboxPublisherService,
+  { provide: APP_GUARD, useClass: JwtAuthGuard },
+  { provide: APP_GUARD, useClass: PluginGuard },
+  { provide: APP_INTERCEPTOR, useClass: AuditInterceptor },
+];
+
 @Module({
-  imports: [
-    ConfigModule.forRoot({ cache: true, isGlobal: true }),
-    InfrastructureModule,
-    AuthModule,
-    HealthModule,
-    ImModule,
-    ConsoleModule,
-    UsersModule,
-    RolesModule,
-    PermissionsModule,
-    MenusModule,
-    TenantsModule,
-    ModernizerModule,
-    BacklogModule,
-  ],
-  providers: [
-    OutboxPublisherService,
-    { provide: APP_GUARD, useClass: JwtAuthGuard },
-    { provide: APP_INTERCEPTOR, useClass: AuditInterceptor },
-  ],
+  imports: APP_IMPORTS,
+  providers: APP_PROVIDERS,
 })
-export class AppModule {}
+export class AppModule {
+  static async forRootAsync(
+    registry: PluginRegistryService = new PluginRegistryService()
+  ): Promise<DynamicModule> {
+    const pluginLoaderModule = await PluginLoaderModule.forRootAsync(registry);
+
+    return {
+      module: AppModule,
+      imports: [...APP_IMPORTS, pluginLoaderModule],
+      providers: APP_PROVIDERS,
+    };
+  }
+}

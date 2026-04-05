@@ -1,9 +1,10 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { resolve } from 'node:path';
+import { importmapPlugin } from './vite-importmap-plugin';
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), importmapPlugin()],
   build: {
     rollupOptions: {
       output: {
@@ -11,6 +12,7 @@ export default defineConfig({
           react: ['react', 'react-dom', 'react-router-dom'],
           state: ['zustand', '@tanstack/react-query'],
           ws: ['socket.io-client'],
+          'shared-ui': ['clsx', 'tailwind-merge'],
         },
       },
     },

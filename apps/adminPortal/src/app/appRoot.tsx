@@ -17,6 +17,12 @@ import { SystemMetricsPanel } from '@/components/business/systemMetricsPanel';
 import { ModernizerPanel } from '@/components/business/modernizerPanel';
 import { BacklogPanel } from '@/components/business/backlogPanel';
 import { NotificationPanel } from '@/components/business/notificationPanel';
+import { PluginMarketplacePage } from '@/components/business/plugins/PluginMarketplacePage';
+import { PluginDetailPage } from '@/components/business/plugins/PluginDetailPage';
+import { InstalledPluginsPage } from '@/components/business/plugins/InstalledPluginsPage';
+import { PluginSettingsPage } from '@/components/business/plugins/PluginSettingsPage';
+import { usePluginStore } from '@/stores/usePluginStore';
+import { PluginView } from './pluginView';
 import { AppLayout } from './layout/appLayout';
 import { AuthGuard } from './authGuard';
 import { ModuleErrorBoundary } from './moduleErrorBoundary';
@@ -32,6 +38,8 @@ function RouteModule({ children }: { children: JSX.Element }): JSX.Element {
 }
 
 export function AppRoot(): JSX.Element {
+  const plugins = usePluginStore((s) => s.plugins);
+
   return (
     <Routes>
       {/* Public routes */}
@@ -46,6 +54,56 @@ export function AppRoot(): JSX.Element {
             <AppLayout>
               <Routes>
                 <Route element={<Navigate replace to="/overview" />} path="/" />
+                
+                {/* Plugin marketplace and management */}
+                <Route
+                  element={
+                    <RouteModule>
+                      <PluginMarketplacePage />
+                    </RouteModule>
+                  }
+                  path="/plugins/marketplace"
+                />
+                <Route
+                  element={
+                    <RouteModule>
+                      <PluginDetailPage />
+                    </RouteModule>
+                  }
+                  path="/plugins/marketplace/:id"
+                />
+                <Route
+                  element={
+                    <RouteModule>
+                      <InstalledPluginsPage />
+                    </RouteModule>
+                  }
+                  path="/plugins/installed"
+                />
+                <Route
+                  element={
+                    <RouteModule>
+                      <PluginSettingsPage />
+                    </RouteModule>
+                  }
+                  path="/plugins/settings/:id"
+                />
+
+                {/* Plugin routes */}
+                {plugins
+                  .filter((p) => p.enabled && p.uiUrl)
+                  .map((plugin) => (
+                    <Route
+                      element={
+                        <RouteModule>
+                          <PluginView pluginName={plugin.name} uiUrl={plugin.uiUrl!} />
+                        </RouteModule>
+                      }
+                      key={plugin.name}
+                      path={`/plugins/${plugin.name}/*`}
+                    />
+                  ))}
+
                 <Route
                   element={
                     <RouteModule>

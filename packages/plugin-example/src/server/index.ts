@@ -1,0 +1,1 @@
+export { ExampleModule } from './exampleModule';

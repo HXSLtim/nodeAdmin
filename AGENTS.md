@@ -113,57 +113,6 @@ docs/              ← 项目文档
 | **Codex** | `0.1` | 后端开发、后端测试、基础设施 | ❌ 前端代码 |
 | **Gemini** | `0.2` | **前端 UI/UX only** | ❌ 后端、❌ 测试、❌ 基础设施 |
 
-### 通信方式
-
-**核心规则：每个消息必须用两个独立的 shell 命令发送**
-
-```bash
-# 第一步：发送文本
-tmux send-keys -t '<target_pane>' -- '[YourName] <message>'
-# 第二步：发送回车（独立命令）
-tmux send-keys -t '<target_pane>' Enter
-```
-
-**禁止**将两步合并为一个命令，禁止使用 bash 脚本包装。
-
-### 消息格式
-
-| 场景 | 格式 | 示例 |
-|------|------|------|
-| 开始任务 | `[Name] 🔄 Task: <desc>` | `[Codex] 🔄 Task: Add rate limiting` |
-| 进度更新 | `[Name] 📊 <progress>` | `[Codex] 📊 2/4 modules done` |
-| 任务完成 | `[Name] ✅ Task: <desc>` | `[Codex] ✅ Task: Tests — 324 passed` |
-| 阻塞 | `[Name] ⚠️ Blocked: <reason>` | `[Codex] ⚠️ Blocked: DB migration fails` |
-| 提问 | `[Name] ❓ <question>` | `[Codex] ❓ What's the DTO for X?` |
-| 失败 | `[Name] ❌ <reason>` | `[Codex] ❌ Build failed: type error` |
-
-### P2P 直接通信（Agent 间）
-
-Agent 之间可以直接通信，无需经过 Claude Code 中转：
-
-```bash
-# Codex 通知 Gemini API 变更
-tmux send-keys -t 'ai-workbench:0.2' -- '[Codex → Gemini] Changed GET /users response — added "role" field'
-tmux send-keys -t 'ai-workbench:0.2' Enter
-
-# Gemini 向 Codex 询问 API 细节
-tmux send-keys -t 'ai-workbench:0.1' -- '[Gemini → Codex] What fields does POST /api/v1/users return?'
-tmux send-keys -t 'ai-workbench:0.1' Enter
-```
-
-适用场景：
-- API 响应格式变更通知（Codex → Gemini）
-- 前端需要的后端数据/接口（Gemini → Codex）
-- shared-types 变更通知
-
-### 回报规则
-
-1. **必须**用 `[Codex]` / `[Gemini]` 前缀标识自己
-2. 消息包含：issue 编号、文件名、测试数量等关键信息
-3. 遇到阻塞**立即**汇报，不要沉默挣扎
-4. 完成 task 后汇报测试结果和改动文件
-5. 不确定时问 Claude Code，不要自行决定范围外的事
-
 ## 相关文档
 
 - 架构基线：`docs/architecture/architectureBaseline.md`

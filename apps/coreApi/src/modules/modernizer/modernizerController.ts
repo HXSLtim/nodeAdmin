@@ -2,9 +2,11 @@ import { Controller, Get } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AnalyzeService } from './analyzeService';
 import { DocSyncService } from './docSyncService';
+import { Plugin } from '../plugin/plugin.decorator';
 
 @ApiTags('modernizer')
 @ApiBearerAuth()
+@Plugin('modernizer')
 @Controller('modernizer')
 export class ModernizerController {
   constructor(
