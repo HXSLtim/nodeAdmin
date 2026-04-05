@@ -29,17 +29,6 @@ interface InstallableVersion {
   version: string;
 }
 
-interface MarketplaceListItem {
-  authorName: string | null;
-  description: string | null;
-  displayName: string;
-  downloadCount: number;
-  id: string;
-  isCompatible: boolean;
-  latestVersion: string;
-  minPlatformVersion: string | null;
-}
-
 interface PublishPluginInput {
   bundleUrl: string;
   changelog?: string;
@@ -67,9 +56,7 @@ export class PluginMarketService {
     }
 
     const offset = (page - 1) * pageSize;
-    const searchClause = search?.trim()
-      ? `AND (pr.display_name ILIKE $1 OR pr.id ILIKE $1)`
-      : '';
+    const searchClause = search?.trim() ? `AND (pr.display_name ILIKE $1 OR pr.id ILIKE $1)` : '';
     const searchParams = search?.trim() ? [`%${search.trim()}%`] : [];
 
     const countResult = await this.pool.query<{ count: number }>(
@@ -271,7 +258,10 @@ export class PluginMarketService {
       const currentLatestVersion = currentVersionResult.rows[0]?.latest_version ?? null;
       const nextLatestVersion =
         currentLatestVersion === null ||
-        this.compareVersions(this.parseVersion(manifest.version), this.parseVersion(currentLatestVersion)) > 0
+        this.compareVersions(
+          this.parseVersion(manifest.version),
+          this.parseVersion(currentLatestVersion)
+        ) > 0
           ? manifest.version
           : currentLatestVersion;
 
@@ -355,16 +345,12 @@ export class PluginMarketService {
     if (normalizedRange.startsWith('^')) {
       const base = this.parseVersion(normalizedRange.slice(1));
       const upper: [number, number, number] = [base[0] + 1, 0, 0];
-      return (
-        this.compareVersions(version, base) >= 0 && this.compareVersions(version, upper) < 0
-      );
+      return this.compareVersions(version, base) >= 0 && this.compareVersions(version, upper) < 0;
     }
     if (normalizedRange.startsWith('~')) {
       const base = this.parseVersion(normalizedRange.slice(1));
       const upper: [number, number, number] = [base[0], base[1] + 1, 0];
-      return (
-        this.compareVersions(version, base) >= 0 && this.compareVersions(version, upper) < 0
-      );
+      return this.compareVersions(version, base) >= 0 && this.compareVersions(version, upper) < 0;
     }
 
     return this.compareVersions(version, this.parseVersion(normalizedRange)) === 0;
@@ -395,10 +381,7 @@ export class PluginMarketService {
     return [Number(major), Number(minor), Number(patch)];
   }
 
-  private compareVersions(
-    left: [number, number, number],
-    right: [number, number, number]
-  ): number {
+  private compareVersions(left: [number, number, number], right: [number, number, number]): number {
     if (left[0] !== right[0]) {
       return left[0] - right[0];
     }

@@ -1,5 +1,5 @@
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
-import { Pool, type PoolClient } from 'pg';
+import { Pool } from 'pg';
 import { PluginMarketService } from './pluginMarketService';
 
 interface AutoUpdateRow {

@@ -27,6 +27,7 @@ export class PluginRegistryService {
   private readonly logger = new Logger(PluginRegistryService.name);
   private readonly registry = new Map<string, RegisteredPlugin>();
   private fs: FileSystemLike = fs;
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- dynamic plugin loading requires require() for CommonJS modules
   private moduleLoader: ModuleLoader = (modulePath) => require(modulePath);
   private nodeModulesScopePath = join(process.cwd(), 'node_modules', '@nodeadmin');
 

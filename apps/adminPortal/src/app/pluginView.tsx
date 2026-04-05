@@ -1,4 +1,4 @@
-import { Suspense, type ReactNode } from 'react';
+import { Suspense } from 'react';
 import { useIntl } from 'react-intl';
 import { ModuleErrorBoundary } from './moduleErrorBoundary';
 import { usePluginLoader } from '@/hooks/usePluginLoader';
@@ -16,9 +16,7 @@ export function PluginView({ pluginName, uiUrl }: PluginViewProps): JSX.Element 
   if (!Component) {
     return (
       <div className="flex h-full items-center justify-center">
-        <p className="text-muted-foreground">
-          {t({ id: 'plugin.no_ui' }, { plugin: pluginName })}
-        </p>
+        <p className="text-muted-foreground">{t({ id: 'plugin.no_ui' }, { plugin: pluginName })}</p>
       </div>
     );
   }
