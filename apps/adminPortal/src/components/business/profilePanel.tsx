@@ -169,10 +169,12 @@ export function ProfilePanel(): JSX.Element {
                   {userRoles.length > 0 ? userRoles.join(', ') : '—'}
                 </dd>
               </div>
-              <div className="flex justify-between">
-                <dt className="text-muted-foreground">{t({ id: 'profile.tenantId' })}</dt>
-                <dd className="font-mono text-xs text-foreground">{tenantId ?? '—'}</dd>
-              </div>
+              {import.meta.env.VITE_SINGLE_TENANT_MODE !== 'true' && (
+                <div className="flex justify-between">
+                  <dt className="text-muted-foreground">{t({ id: 'profile.tenantId' })}</dt>
+                  <dd className="font-mono text-xs text-foreground">{tenantId ?? '—'}</dd>
+                </div>
+              )}
             </dl>
           </CardContent>
         </Card>

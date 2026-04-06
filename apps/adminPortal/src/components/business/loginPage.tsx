@@ -37,7 +37,11 @@ export function LoginPage(): JSX.Element {
   const setTheme = useUiStore((s) => s.setTheme);
   const setLocale = useUiStore((s) => s.setLocale);
 
+  const isSingleTenant = import.meta.env.VITE_SINGLE_TENANT_MODE === 'true';
+
   useEffect(() => {
+    if (isSingleTenant) return;
+
     const apiBaseUrl =
       (import.meta.env.VITE_CORE_API_BASE_URL as string | undefined)?.trim() ??
       `http://${window.location.hostname}:11451`;
@@ -47,7 +51,7 @@ export function LoginPage(): JSX.Element {
       .catch(() => {
         /* ignore — tenant list is optional */
       });
-  }, []);
+  }, [isSingleTenant]);
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -255,24 +259,26 @@ export function LoginPage(): JSX.Element {
                 </button>
               </div>
             </FormField>
-            <FormField label={t({ id: 'auth.tenantId' })} htmlFor="login-tenant">
-              {tenants.length > 0 ? (
-                <Select
-                  id="login-tenant"
-                  onChange={setTenantId}
-                  options={tenants.map((t) => ({ value: t.id, label: `${t.name} (${t.slug})` }))}
-                  value={tenantId}
-                />
-              ) : (
-                <Input
-                  autoComplete="organization"
-                  id="login-tenant"
-                  onChange={(e) => setTenantId(e.target.value)}
-                  placeholder="default"
-                  value={tenantId}
-                />
-              )}
-            </FormField>
+            {!isSingleTenant && (
+              <FormField label={t({ id: 'auth.tenantId' })} htmlFor="login-tenant">
+                {tenants.length > 0 ? (
+                  <Select
+                    id="login-tenant"
+                    onChange={setTenantId}
+                    options={tenants.map((t) => ({ value: t.id, label: `${t.name} (${t.slug})` }))}
+                    value={tenantId}
+                  />
+                ) : (
+                  <Input
+                    autoComplete="organization"
+                    id="login-tenant"
+                    onChange={(e) => setTenantId(e.target.value)}
+                    placeholder="default"
+                    value={tenantId}
+                  />
+                )}
+              </FormField>
+            )}
             <Button className="w-full" disabled={loading} type="submit">
               {loading ? t({ id: 'common.loading' }) : t({ id: 'auth.login' })}
             </Button>
@@ -312,24 +318,26 @@ export function LoginPage(): JSX.Element {
                 </Button>
               </div>
             </FormField>
-            <FormField label={t({ id: 'auth.tenantId' })} htmlFor="login-tenant-sms">
-              {tenants.length > 0 ? (
-                <Select
-                  id="login-tenant-sms"
-                  onChange={setTenantId}
-                  options={tenants.map((t) => ({ value: t.id, label: `${t.name} (${t.slug})` }))}
-                  value={tenantId}
-                />
-              ) : (
-                <Input
-                  autoComplete="organization"
-                  id="login-tenant-sms"
-                  onChange={(e) => setTenantId(e.target.value)}
-                  placeholder="default"
-                  value={tenantId}
-                />
-              )}
-            </FormField>
+            {!isSingleTenant && (
+              <FormField label={t({ id: 'auth.tenantId' })} htmlFor="login-tenant-sms">
+                {tenants.length > 0 ? (
+                  <Select
+                    id="login-tenant-sms"
+                    onChange={setTenantId}
+                    options={tenants.map((t) => ({ value: t.id, label: `${t.name} (${t.slug})` }))}
+                    value={tenantId}
+                  />
+                ) : (
+                  <Input
+                    autoComplete="organization"
+                    id="login-tenant-sms"
+                    onChange={(e) => setTenantId(e.target.value)}
+                    placeholder="default"
+                    value={tenantId}
+                  />
+                )}
+              </FormField>
+            )}
             <Button className="w-full" disabled={loading} type="submit">
               {loading ? t({ id: 'common.loading' }) : t({ id: 'auth.login' })}
             </Button>

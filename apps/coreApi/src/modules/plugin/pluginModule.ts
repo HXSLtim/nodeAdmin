@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { InfrastructureModule } from '../../infrastructure/infrastructureModule';
 import { AdminPluginController } from './adminPluginController';
 import { PluginController } from './pluginController';
 import { PluginAutoUpdateService } from './pluginAutoUpdateService';
@@ -8,6 +9,7 @@ import { PluginRegistryService } from './pluginRegistryService';
 import { PluginService } from './pluginService';
 
 @Module({
+  imports: [InfrastructureModule],
   controllers: [PluginController, AdminPluginController],
   providers: [
     PluginService,

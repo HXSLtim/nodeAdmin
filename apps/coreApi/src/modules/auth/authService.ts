@@ -5,13 +5,14 @@ import { sign, verify } from 'jsonwebtoken';
 import type { StringValue } from 'ms';
 import { Pool } from 'pg';
 import { runtimeConfig } from '../../app/runtimeConfig';
+import type { AuthPrincipal } from '../../infrastructure/tenant/authPrincipal';
 import { AuthIdentity } from './authIdentity';
 
 interface AccessTokenClaims {
   jti: string;
   roles: string[];
   sub: string;
-  tid: string;
+  tid?: string;
   type: 'access';
 }
 
@@ -93,6 +94,25 @@ export class AuthService {
   }
 
   verifyAccessToken(token: string): AuthIdentity {
+    const principal = this.verifyAccessPrincipal(token);
+    const tenantId = principal.tenantId?.trim();
+    const userId = principal.userId?.trim();
+
+    if (principal.principalType !== 'user' || !tenantId || !userId) {
+      throw new UnauthorizedException('Malformed access token payload.');
+    }
+
+    return {
+      jti: principal.jti,
+      principalId: principal.principalId,
+      principalType: 'user',
+      roles: principal.roles,
+      tenantId,
+      userId,
+    };
+  }
+
+  verifyAccessPrincipal(token: string): AuthPrincipal {
     let decoded: unknown;
     try {
       decoded = verify(token, runtimeConfig.auth.accessSecret);
@@ -113,11 +133,18 @@ export class AuthService {
       : [];
     const tokenType = payload.type;
 
-    if (!userId || !tenantId || !jti || tokenType !== 'access') {
+    if (!userId || !jti || tokenType !== 'access') {
       throw new UnauthorizedException('Malformed access token payload.');
     }
 
-    return { jti, roles, tenantId, userId };
+    return {
+      jti,
+      principalId: userId,
+      principalType: 'user' as const,
+      roles,
+      tenantId: tenantId ?? '',
+      userId,
+    };
   }
 
   async register(

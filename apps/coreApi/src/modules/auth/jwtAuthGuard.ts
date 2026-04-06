@@ -1,4 +1,6 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+import type { AuthPrincipal } from '../../infrastructure/tenant/authPrincipal';
+import { TenantContextResolver } from '../../infrastructure/tenant/tenantContextResolver';
 import { AuthService } from './authService';
 import { AuthIdentity } from './authIdentity';
 
@@ -14,7 +16,10 @@ const EXCLUDED_PATHS = [
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly tenantContextResolver: TenantContextResolver
+  ) {}
 
   canActivate(context: ExecutionContext): boolean {
     const request = context
@@ -43,8 +48,37 @@ export class JwtAuthGuard implements CanActivate {
       throw new UnauthorizedException('Empty Bearer token.');
     }
 
-    const identity = this.authService.verifyAccessToken(token);
-    request.user = identity;
+    const principal = this.authService.verifyAccessPrincipal(token);
+
+    try {
+      const tenantContext = this.tenantContextResolver.resolve(principal);
+      request.user = this.toAuthIdentity(principal, tenantContext.tenantId);
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+
+      throw new UnauthorizedException(
+        error instanceof Error ? error.message : 'Invalid access token payload.'
+      );
+    }
+
     return true;
+  }
+
+  private toAuthIdentity(principal: AuthPrincipal, tenantId: string): AuthIdentity {
+    const userId = principal.userId?.trim() || principal.principalId.trim();
+    if (principal.principalType !== 'user' || userId.length === 0) {
+      throw new UnauthorizedException('Unsupported principal type for HTTP requests.');
+    }
+
+    return {
+      jti: principal.jti,
+      principalId: principal.principalId,
+      principalType: 'user',
+      roles: principal.roles,
+      tenantId,
+      userId,
+    };
   }
 }

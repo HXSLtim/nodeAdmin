@@ -73,6 +73,7 @@ export const navItems: NavItem[] = [
     labelId: 'nav.tenants',
     path: '/tenants',
     permission: 'tenants:view',
+    pluginCode: 'tenant-management',
   },
   {
     icon: 'rocket',

@@ -1,5 +1,6 @@
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { TenantContextResolver } from '../../infrastructure/tenant/tenantContextResolver';
 import type { AuthIdentity } from '../auth/authIdentity';
 import { PLUGIN_METADATA_KEY } from './plugin.decorator';
 import { PluginService } from './pluginService';
@@ -8,7 +9,8 @@ import { PluginService } from './pluginService';
 export class PluginGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
-    private readonly pluginService: PluginService
+    private readonly pluginService: PluginService,
+    private readonly tenantContextResolver: TenantContextResolver
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -22,9 +24,11 @@ export class PluginGuard implements CanActivate {
     }
 
     const request = context.switchToHttp().getRequest<{ user?: AuthIdentity }>();
-    const tenantId = request.user?.tenantId;
+    let tenantId: string;
 
-    if (typeof tenantId !== 'string' || tenantId.trim().length === 0) {
+    try {
+      tenantId = this.tenantContextResolver.resolve(request.user).tenantId;
+    } catch {
       throw new ForbiddenException('Tenant context is required for plugin-protected routes');
     }
 

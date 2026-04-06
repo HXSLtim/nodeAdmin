@@ -48,6 +48,10 @@ interface RuntimeConfig {
     pingInterval: number;
     pingTimeout: number;
   };
+  tenant: {
+    defaultTenantId: string;
+    singleTenantMode: boolean;
+  };
   database: {
     connectionTimeoutMillis: number;
     idleTimeoutMillis: number;
@@ -190,6 +194,10 @@ export const runtimeConfig: RuntimeConfig = {
   socketio: {
     pingInterval: readPositiveInt('SOCKETIO_PING_INTERVAL', 25000),
     pingTimeout: readPositiveInt('SOCKETIO_PING_TIMEOUT', 60000),
+  },
+  tenant: {
+    defaultTenantId: process.env.DEFAULT_TENANT_ID?.trim() || 'default',
+    singleTenantMode: readBooleanEnv('SINGLE_TENANT_MODE', false),
   },
   database: {
     connectionTimeoutMillis: readPositiveInt('PG_CONNECTION_TIMEOUT', 15000),

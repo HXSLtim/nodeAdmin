@@ -115,11 +115,14 @@ export function SettingsPanel(): JSX.Element {
               <dt className="text-muted-foreground">{t({ id: 'settings.userId' })}</dt>
               <dd className="font-mono text-xs text-foreground">{userId ?? '—'}</dd>
             </div>
+            {import.meta.env.VITE_SINGLE_TENANT_MODE !== 'true' && (
+              <div className="flex justify-between">
+                <dt className="text-muted-foreground">{t({ id: 'settings.tenantId' })}</dt>
+                <dd className="font-mono text-xs text-foreground">{tenantId ?? '—'}</dd>
+              </div>
+            )}
             <div className="flex justify-between">
-              <dt className="text-muted-foreground">{t({ id: 'settings.tenantId' })}</dt>
-              <dd className="font-mono text-xs text-foreground">{tenantId ?? '—'}</dd>
-            </div>
-            <div className="flex justify-between">
+
               <dt className="text-muted-foreground">{t({ id: 'settings.userName' })}</dt>
               <dd className="text-foreground">{userName ?? '—'}</dd>
             </div>

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
+import type { TenantContextResolver } from '../../infrastructure/tenant/tenantContextResolver';
 import { JwtAuthGuard } from './jwtAuthGuard';
 import type { AuthService } from './authService';
 import type { AuthIdentity } from './authIdentity';
@@ -36,9 +37,19 @@ describe('JwtAuthGuard', () => {
   };
 
   it('allows request with valid Bearer token and attaches user', () => {
-    const verifyAccessToken = vi.fn().mockReturnValue(mockIdentity);
-    const authService = { verifyAccessToken } as unknown as AuthService;
-    const guard = new JwtAuthGuard(authService);
+    const verifyAccessPrincipal = vi.fn().mockReturnValue({
+      ...mockIdentity,
+      principalId: mockIdentity.userId,
+      principalType: 'user',
+    });
+    const authService = { verifyAccessPrincipal } as unknown as AuthService;
+    const tenantContextResolver = {
+      resolve: vi.fn().mockReturnValue({
+        source: 'jwt',
+        tenantId: 'tenant-1',
+      }),
+    } as unknown as TenantContextResolver;
+    const guard = new JwtAuthGuard(authService, tenantContextResolver);
 
     const ctx = createHttpExecutionContext(
       { authorization: 'Bearer valid-token' },
@@ -47,17 +58,22 @@ describe('JwtAuthGuard', () => {
 
     const result = guard.canActivate(ctx);
     expect(result).toBe(true);
-    expect(verifyAccessToken).toHaveBeenCalledWith('valid-token');
+    expect(verifyAccessPrincipal).toHaveBeenCalledWith('valid-token');
 
     const request = ctx.switchToHttp().getRequest<{ user?: AuthIdentity }>();
-    expect(request.user).toEqual(mockIdentity);
+    expect(request.user).toEqual({
+      ...mockIdentity,
+      principalId: mockIdentity.userId,
+      principalType: 'user',
+    });
   });
 
   it('rejects request with missing Authorization header', () => {
     const authService = {
-      verifyAccessToken: vi.fn(),
+      verifyAccessPrincipal: vi.fn(),
     } as unknown as AuthService;
-    const guard = new JwtAuthGuard(authService);
+    const tenantContextResolver = { resolve: vi.fn() } as unknown as TenantContextResolver;
+    const guard = new JwtAuthGuard(authService, tenantContextResolver);
 
     const ctx = createHttpExecutionContext({}, '/api/v1/users');
 
@@ -66,9 +82,10 @@ describe('JwtAuthGuard', () => {
 
   it('rejects request with non-Bearer scheme', () => {
     const authService = {
-      verifyAccessToken: vi.fn(),
+      verifyAccessPrincipal: vi.fn(),
     } as unknown as AuthService;
-    const guard = new JwtAuthGuard(authService);
+    const tenantContextResolver = { resolve: vi.fn() } as unknown as TenantContextResolver;
+    const guard = new JwtAuthGuard(authService, tenantContextResolver);
 
     const ctx = createHttpExecutionContext({ authorization: 'Basic abc123' }, '/api/v1/users');
 
@@ -76,11 +93,12 @@ describe('JwtAuthGuard', () => {
   });
 
   it('rejects request when token verification fails', () => {
-    const verifyAccessToken = vi.fn().mockImplementation(() => {
+    const verifyAccessPrincipal = vi.fn().mockImplementation(() => {
       throw new UnauthorizedException('Invalid or expired access token.');
     });
-    const authService = { verifyAccessToken } as unknown as AuthService;
-    const guard = new JwtAuthGuard(authService);
+    const authService = { verifyAccessPrincipal } as unknown as AuthService;
+    const tenantContextResolver = { resolve: vi.fn() } as unknown as TenantContextResolver;
+    const guard = new JwtAuthGuard(authService, tenantContextResolver);
 
     const ctx = createHttpExecutionContext({ authorization: 'Bearer bad-token' }, '/api/v1/users');
 
@@ -89,79 +107,118 @@ describe('JwtAuthGuard', () => {
 
   it('skips guard for /health endpoint', () => {
     const authService = {
-      verifyAccessToken: vi.fn(),
+      verifyAccessPrincipal: vi.fn(),
     } as unknown as AuthService;
-    const guard = new JwtAuthGuard(authService);
+    const tenantContextResolver = { resolve: vi.fn() } as unknown as TenantContextResolver;
+    const guard = new JwtAuthGuard(authService, tenantContextResolver);
 
     const ctx = createHttpExecutionContext({}, '/health');
 
     const result = guard.canActivate(ctx);
     expect(result).toBe(true);
-    expect(authService.verifyAccessToken).not.toHaveBeenCalled();
+    expect(authService.verifyAccessPrincipal).not.toHaveBeenCalled();
   });
 
   it('skips guard for /api/v1/auth/login', () => {
     const authService = {
-      verifyAccessToken: vi.fn(),
+      verifyAccessPrincipal: vi.fn(),
     } as unknown as AuthService;
-    const guard = new JwtAuthGuard(authService);
+    const tenantContextResolver = { resolve: vi.fn() } as unknown as TenantContextResolver;
+    const guard = new JwtAuthGuard(authService, tenantContextResolver);
 
     const ctx = createHttpExecutionContext({}, '/api/v1/auth/login');
 
     const result = guard.canActivate(ctx);
     expect(result).toBe(true);
-    expect(authService.verifyAccessToken).not.toHaveBeenCalled();
+    expect(authService.verifyAccessPrincipal).not.toHaveBeenCalled();
   });
 
   it('skips guard for /api/v1/auth/register', () => {
     const authService = {
-      verifyAccessToken: vi.fn(),
+      verifyAccessPrincipal: vi.fn(),
     } as unknown as AuthService;
-    const guard = new JwtAuthGuard(authService);
+    const tenantContextResolver = { resolve: vi.fn() } as unknown as TenantContextResolver;
+    const guard = new JwtAuthGuard(authService, tenantContextResolver);
 
     const ctx = createHttpExecutionContext({}, '/api/v1/auth/register');
 
     const result = guard.canActivate(ctx);
     expect(result).toBe(true);
-    expect(authService.verifyAccessToken).not.toHaveBeenCalled();
+    expect(authService.verifyAccessPrincipal).not.toHaveBeenCalled();
   });
 
   it('skips guard for /api/v1/auth/refresh', () => {
     const authService = {
-      verifyAccessToken: vi.fn(),
+      verifyAccessPrincipal: vi.fn(),
     } as unknown as AuthService;
-    const guard = new JwtAuthGuard(authService);
+    const tenantContextResolver = { resolve: vi.fn() } as unknown as TenantContextResolver;
+    const guard = new JwtAuthGuard(authService, tenantContextResolver);
 
     const ctx = createHttpExecutionContext({}, '/api/v1/auth/refresh');
 
     const result = guard.canActivate(ctx);
     expect(result).toBe(true);
-    expect(authService.verifyAccessToken).not.toHaveBeenCalled();
+    expect(authService.verifyAccessPrincipal).not.toHaveBeenCalled();
   });
 
   it('skips guard for /api/v1/auth/dev-token', () => {
     const authService = {
-      verifyAccessToken: vi.fn(),
+      verifyAccessPrincipal: vi.fn(),
     } as unknown as AuthService;
-    const guard = new JwtAuthGuard(authService);
+    const tenantContextResolver = { resolve: vi.fn() } as unknown as TenantContextResolver;
+    const guard = new JwtAuthGuard(authService, tenantContextResolver);
 
     const ctx = createHttpExecutionContext({}, '/api/v1/auth/dev-token');
 
     const result = guard.canActivate(ctx);
     expect(result).toBe(true);
-    expect(authService.verifyAccessToken).not.toHaveBeenCalled();
+    expect(authService.verifyAccessPrincipal).not.toHaveBeenCalled();
   });
 
   it('skips guard for excluded path with query string', () => {
     const authService = {
-      verifyAccessToken: vi.fn(),
+      verifyAccessPrincipal: vi.fn(),
     } as unknown as AuthService;
-    const guard = new JwtAuthGuard(authService);
+    const tenantContextResolver = { resolve: vi.fn() } as unknown as TenantContextResolver;
+    const guard = new JwtAuthGuard(authService, tenantContextResolver);
 
     const ctx = createHttpExecutionContext({}, '/health?format=json');
 
     const result = guard.canActivate(ctx);
     expect(result).toBe(true);
-    expect(authService.verifyAccessToken).not.toHaveBeenCalled();
+    expect(authService.verifyAccessPrincipal).not.toHaveBeenCalled();
+  });
+
+  it('injects the default tenant when single-tenant resolution overrides a missing token tenant', () => {
+    const authService = {
+      verifyAccessPrincipal: vi.fn().mockReturnValue({
+        jti: 'jti-1',
+        principalId: 'user-1',
+        principalType: 'user',
+        roles: ['admin'],
+        userId: 'user-1',
+      }),
+    } as unknown as AuthService;
+    const tenantContextResolver = {
+      resolve: vi.fn().mockReturnValue({
+        source: 'default',
+        tenantId: 'default',
+      }),
+    } as unknown as TenantContextResolver;
+    const guard = new JwtAuthGuard(authService, tenantContextResolver);
+    const ctx = createHttpExecutionContext(
+      { authorization: 'Bearer valid-token' },
+      '/api/v1/users'
+    );
+
+    expect(guard.canActivate(ctx)).toBe(true);
+    expect(ctx.switchToHttp().getRequest<{ user?: AuthIdentity }>().user).toEqual({
+      jti: 'jti-1',
+      principalId: 'user-1',
+      principalType: 'user',
+      roles: ['admin'],
+      tenantId: 'default',
+      userId: 'user-1',
+    });
   });
 });
