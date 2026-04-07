@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -e \"const s=require\\(''fs''\\).readFileSync\\(''C:/Users/a2778/Desktop/code/nodeAdmin/.claude/settings.json'',''utf8''\\);const j=JSON.parse\\(s\\);const h=j.hooks.PostToolUse[0];console.log\\(''matcher:'',h.matcher\\);console.log\\(''command:'',h.hooks[0].command.substring\\(0,60\\)+''...''\\);console.log\\(''Valid JSON: OK''\\)\")",
+      "Bash(claude plugins:*)",
+      "Bash(claude plugin:*)",
+      "Bash(git remote:*)",
+      "Bash(git push:*)",
+      "Read(//home/a2778/**)",
+      "Read(//home/a2778/.ssh/**)",
+      "Bash(ssh:*)",
+      "Bash(mkdir -p ~/.ssh)",
+      "Bash(ssh-keyscan github.com)",
+      "Bash(git fetch:*)",
+      "Bash(git checkout:*)",
+      "Bash(git merge:*)",
+      "Bash(npm run:*)",
+      "Bash(git status:*)",
+      "Bash(git check-ignore:*)"
+    ]
+  }
+}

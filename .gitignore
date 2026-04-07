@@ -10,7 +10,6 @@ coverage/
 Backups/
 Apps/**/test-results/
 **/*.tsbuildinfo
-.claude/
 .superpowers/
 uploads/
 .codex/
