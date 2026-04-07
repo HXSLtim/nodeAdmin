@@ -54,7 +54,7 @@ export function AppRoot(): JSX.Element {
             <AppLayout>
               <Routes>
                 <Route element={<Navigate replace to="/overview" />} path="/" />
-                
+
                 {/* Plugin marketplace and management */}
                 <Route
                   element={

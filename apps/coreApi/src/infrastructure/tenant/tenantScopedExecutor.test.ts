@@ -52,7 +52,7 @@ describe('TenantScopedExecutor', () => {
       { params: [], sql: 'COMMIT' },
     ]);
     expect(mockClient.release).toHaveBeenCalled();
-    expect((resolver.resolve as ReturnType<typeof vi.fn>)).toHaveBeenCalledWith(createPrincipal());
+    expect(resolver.resolve as ReturnType<typeof vi.fn>).toHaveBeenCalledWith(createPrincipal());
   });
 
   it('rolls back and releases the client when the callback throws', async () => {

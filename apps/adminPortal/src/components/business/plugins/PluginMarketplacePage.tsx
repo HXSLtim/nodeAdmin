@@ -3,7 +3,14 @@ import { useIntl } from 'react-intl';
 import { Link } from 'react-router-dom';
 import { useMarketplace, usePluginManagement } from '@/hooks/useMarketplace';
 import { usePluginStore } from '@/stores/usePluginStore';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,19 +31,29 @@ export function PluginMarketplacePage() {
     // Current plugins in store are matched by name, but marketplace uses ID (@nodeadmin/plugin-xxx)
     // We assume p.name in store might be the short name or the ID.
     // For now, let's check both or wait for T-209 to clarify.
-    return plugins.some(p => p.name === pluginId || (p.manifest?.id === pluginId));
+    return plugins.some((p) => p.name === pluginId || p.manifest?.id === pluginId);
   };
 
-  if (isLoading) return <div className="flex h-64 items-center justify-center"><Spinner className="h-8 w-8 text-primary" /></div>;
+  if (isLoading)
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <Spinner className="h-8 w-8 text-primary" />
+      </div>
+    );
   if (error) return <div className="text-destructive">Failed to load marketplace.</div>;
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">{t({ id: 'plugins.marketplace.title', defaultMessage: 'Plugin Marketplace' })}</h1>
+        <h1 className="text-2xl font-bold tracking-tight">
+          {t({ id: 'plugins.marketplace.title', defaultMessage: 'Plugin Marketplace' })}
+        </h1>
         <div className="flex w-full max-w-sm items-center space-x-2">
-          <Input 
-            placeholder={t({ id: 'plugins.marketplace.search', defaultMessage: 'Search plugins...' })} 
+          <Input
+            placeholder={t({
+              id: 'plugins.marketplace.search',
+              defaultMessage: 'Search plugins...',
+            })}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -52,7 +69,9 @@ export function PluginMarketplacePage() {
                   <NavIcon name="rocket" />
                 </div>
                 {isInstalled(plugin.id) && (
-                  <Badge variant="secondary">{t({ id: 'plugins.status.installed', defaultMessage: 'Installed' })}</Badge>
+                  <Badge variant="secondary">
+                    {t({ id: 'plugins.status.installed', defaultMessage: 'Installed' })}
+                  </Badge>
                 )}
               </div>
               <CardTitle className="mt-4">{plugin.displayName}</CardTitle>
@@ -71,12 +90,15 @@ export function PluginMarketplacePage() {
             </CardContent>
             <CardFooter className="gap-2">
               <Button variant="outline" className="flex-1">
-                <Link className="w-full text-center" to={`/plugins/marketplace/${encodeURIComponent(plugin.id)}`}>
+                <Link
+                  className="w-full text-center"
+                  to={`/plugins/marketplace/${encodeURIComponent(plugin.id)}`}
+                >
                   {t({ id: 'plugins.view_details', defaultMessage: 'View Details' })}
                 </Link>
               </Button>
               {!isInstalled(plugin.id) && (
-                <Button 
+                <Button
                   className="flex-1"
                   onClick={() => install.mutate({ pluginId: plugin.id })}
                   disabled={install.isPending}
@@ -92,17 +114,13 @@ export function PluginMarketplacePage() {
 
       {data && data.total > pageSize && (
         <div className="flex justify-center space-x-2 py-4">
-          <Button 
-            variant="outline" 
-            disabled={page === 1} 
-            onClick={() => setPage(p => p - 1)}
-          >
+          <Button variant="outline" disabled={page === 1} onClick={() => setPage((p) => p - 1)}>
             Previous
           </Button>
-          <Button 
-            variant="outline" 
-            disabled={page * pageSize >= data.total} 
-            onClick={() => setPage(p => p + 1)}
+          <Button
+            variant="outline"
+            disabled={page * pageSize >= data.total}
+            onClick={() => setPage((p) => p + 1)}
           >
             Next
           </Button>

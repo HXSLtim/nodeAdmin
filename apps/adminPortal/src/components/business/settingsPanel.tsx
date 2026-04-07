@@ -122,7 +122,6 @@ export function SettingsPanel(): JSX.Element {
               </div>
             )}
             <div className="flex justify-between">
-
               <dt className="text-muted-foreground">{t({ id: 'settings.userName' })}</dt>
               <dd className="text-foreground">{userName ?? '—'}</dd>
             </div>

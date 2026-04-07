@@ -25,6 +25,8 @@ describe('AppModule.forRootAsync', () => {
 
     expect(pluginLoaderSpy).toHaveBeenCalledWith(registry);
     expect(dynamicModule.module).toBe(AppModule);
-    expect(dynamicModule.imports).toEqual(expect.arrayContaining([{ module: MockPluginLoaderModule }]));
+    expect(dynamicModule.imports).toEqual(
+      expect.arrayContaining([{ module: MockPluginLoaderModule }])
+    );
   });
 });

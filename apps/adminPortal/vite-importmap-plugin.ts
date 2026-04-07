@@ -23,7 +23,7 @@ export function importmapPlugin(): Plugin {
 
       for (const dep of SHARED_DEPS) {
         // In development, point to the Vite-transformed entry point.
-        // In production, we assume they're served from a specific /shared/ folder 
+        // In production, we assume they're served from a specific /shared/ folder
         // OR as bundled chunks. The plan says "Generated importmap JSON embedded in index.html".
         // Let's use a virtual path prefix.
         imports[dep] = isDev ? `/@node-admin-shared/${dep}` : `/shared/${dep}.js`;

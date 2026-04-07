@@ -14,9 +14,7 @@ export const usePluginStore = create<PluginState>((set, get) => ({
   enabledPlugins: [],
   plugins: [],
   setPlugins: (plugins) => {
-    const enabledPlugins = plugins
-      .filter((tp) => tp.enabled)
-      .map((tp) => tp.name);
+    const enabledPlugins = plugins.filter((tp) => tp.enabled).map((tp) => tp.name);
     set({ loaded: true, plugins, enabledPlugins });
   },
   isPluginEnabled: (name: string) => {

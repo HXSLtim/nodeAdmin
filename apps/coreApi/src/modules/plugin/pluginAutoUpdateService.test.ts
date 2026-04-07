@@ -15,12 +15,8 @@ describe('PluginAutoUpdateService', () => {
   });
 
   it('schedules recurring update checks on module init when a pool is available', async () => {
-    const setIntervalSpy = vi
-      .spyOn(global, 'setInterval')
-      .mockReturnValue({} as NodeJS.Timeout);
-    const runSpy = vi
-      .spyOn(service, 'runAutoUpdateCycle')
-      .mockResolvedValue(undefined);
+    const setIntervalSpy = vi.spyOn(global, 'setInterval').mockReturnValue({} as NodeJS.Timeout);
+    const runSpy = vi.spyOn(service, 'runAutoUpdateCycle').mockResolvedValue(undefined);
 
     (service as unknown as { pool: { end: ReturnType<typeof vi.fn> } }).pool = {
       end: vi.fn(),

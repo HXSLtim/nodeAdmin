@@ -46,9 +46,9 @@ describe('PluginSandboxModule', () => {
   });
 
   it('rejects permission declarations outside the whitelist', () => {
-    expect(() =>
-      PluginSandboxModule.validatePermissions(['backlog:view', 'root:shell'])
-    ).toThrow("Plugin permission 'root:shell' is not allowed");
+    expect(() => PluginSandboxModule.validatePermissions(['backlog:view', 'root:shell'])).toThrow(
+      "Plugin permission 'root:shell' is not allowed"
+    );
   });
 
   it('exposes the current whitelist for registry and loader checks', () => {

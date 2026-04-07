@@ -51,16 +51,14 @@ describe('validatePluginManifest', () => {
     delete (manifest as Partial<PluginManifest>).displayName;
 
     expect(() => validatePluginManifest(manifest)).toThrow(ManifestValidationError);
-    expect(() => validatePluginManifest(manifest)).toThrow("displayName is required");
+    expect(() => validatePluginManifest(manifest)).toThrow('displayName is required');
   });
 
   it('rejects plugin ids outside the @nodeadmin/plugin-* namespace', () => {
     const manifest = createValidManifest();
     manifest.id = '@someone-else/plugin-kanban';
 
-    expect(() => validatePluginManifest(manifest)).toThrow(
-      "id must match '@nodeadmin/plugin-*'"
-    );
+    expect(() => validatePluginManifest(manifest)).toThrow("id must match '@nodeadmin/plugin-*'");
   });
 
   it('rejects invalid semver versions and nodeAdmin engine ranges', () => {

@@ -71,19 +71,17 @@ describe('PluginRegistryService', () => {
       createFileEntry('README.md'),
       createDirectoryEntry('shared-types'),
     ]);
-    mockFs.readFile
-      .mockResolvedValueOnce(JSON.stringify(createManifest()))
-      .mockResolvedValueOnce(
-        JSON.stringify(
-          createManifest({
-            id: '@nodeadmin/plugin-im',
-            displayName: 'IM',
-            entrypoints: {
-              server: './dist/server/imModule.js',
-            },
-          })
-        )
-      );
+    mockFs.readFile.mockResolvedValueOnce(JSON.stringify(createManifest())).mockResolvedValueOnce(
+      JSON.stringify(
+        createManifest({
+          id: '@nodeadmin/plugin-im',
+          displayName: 'IM',
+          entrypoints: {
+            server: './dist/server/imModule.js',
+          },
+        })
+      )
+    );
 
     const result = await service.scanInstalledPlugins();
 

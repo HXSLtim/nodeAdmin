@@ -195,7 +195,9 @@ export function Sidebar(): JSX.Element {
           >
             <NavIcon name="building" />
             {!sidebarCollapsed ? (
-              <span className="truncate">{t({ id: 'nav.marketplace', defaultMessage: 'Marketplace' })}</span>
+              <span className="truncate">
+                {t({ id: 'nav.marketplace', defaultMessage: 'Marketplace' })}
+              </span>
             ) : (
               <span className="absolute left-full ml-2 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-xs text-popover-foreground shadow-md group-hover:block z-50">
                 {t({ id: 'nav.marketplace', defaultMessage: 'Marketplace' })}
@@ -211,7 +213,9 @@ export function Sidebar(): JSX.Element {
           >
             <NavIcon name="plus" />
             {!sidebarCollapsed ? (
-              <span className="truncate">{t({ id: 'nav.installed', defaultMessage: 'Installed' })}</span>
+              <span className="truncate">
+                {t({ id: 'nav.installed', defaultMessage: 'Installed' })}
+              </span>
             ) : (
               <span className="absolute left-full ml-2 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-xs text-popover-foreground shadow-md group-hover:block z-50">
                 {t({ id: 'nav.installed', defaultMessage: 'Installed' })}

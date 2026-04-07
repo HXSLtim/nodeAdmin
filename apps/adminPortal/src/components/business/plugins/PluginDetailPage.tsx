@@ -5,7 +5,14 @@ import { usePluginStore } from '@/stores/usePluginStore';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from '@/components/ui/table';
 import { Spinner } from '@/components/ui/spinner';
 import { NavIcon } from '@/app/layout/navIcon';
 
@@ -16,10 +23,15 @@ export function PluginDetailPage() {
   const { install, uninstall } = usePluginManagement();
   const plugins = usePluginStore((s) => s.plugins);
 
-  const installedPlugin = plugins.find(p => p.name === id || (p.manifest?.id === id));
+  const installedPlugin = plugins.find((p) => p.name === id || p.manifest?.id === id);
   const isInstalled = !!installedPlugin;
 
-  if (isLoading) return <div className="flex h-64 items-center justify-center"><Spinner className="h-8 w-8 text-primary" /></div>;
+  if (isLoading)
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <Spinner className="h-8 w-8 text-primary" />
+      </div>
+    );
   if (error || !data) return <div className="text-destructive">Failed to load plugin details.</div>;
 
   return (
@@ -28,7 +40,12 @@ export function PluginDetailPage() {
         <Button variant="ghost" size="sm">
           <Link className="flex items-center" to="/plugins/marketplace">
             <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path d="M15 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+              <path
+                d="M15 19l-7-7 7-7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+              />
             </svg>
             {t({ id: 'common.back', defaultMessage: 'Back' })}
           </Link>
@@ -51,9 +68,10 @@ export function PluginDetailPage() {
               {isInstalled ? (
                 <>
                   <Badge variant="outline" className="h-8 px-3">
-                    {t({ id: 'plugins.status.installed_v', defaultMessage: 'Installed' })} v{installedPlugin.installedVersion || 'unknown'}
+                    {t({ id: 'plugins.status.installed_v', defaultMessage: 'Installed' })} v
+                    {installedPlugin.installedVersion || 'unknown'}
                   </Badge>
-                  <Button 
+                  <Button
                     variant="outline"
                     className="border-destructive text-destructive hover:bg-destructive/10"
                     onClick={() => uninstall.mutate(data.id)}
@@ -64,7 +82,7 @@ export function PluginDetailPage() {
                   </Button>
                 </>
               ) : (
-                <Button 
+                <Button
                   size="lg"
                   onClick={() => install.mutate({ pluginId: data.id })}
                   disabled={install.isPending}
@@ -78,7 +96,9 @@ export function PluginDetailPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>{t({ id: 'plugins.detail.description', defaultMessage: 'Description' })}</CardTitle>
+              <CardTitle>
+                {t({ id: 'plugins.detail.description', defaultMessage: 'Description' })}
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="whitespace-pre-wrap text-muted-foreground">
@@ -89,7 +109,9 @@ export function PluginDetailPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>{t({ id: 'plugins.detail.versions', defaultMessage: 'Version History' })}</CardTitle>
+              <CardTitle>
+                {t({ id: 'plugins.detail.versions', defaultMessage: 'Version History' })}
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <Table>
@@ -109,10 +131,12 @@ export function PluginDetailPage() {
                       <TableCell>{new Date(v.publishedAt).toLocaleDateString()}</TableCell>
                       <TableCell className="text-right">
                         {!isInstalled && (
-                          <Button 
-                            variant="ghost" 
+                          <Button
+                            variant="ghost"
                             size="sm"
-                            onClick={() => install.mutate({ pluginId: data.id, version: v.version })}
+                            onClick={() =>
+                              install.mutate({ pluginId: data.id, version: v.version })
+                            }
                           >
                             Install v{v.version}
                           </Button>
