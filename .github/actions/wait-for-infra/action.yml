@@ -21,23 +21,37 @@ runs:
     - name: Wait for TCP ports and PostgreSQL
       shell: bash
       run: |
+        set -euo pipefail
+
         for port in ${{ inputs.ports }}; do
           echo "Waiting for port $port..."
+          ready=0
           for i in $(seq 1 ${{ inputs.max-retries }}); do
-            if nc -z localhost $port 2>/dev/null; then
-              echo "Port $port ready"
+            if nc -z localhost "$port" 2>/dev/null; then
+              echo "  port $port ready (attempt $i)"
+              ready=1
               break
             fi
             sleep 1
           done
+          if [ "$ready" -ne 1 ]; then
+            echo "::error::Port $port not ready after ${{ inputs.max-retries }} attempts"
+            exit 1
+          fi
         done
 
         echo "Waiting for PostgreSQL to accept connections..."
+        ready=0
         for i in $(seq 1 ${{ inputs.max-retries }}); do
           if node -e "const{Client}=require('pg');const c=new Client('${{ inputs.database-url }}');c.connect().then(()=>c.end().then(()=>process.exit(0))).catch(()=>process.exit(1))" 2>/dev/null; then
-            echo "PostgreSQL accepting connections"
+            echo "  PostgreSQL accepting connections (attempt $i)"
+            ready=1
             break
           fi
           echo "  retry $i/${{ inputs.max-retries }}..."
           sleep 2
         done
+        if [ "$ready" -ne 1 ]; then
+          echo "::error::PostgreSQL not ready after ${{ inputs.max-retries }} attempts"
+          exit 1
+        fi

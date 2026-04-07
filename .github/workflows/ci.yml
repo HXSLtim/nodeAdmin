@@ -12,56 +12,93 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  NODE_VERSION: '22'
+
 jobs:
   # ── Parallel: Static Analysis ────────────────────────────────────────────
   static:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - run: npm ci
       - run: npm run format:check
       - run: npm run lint
 
-  # ── Parallel: Unit Tests ─────────────────────────────────────────────────
+  # ── Parallel: Unit Tests (backend + frontend) ────────────────────────────
   unit-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - run: npm ci
-      - run: npm run test:coreApi
+      - name: CoreApi unit tests
+        run: npm run test:coreApi
+      - name: AdminPortal unit tests
+        run: npm run test:adminPortal
 
-  # ── Parallel: Build ──────────────────────────────────────────────────────
-  build:
+  # ── Parallel: Security Audit ─────────────────────────────────────────────
+  audit:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - name: npm audit (production deps, high+ severity)
+        run: npm audit --omit=dev --audit-level=high
+
+  # ── Parallel: Build (artifacts shared with downstream jobs) ──────────────
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - run: npm ci
       - run: npm run build
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-dist
+          path: |
+            apps/coreApi/dist
+            apps/adminPortal/dist
+          retention-days: 1
+          if-no-files-found: error
 
   # ── Sequential: Integration + Acceptance ─────────────────────────────────
   test-integration:
     needs: [build]
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - run: npm ci
-      - run: npm run build
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-dist
+          path: .
 
       - name: Setup Infrastructure
         uses: ./.github/actions/setup-stack
@@ -75,7 +112,48 @@ jobs:
         env:
           M2_INCLUDE_PGBOUNCER_SMOKE: skip
 
+      - name: Collect docker logs on failure
+        if: failure()
+        run: docker compose logs --no-color > docker-logs.txt || true
+
+      - name: Upload docker logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-logs-test-integration
+          path: docker-logs.txt
+          if-no-files-found: ignore
+
       - name: Shutdown Infrastructure
         if: always()
         run: docker compose down
 
+  # NOTE: E2E (Playwright) job was intentionally removed in c33a0fc due to
+  # CI-environment-specific flakiness. Re-add only after the underlying root
+  # cause is addressed. Run locally with: npm run test:e2e:web
+
+  # ── Parallel: Docker image build validation (no push) ────────────────────
+  docker-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build CoreApi image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/coreApi/Dockerfile
+          push: false
+          tags: nodeadmin/coreapi:ci
+          cache-from: type=gha,scope=coreapi
+          cache-to: type=gha,scope=coreapi,mode=max
+      - name: Build AdminPortal image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/adminPortal/Dockerfile
+          push: false
+          tags: nodeadmin/adminportal:ci
+          cache-from: type=gha,scope=adminportal
+          cache-to: type=gha,scope=adminportal,mode=max
