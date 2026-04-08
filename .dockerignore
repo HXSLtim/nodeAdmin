@@ -20,13 +20,18 @@ infra
 apps/adminPortal
 !apps/adminPortal/src
 !apps/adminPortal/public
-!apps/adminPortal/package.json
-!apps/adminPortal/tsconfig*.json
-!apps/adminPortal/vite.config.ts
-!apps/adminPortal/vite-importmap-plugin.ts
-!apps/adminPortal/postcss.config.js
-!apps/adminPortal/tailwind.config.ts
-!apps/adminPortal/index.html
+# Pattern-based allowlist for top-level config files so new files
+# (e.g. vite plugins, tailwind/postcss configs, tsconfigs) don't silently
+# break docker build the way vite-importmap-plugin.ts did before 61b1cab.
+# Tests and __tests__ are still excluded by the apps/**/*.test.ts and
+# apps/**/__tests__ rules below.
+!apps/adminPortal/*.ts
+!apps/adminPortal/*.tsx
+!apps/adminPortal/*.js
+!apps/adminPortal/*.cjs
+!apps/adminPortal/*.mjs
+!apps/adminPortal/*.json
+!apps/adminPortal/*.html
 apps/**/test-results
 apps/**/*.test.ts
 apps/**/__tests__

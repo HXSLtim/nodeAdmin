@@ -57,6 +57,8 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - run: npm ci
+      - name: Check audit-ci allowlist expiry
+        run: node scripts/checkAuditAllowlistExpiry.cjs
       - name: audit-ci (gate on high+ with documented allowlist)
         run: npx audit-ci --config audit-ci.jsonc
 
