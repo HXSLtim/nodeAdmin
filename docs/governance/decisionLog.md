@@ -194,8 +194,20 @@
 - 影响范围：`apps/adminPortal/package.json` 的 `react-intl` 版本约束；package-lock.json 重建；T-P5-FE-01 关闭为「decided：execute path (d)」；T-P5-FE-01 后续派单为执行任务（找版本 → pin → 验证 → PR）；roadmap §9.3 TD-2 状态更新为「resolved by downgrade」一旦 PR 合入。
 - 责任人：项目负责人 / 前端负责人。
 
+### D-021 addendum — react-intl 7.x API surface 限制
+
+- 日期：2026-04-08（PR #48 合入 master 后追加）
+- 决策追加：执行 D-021 路径 (d) 后，仓库实际使用的是 `react-intl@7.1.14`，跨过了 8/9/10 三个 major。新代码引入下列 API 时需要先评估 7.x 是否支持：
+  - `FormattedMessage`、`defineMessages`、`defineMessage`、`injectIntl` 等 7.x 之后才稳定的高阶组件 / HOC API；
+  - 任何 8.x 引入的 message format 扩展或 ICU 语法变体；
+  - 任何 9.x / 10.x 调整过的 `useIntl` 返回值结构（v7 的 `IntlShape` 接口不保证向前兼容）。
+- 当前安全用法：仅 `IntlProvider`（`apps/adminPortal/src/main.tsx` 一处）+ `useIntl().formatMessage(...)`（53 处）。这两个 API 自 react-intl 6.x 起 surface 稳定不变，不受版本回退影响。
+- 何时需要重新评估：当 React 19 升级被纳入路线图时，TD-2 的根本约束消失（届时 `react-intl@10+` 的 peer 自动满足），可以一次性升回最新版并恢复完整 API surface。在那之前，FE 新代码应优先用 `useIntl().formatMessage`，避免引入 7.x 不存在的 API。
+- 影响范围：`apps/adminPortal/src/i18n/`、未来所有引入 i18n 的 FE 模块。
+- 责任人：前端负责人。
+
 ## 最近更新时间
 
-- 2026-04-08（新增 D-020 / D-021，关闭 TD-1 / TD-2 两条挂账技术债的决策状态；新增 D-019 明确框架定位；同日补录 D-012 ~ D-018，对齐插件市场 / CI 加固 / TenantContext 实际落地）
+- 2026-04-08（P5 七个 PR 全部合入 master：#46 OpenAPI snapshot guard、#47 plugin lifecycle hooks、#49 backend coverage baseline、#48 react-intl 降级、#45 hooks/stores coverage、#43 design token sweep、#44 plugin UI polish；D-021 追加 react-intl 7.x API surface 限制说明；新增 D-020 / D-021，关闭 TD-1 / TD-2 两条挂账技术债的决策状态；新增 D-019 明确框架定位；同日补录 D-012 ~ D-018，对齐插件市场 / CI 加固 / TenantContext 实际落地）
 - 2026-03-01（补录 D-007 ~ D-011，对齐 brainstormingResults.md 决策建议）
 - 2026-02-28
