@@ -29,16 +29,33 @@
     // ─── lodash (transitive via @nestjs/swagger@11.x and @nestjs/config@4.x) ───
     // Fix requires @nestjs/swagger upgrade to a version that no longer
     // exact-pins "lodash": "4.17.23". `npm audit fix --force` proposes a
-    // destructive downgrade to @nestjs/swagger@2.5.1 (6 years old), which
-    // is not acceptable. Tracked as tech debt: upgrade/replace @nestjs/swagger.
-    // Expiry: 2026-07-07 (90 days from 2026-04-08).
+    // destructive downgrade to @nestjs/swagger@2.5.1 (6 years old), not acceptable.
+    //
+    // 2026-04-08 reassessment (D-020, T-P5-BE-01 trade-off note):
+    //   (a) upgrade @nestjs/swagger — latest is still 11.2.6, pin unchanged. Dead.
+    //   (b) `npm overrides`        — already verified ineffective on npm 11
+    //                                 + workspace setup (D-016). Dead.
+    //   (c) fork or migrate to zod-openapi/scalar — only viable path, but
+    //       requires touching ~70 controllers' @Api* decorators + every
+    //       @ApiProperty DTO + generator templates. Deferred.
+    //
+    // Practical exploitability in this codebase is near-zero:
+    //   - swagger UI gated by SWAGGER_ENABLED env (off by default in prod)
+    //   - vulnerable code path takes compile-time decorator input, not user input
+    //   - `_.template` is not invoked on attacker-controllable strings
+    // Risk accepted; revisit at 2026-10-08 (whether upstream has shipped a fix
+    // or whether we commit to the (c) migration).
+    // Expiry: 2027-01-07 (extended +6 months from 2026-07-07 per D-020).
     "GHSA-r5fr-rjxr-66jc", // lodash: code injection via `_.template` key names
 
     // ─── path-to-regexp (transitive via @nestjs/swagger@11.x) ───
     // Same root cause: @nestjs/swagger@11.2.6 exact-pins "path-to-regexp": "8.3.0".
     // @nestjs/core and @nestjs/platform-fastify already resolve to 8.4.2
     // (non-vulnerable); only the swagger branch retains 8.3.0.
-    // Expiry: 2026-07-07 (90 days from 2026-04-08).
+    // Practical exploitability: paths consumed by swagger come from controller
+    // route metadata (compile-time, static), not user-controlled input.
+    // Same reassessment and revisit schedule as the lodash entry above.
+    // Expiry: 2027-01-07 (extended +6 months from 2026-07-07 per D-020).
     "GHSA-j3q9-mxjg-w52f", // path-to-regexp: DoS via sequential optional groups
   ],
 }

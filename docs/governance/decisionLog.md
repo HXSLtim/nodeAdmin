@@ -169,8 +169,33 @@
   - 未来讨论或规划时，默认假设：任何 vertical business domain（IM 业务具体玩法除外——IM 是框架内置的示范模块）应当放到下游 fork 的 repo，不进 nodeAdmin 主线。
 - 责任人：项目负责人 / 架构负责人。
 
+### D-020
+
+- 日期：2026-04-08
+- 决策：TD-1（`@nestjs/swagger` 的 lodash + path-to-regexp 锁死）当前**不实施迁移**，将 audit-ci allowlist 中两条 GHSA 的过期日由 2026-07-07 延长至 **2027-01-07**，下一次复核节点定在 2026-10-08。
+- 原因：T-P5-BE-01 调研结论锁死了候选路径——
+  - (a) 升级 `@nestjs/swagger` 到 latest：仍是 11.2.6，pin 未变，**无效**。
+  - (b) `npm overrides` 强制覆盖：D-016 已实证在 npm 11 + workspace 下不生效，**无效**。
+  - (c) fork `@nestjs/swagger` 或迁 zod-openapi/scalar：唯一可行路径，但需要触动 ~70 个 controller 的 `@Api*` 装饰器、所有 DTO 的 `@ApiProperty`、generator 模板，**代价巨大**。
+  - 同时，两条 CVE 在本仓库内的实际可利用性接近零：(1) swagger UI 由 `SWAGGER_ENABLED` 环境变量控制，生产默认关闭；(2) 漏洞代码路径吃的是编译期 decorator 静态输入，不是用户输入；(3) `_.template` 不会被以攻击者可控字符串调用；(4) `path-to-regexp` 8.4.2（已修版本）已经被 `@nestjs/core` 和 `@nestjs/platform-fastify` 拉进来，只是 swagger 分支仍留 8.3.0。
+  - 综合：现在为零收益的 (c) 付出高代价不合理。延长 6 个月窗口，期间观察上游是否发布修复版本，或在 2026-10 节点决定是否承诺 (c) 迁移工程。
+- 影响范围：`audit-ci.jsonc` 两条 allowlist 注释更新；T-P5-BE-01 关闭为「decided：defer」；roadmap §9.3 TD-1 状态更新为「accepted risk, revisit 2026-10-08」。
+- 责任人：项目负责人 / 平台与安全负责人。
+
+### D-021
+
+- 日期：2026-04-08
+- 决策：TD-2（`react-intl@10.1.0` 与 React 18 的 peer 冲突）走第 (d) 条路径——**降级 `react-intl` 到最高的仍声明 `react@^18` peer 的版本**，不升级 React，不切换 FormatJS Core，不动 `@types/react`。
+- 原因：T-P5-FE-01 调研覆盖了 (a) 升 React 19 / (b) 切 FormatJS Core / (c) 升 `@types/react`，但漏掉了 (d) 降级路径。事实层面：
+  - `react-intl@10.1.0` 的 peer 是 `{"react":"19","@types/react":"19","typescript":"^5.6.0"}`——**两侧 peer 都要求 19**，因此 (c) 只升 types 不解决 react 那一侧的冲突，方案不成立。
+  - `apps/adminPortal/src` 实际只用 `IntlProvider`（仅 main.tsx 一处）和 `useIntl().formatMessage(...)`——零高级 API。这两个 API 自 react-intl 6.x 起 API surface 稳定不变。
+  - (a) React 18→19 升级有真实 breaking（defaultProps 移除、string refs 移除、ref API 变化），53+ 业务面板需重测；(b) FormatJS Core 迁移要写适配层 + 改 53 处 import；(d) 降级是单行 package.json 修改 + 不动业务代码 + 完全可逆。
+  - 长期 React 19 升级仍是独立战略问题，但与 TD-2 的"恢复 `npm install` 可重建 lockfile"目标解耦。
+- 影响范围：`apps/adminPortal/package.json` 的 `react-intl` 版本约束；package-lock.json 重建；T-P5-FE-01 关闭为「decided：execute path (d)」；T-P5-FE-01 后续派单为执行任务（找版本 → pin → 验证 → PR）；roadmap §9.3 TD-2 状态更新为「resolved by downgrade」一旦 PR 合入。
+- 责任人：项目负责人 / 前端负责人。
+
 ## 最近更新时间
 
-- 2026-04-08（新增 D-019 明确框架定位；同日补录 D-012 ~ D-018，对齐插件市场 / CI 加固 / TenantContext 实际落地）
+- 2026-04-08（新增 D-020 / D-021，关闭 TD-1 / TD-2 两条挂账技术债的决策状态；新增 D-019 明确框架定位；同日补录 D-012 ~ D-018，对齐插件市场 / CI 加固 / TenantContext 实际落地）
 - 2026-03-01（补录 D-007 ~ D-011，对齐 brainstormingResults.md 决策建议）
 - 2026-02-28
