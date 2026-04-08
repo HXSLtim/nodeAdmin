@@ -95,7 +95,70 @@
 - 影响范围：`apps/coreApi` 所有日志输出，禁止使用 `console.log`。
 - 责任人：后端负责人。
 
+### D-012
+
+- 日期：2026-04-03
+- 决策：Playwright E2E 暂时退出 CI pipeline，只保留本地运行入口 (`npm run test:e2e:web`)。
+- 原因：E2E 在 CI 环境下持续 flaky（本地能过 CI 挂），`a1fe31a`、`d37d846` 两次 harden 尝试均未解决根因。继续带着不稳定的 gate 会吞噬注意力并降低整体 CI 信号质量；选择退出而非静默 skip 以保持诚实。
+- 影响范围：`.github/workflows/ci.yml`（删除 e2e job）；重新加回 CI 前必须先定位 flake 根因。
+- 责任人：平台与 QA 负责人。
+- 溯源：`c33a0fc`
+
+### D-013
+
+- 日期：2026-04-06
+- 决策：插件市场后端动态加载采用「启动前扫描 + DynamicModule 注册」，不使用 `LazyModuleLoader`。
+- 原因：NestJS `LazyModuleLoader` 无法在 bootstrap 之后注册 Controller/Route，Fastify 路由表在 `listen()` 时冻结；启动前扫描 `node_modules/@nodeadmin/plugin-*` 并通过 `DynamicModule.forRootAsync()` 注入是唯一稳定路径。
+- 影响范围：`apps/coreApi/src/modules/plugin/`、`AppModule` 启动流程、插件 manifest 规范。
+- 责任人：后端负责人 + 架构负责人。
+- 溯源：`docs/architecture/pluginMarketplacePlan.md`，实现 `e11a5d9`
+
+### D-014
+
+- 日期：2026-04-06
+- 决策：插件市场前端动态加载采用「Dynamic `import()` + `React.lazy()` + importmap 共享依赖」，不使用 Vite Module Federation。
+- 原因：`@module-federation/vite` 仍在 0.x beta，HMR 兼容性差；Dynamic `import()` 是浏览器原生能力，可控性和稳定性更高；共享依赖通过 importmap 强制单实例，避免 React 多实例运行时崩溃。
+- 影响范围：`apps/adminPortal` 插件加载 hook、构建期 externals 配置、importmap 生成。
+- 责任人：前端负责人。
+- 溯源：`docs/architecture/pluginMarketplacePlan.md`，实现 `e11a5d9`
+
+### D-015
+
+- 日期：2026-04-06
+- 决策：引入 `TenantContext` 抽象并提供 `SINGLE_TENANT_MODE` 运行期开关，作为多租户/单租户部署的统一入口。
+- 原因：历史代码中 `tenantId` 在 service/repo 层直接读取，单租户部署场景需要硬编码常量绕过租户校验；抽象出 `TenantContext` 后可以在同一份代码基上通过配置切换模式，且为后续按租户动态注入策略（限流、加密密钥、配额）留出扩展点。
+- 影响范围：`apps/coreApi/src/infrastructure/tenant/`、所有需要 `tenantId` 的 service/repo、`env` 配置项 `SINGLE_TENANT_MODE`。
+- 责任人：架构负责人。
+- 溯源：`d132602`
+
+### D-016
+
+- 日期：2026-04-08
+- 决策：CI 依赖安全审计采用 `audit-ci` + allowlist 模式，替代裸 `npm audit --audit-level=high`。
+- 原因：裸 `npm audit` 无法对"已知但暂时无法修复的 transitive 漏洞"做结构化豁免；审计门槛要么全挂要么全放，缺乏可审计性。`audit-ci` 支持 allowlist + per-advisory 注释 + `skip-dev`，可以在保持 high/critical 严格门槛的同时显式声明风险接受。另一个现实约束：尝试 `npm overrides` 强制升级 `@nestjs/swagger@11.2.6` 的 exact-pin transitive (`lodash@4.17.23`, `path-to-regexp@8.3.0`) 未能成功（4 种 overrides 语法均被 npm 11.11.0 忽略），且 `npm audit fix --force` 会把 swagger 破坏性降级到 2.5.1，无可接受的自动修复路径。
+- 影响范围：`.github/workflows/ci.yml` audit job、根 `audit-ci.jsonc`、开发依赖新增 `audit-ci`。
+- 责任人：平台与安全负责人。
+- 溯源：`ad33af1`
+
+### D-017
+
+- 日期：2026-04-08
+- 决策：CI 新增 `docker-build` job，使用 `docker/build-push-action@v6` + GHA 缓存构建 `coreApi` 和 `adminPortal` 镜像，`push: false` 仅校验不推送。
+- 原因：此前 CI 链路完全没有实际运行过 Dockerfile，导致 `.dockerignore` 与 Dockerfile 的不一致长期潜伏（`61b1cab` 修复的 `vite-importmap-plugin.ts` 即为一例）。镜像构建 gate 是 CD 的起点，即便暂无 registry 也应先建立校验能力。
+- 影响范围：`.github/workflows/ci.yml`、`.dockerignore` 维护策略。
+- 责任人：平台负责人。
+- 溯源：`b463d59`，后续 `61b1cab` 修复首次 gate 抓到的损坏。
+
+### D-018
+
+- 日期：2026-04-08
+- 决策：`audit-ci.jsonc` allowlist 条目必须携带 `Expiry: YYYY-MM-DD` 注释，CI 在 audit 步骤前自动检查过期。初始 expiry 窗口 90 天。
+- 原因：allowlist 如果没有强制复核机制，会在几个月后退化成"永久豁免"，丧失安全意义。通过把过期检查写进 CI（`scripts/checkAuditAllowlistExpiry.cjs`），过期条目会直接把 audit job 拦红，强制人介入决定「上游已修 → 删除」、「仍然接受 → 延期并更新理由」、「可以升级 → 做 fix」三者之一。
+- 影响范围：`audit-ci.jsonc` 注释格式、新增 `scripts/checkAuditAllowlistExpiry.cjs`、`ci.yml` audit job 新增 step。
+- 责任人：平台与安全负责人。
+
 ## 最近更新时间
 
+- 2026-04-08（补录 D-012 ~ D-018，对齐插件市场 / CI 加固 / TenantContext 实际落地；前序决策日志自 2026-03-01 起滞后）
 - 2026-03-01（补录 D-007 ~ D-011，对齐 brainstormingResults.md 决策建议）
 - 2026-02-28
