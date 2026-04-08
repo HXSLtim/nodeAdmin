@@ -1066,7 +1066,9 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
                 >
                   <div className="mb-1.5 flex items-center gap-2 px-1">
                     {!isMe && (
-                      <span className="text-[0.625rem] font-bold text-primary">{message.userId}</span>
+                      <span className="text-[0.625rem] font-bold text-primary">
+                        {message.userId}
+                      </span>
                     )}
                     <span className="text-[0.625rem] text-muted-foreground opacity-70">
                       {new Date(message.createdAt).toLocaleTimeString([], {
