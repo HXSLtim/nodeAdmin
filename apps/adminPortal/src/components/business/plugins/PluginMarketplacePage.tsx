@@ -63,12 +63,18 @@ export function PluginMarketplacePage() {
             {t({ id: 'plugins.marketplace.title', defaultMessage: 'Plugin Marketplace' })}
           </h1>
           <p className="text-sm text-muted-foreground">
-            {t({ id: 'plugins.marketplace.description', defaultMessage: 'Discover and install plugins to extend your platform.' })}
+            {t({
+              id: 'plugins.marketplace.description',
+              defaultMessage: 'Discover and install plugins to extend your platform.',
+            })}
           </p>
         </div>
         <div className="flex w-full max-w-sm items-center space-x-2">
           <Input
-            aria-label={t({ id: 'plugins.marketplace.search_label', defaultMessage: 'Search plugins' })}
+            aria-label={t({
+              id: 'plugins.marketplace.search_label',
+              defaultMessage: 'Search plugins',
+            })}
             placeholder={t({
               id: 'plugins.marketplace.search',
               defaultMessage: 'Search plugins...',
@@ -87,9 +93,14 @@ export function PluginMarketplacePage() {
           <div className="rounded-full bg-destructive/10 p-3 text-destructive">
             <NavIcon name="alert" />
           </div>
-          <h3 className="mt-4 text-lg font-semibold">{t({ id: 'common.error', defaultMessage: 'Error' })}</h3>
+          <h3 className="mt-4 text-lg font-semibold">
+            {t({ id: 'common.error', defaultMessage: 'Error' })}
+          </h3>
           <p className="mb-6 text-sm text-muted-foreground">
-            {t({ id: 'plugins.marketplace.load_failed', defaultMessage: 'Failed to load marketplace data.' })}
+            {t({
+              id: 'plugins.marketplace.load_failed',
+              defaultMessage: 'Failed to load marketplace data.',
+            })}
           </p>
           <Button onClick={() => refetch()} variant="outline">
             {t({ id: 'common.retry', defaultMessage: 'Retry' })}
@@ -106,12 +117,17 @@ export function PluginMarketplacePage() {
           <div className="rounded-full bg-muted p-3 text-muted-foreground">
             <NavIcon name="search" />
           </div>
-          <h3 className="mt-4 text-lg font-semibold">{t({ id: 'plugins.marketplace.no_results', defaultMessage: 'No plugins found' })}</h3>
+          <h3 className="mt-4 text-lg font-semibold">
+            {t({ id: 'plugins.marketplace.no_results', defaultMessage: 'No plugins found' })}
+          </h3>
           <p className="text-sm text-muted-foreground">
-            {t({ id: 'plugins.marketplace.no_results_desc', defaultMessage: 'Try adjusting your search to find what you are looking for.' })}
+            {t({
+              id: 'plugins.marketplace.no_results_desc',
+              defaultMessage: 'Try adjusting your search to find what you are looking for.',
+            })}
           </p>
           {search && (
-            <Button className="mt-6" variant="link" onClick={() => setSearch('')}>
+            <Button className="mt-6" variant="ghost" onClick={() => setSearch('')}>
               {t({ id: 'common.clear_search', defaultMessage: 'Clear search' })}
             </Button>
           )}
@@ -137,7 +153,11 @@ export function PluginMarketplacePage() {
                 </CardHeader>
                 <CardContent className="flex-1">
                   <p className="text-sm text-muted-foreground line-clamp-3">
-                    {plugin.description || t({ id: 'plugins.marketplace.no_description', defaultMessage: 'No description provided.' })}
+                    {plugin.description ||
+                      t({
+                        id: 'plugins.marketplace.no_description',
+                        defaultMessage: 'No description provided.',
+                      })}
                   </p>
                   <div className="mt-4 flex items-center space-x-4 text-[0.625rem] text-muted-foreground">
                     <span className="flex items-center gap-1">
@@ -181,10 +201,13 @@ export function PluginMarketplacePage() {
                 {t({ id: 'common.previous', defaultMessage: 'Previous' })}
               </Button>
               <span className="text-sm text-muted-foreground">
-                {t({ id: 'common.page_info', defaultMessage: 'Page {page} of {total}' }, {
-                  page,
-                  total: Math.ceil(data.total / pageSize)
-                })}
+                {t(
+                  { id: 'common.page_info', defaultMessage: 'Page {page} of {total}' },
+                  {
+                    page,
+                    total: Math.ceil(data.total / pageSize),
+                  }
+                )}
               </span>
               <Button
                 variant="outline"

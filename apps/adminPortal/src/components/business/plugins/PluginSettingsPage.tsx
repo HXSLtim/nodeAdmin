@@ -33,7 +33,9 @@ export function PluginSettingsPage() {
           <NavIcon name="alert" />
         </div>
         <p className="text-destructive font-medium">Plugin not found.</p>
-        <Button variant="outline" onClick={() => navigate('/plugins/installed')}>Back to list</Button>
+        <Button variant="outline" onClick={() => navigate('/plugins/installed')}>
+          Back to list
+        </Button>
       </div>
     );
   }
@@ -55,7 +57,12 @@ export function PluginSettingsPage() {
         <div className="flex items-center space-x-4">
           <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
             <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path d="M15 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+              <path
+                d="M15 19l-7-7 7-7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+              />
             </svg>
             Back
           </Button>
@@ -94,7 +101,10 @@ export function PluginSettingsPage() {
                       <Checkbox
                         id={key}
                         checked={value}
-                        label={`Enable ${key.replace(/([A-Z])/g, ' $1').trim().toLowerCase()}`}
+                        label={`Enable ${key
+                          .replace(/([A-Z])/g, ' $1')
+                          .trim()
+                          .toLowerCase()}`}
                         onChange={(checked: boolean) => handleFieldChange(key, checked)}
                       />
                     </div>

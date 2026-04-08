@@ -36,17 +36,27 @@ function DetailSkeleton() {
             <Skeleton className="h-10 w-32" />
           </div>
           <Card>
-            <CardHeader><Skeleton className="h-6 w-32" /></CardHeader>
-            <CardContent><Skeleton className="h-24 w-full" /></CardContent>
+            <CardHeader>
+              <Skeleton className="h-6 w-32" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-24 w-full" />
+            </CardContent>
           </Card>
           <Card>
-            <CardHeader><Skeleton className="h-6 w-48" /></CardHeader>
-            <CardContent><Skeleton className="h-48 w-full" /></CardContent>
+            <CardHeader>
+              <Skeleton className="h-6 w-48" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-48 w-full" />
+            </CardContent>
           </Card>
         </div>
         <div className="w-full space-y-6 lg:w-80">
           <Card>
-            <CardHeader><Skeleton className="h-6 w-32" /></CardHeader>
+            <CardHeader>
+              <Skeleton className="h-6 w-32" />
+            </CardHeader>
             <CardContent className="space-y-4">
               {Array.from({ length: 5 }).map((_, i) => (
                 <div key={i} className="flex justify-between">
@@ -80,9 +90,14 @@ export function PluginDetailPage() {
         <div className="rounded-full bg-destructive/10 p-3 text-destructive">
           <NavIcon name="alert" />
         </div>
-        <h3 className="mt-4 text-lg font-semibold">{t({ id: 'plugins.detail.error', defaultMessage: 'Failed to load details' })}</h3>
+        <h3 className="mt-4 text-lg font-semibold">
+          {t({ id: 'plugins.detail.error', defaultMessage: 'Failed to load details' })}
+        </h3>
         <p className="mb-6 text-sm text-muted-foreground">
-          {t({ id: 'plugins.detail.error_desc', defaultMessage: 'The plugin information could not be retrieved at this time.' })}
+          {t({
+            id: 'plugins.detail.error_desc',
+            defaultMessage: 'The plugin information could not be retrieved at this time.',
+          })}
         </p>
         <div className="flex gap-2">
           <Link className={buttonVariants({ variant: 'outline' })} to="/plugins/marketplace">
@@ -100,11 +115,19 @@ export function PluginDetailPage() {
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex items-center space-x-4">
         <Link
-          className={className(buttonVariants({ variant: 'ghost', size: 'sm' }), 'flex items-center')}
+          className={className(
+            buttonVariants({ variant: 'ghost', size: 'sm' }),
+            'flex items-center'
+          )}
           to="/plugins/marketplace"
         >
           <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path d="M15 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+            <path
+              d="M15 19l-7-7 7-7"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+            />
           </svg>
           {t({ id: 'common.back', defaultMessage: 'Back' })}
         </Link>
@@ -133,7 +156,11 @@ export function PluginDetailPage() {
                     variant="outline"
                     className="border-destructive text-destructive hover:bg-destructive/10"
                     onClick={() => {
-                      if (window.confirm(t({ id: 'plugins.uninstall.confirm', defaultMessage: 'Are you sure?' }))) {
+                      if (
+                        window.confirm(
+                          t({ id: 'plugins.uninstall.confirm', defaultMessage: 'Are you sure?' })
+                        )
+                      ) {
                         uninstall.mutate(data.id);
                       }
                     }}
@@ -168,7 +195,11 @@ export function PluginDetailPage() {
             </CardHeader>
             <CardContent>
               <p className="whitespace-pre-wrap text-sm text-muted-foreground leading-relaxed">
-                {data.description || t({ id: 'plugins.marketplace.no_description', defaultMessage: 'No description available for this plugin.' })}
+                {data.description ||
+                  t({
+                    id: 'plugins.marketplace.no_description',
+                    defaultMessage: 'No description available for this plugin.',
+                  })}
               </p>
             </CardContent>
           </Card>
@@ -193,8 +224,12 @@ export function PluginDetailPage() {
                   {data.versions.map((v) => (
                     <TableRow key={v.version}>
                       <TableCell className="font-mono pl-6">v{v.version}</TableCell>
-                      <TableCell className="max-w-md truncate text-sm">{v.changelog || '-'}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{new Date(v.publishedAt).toLocaleDateString()}</TableCell>
+                      <TableCell className="max-w-md truncate text-sm">
+                        {v.changelog || '-'}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {new Date(v.publishedAt).toLocaleDateString()}
+                      </TableCell>
                       <TableCell className="text-right pr-6">
                         {!isInstalled && (
                           <Button
@@ -204,7 +239,10 @@ export function PluginDetailPage() {
                               install.mutate({ pluginId: data.id, version: v.version })
                             }
                           >
-                            {t({ id: 'plugins.install_v', defaultMessage: 'Install v{version}' }, { version: v.version })}
+                            {t(
+                              { id: 'plugins.install_v', defaultMessage: 'Install v{version}' },
+                              { version: v.version }
+                            )}
                           </Button>
                         )}
                       </TableCell>
@@ -240,7 +278,9 @@ export function PluginDetailPage() {
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Visibility</span>
-                <Badge variant="secondary" className="text-[0.625rem]">{data.isPublic ? 'Public' : 'Private'}</Badge>
+                <Badge variant="secondary" className="text-[0.625rem]">
+                  {data.isPublic ? 'Public' : 'Private'}
+                </Badge>
               </div>
             </CardContent>
           </Card>

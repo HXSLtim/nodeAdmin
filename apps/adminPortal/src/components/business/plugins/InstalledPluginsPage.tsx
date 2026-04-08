@@ -29,7 +29,10 @@ export function InstalledPluginsPage() {
             {t({ id: 'plugins.installed.title', defaultMessage: 'Installed Plugins' })}
           </h1>
           <p className="text-sm text-muted-foreground">
-            {t({ id: 'plugins.installed.description', defaultMessage: 'Manage and configure your active plugins.' })}
+            {t({
+              id: 'plugins.installed.description',
+              defaultMessage: 'Manage and configure your active plugins.',
+            })}
           </p>
         </div>
         <Link
@@ -42,17 +45,28 @@ export function InstalledPluginsPage() {
 
       <Card>
         <CardHeader className="px-6 py-4">
-          <CardTitle className="text-lg">{t({ id: 'plugins.installed.list_title', defaultMessage: 'Active Extensions' })}</CardTitle>
-          <CardDescription>{t({ id: 'plugins.installed.list_desc', defaultMessage: 'A list of all plugins currently installed on your tenant.' })}</CardDescription>
+          <CardTitle className="text-lg">
+            {t({ id: 'plugins.installed.list_title', defaultMessage: 'Active Extensions' })}
+          </CardTitle>
+          <CardDescription>
+            {t({
+              id: 'plugins.installed.list_desc',
+              defaultMessage: 'A list of all plugins currently installed on your tenant.',
+            })}
+          </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50 hover:bg-muted/50">
-                <TableHead className="w-72 pl-6">{t({ id: 'plugins.col.plugin', defaultMessage: 'Plugin' })}</TableHead>
+                <TableHead className="w-72 pl-6">
+                  {t({ id: 'plugins.col.plugin', defaultMessage: 'Plugin' })}
+                </TableHead>
                 <TableHead>{t({ id: 'plugins.col.version', defaultMessage: 'Version' })}</TableHead>
                 <TableHead>{t({ id: 'plugins.col.status', defaultMessage: 'Status' })}</TableHead>
-                <TableHead className="text-right pr-6">{t({ id: 'plugins.col.actions', defaultMessage: 'Actions' })}</TableHead>
+                <TableHead className="text-right pr-6">
+                  {t({ id: 'plugins.col.actions', defaultMessage: 'Actions' })}
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -64,14 +78,30 @@ export function InstalledPluginsPage() {
                         <NavIcon name="puzzle" />
                       </div>
                       <div className="text-muted-foreground">
-                        <p className="font-medium">{t({ id: 'plugins.installed.empty', defaultMessage: 'No plugins installed' })}</p>
-                        <p className="text-sm">{t({ id: 'plugins.installed.empty_desc', defaultMessage: 'Get started by browsing the marketplace.' })}</p>
+                        <p className="font-medium">
+                          {t({
+                            id: 'plugins.installed.empty',
+                            defaultMessage: 'No plugins installed',
+                          })}
+                        </p>
+                        <p className="text-sm">
+                          {t({
+                            id: 'plugins.installed.empty_desc',
+                            defaultMessage: 'Get started by browsing the marketplace.',
+                          })}
+                        </p>
                       </div>
                       <Link
-                        className={className(buttonVariants({ variant: 'outline', size: 'sm' }), 'mt-2')}
+                        className={className(
+                          buttonVariants({ variant: 'outline', size: 'sm' }),
+                          'mt-2'
+                        )}
                         to="/plugins/marketplace"
                       >
-                        {t({ id: 'plugins.marketplace.visit', defaultMessage: 'Visit Marketplace' })}
+                        {t({
+                          id: 'plugins.marketplace.visit',
+                          defaultMessage: 'Visit Marketplace',
+                        })}
                       </Link>
                     </div>
                   </TableCell>
@@ -89,33 +119,48 @@ export function InstalledPluginsPage() {
                             {plugin.manifest?.displayName || plugin.name}
                           </span>
                           <span className="text-xs text-muted-foreground truncate max-w-48">
-                            {plugin.manifest?.description || t({ id: 'plugins.marketplace.no_description', defaultMessage: 'No description' })}
+                            {plugin.manifest?.description ||
+                              t({
+                                id: 'plugins.marketplace.no_description',
+                                defaultMessage: 'No description',
+                              })}
                           </span>
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col">
-                        <span className="text-sm font-mono">v{plugin.installedVersion || '0.1.0'}</span>
+                        <span className="text-sm font-mono">
+                          v{plugin.installedVersion || '0.1.0'}
+                        </span>
                         {/* Mock update check */}
                         {false && (
-                          <Badge variant="outline" className="mt-1 w-fit border-amber-500/50 text-amber-600 bg-amber-50 text-[0.5625rem] font-bold dark:bg-amber-950/20">
+                          <Badge
+                            variant="outline"
+                            className="mt-1 w-fit border-amber-500/50 text-amber-600 bg-amber-50 text-[0.5625rem] font-bold dark:bg-amber-950/20"
+                          >
                             UPDATE AVAILABLE
                           </Badge>
                         )}
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={plugin.enabled ? 'default' : 'secondary'} className="capitalize">
-                        {plugin.enabled 
-                          ? t({ id: 'common.enabled', defaultMessage: 'Enabled' }) 
+                      <Badge
+                        variant={plugin.enabled ? 'default' : 'secondary'}
+                        className="capitalize"
+                      >
+                        {plugin.enabled
+                          ? t({ id: 'common.enabled', defaultMessage: 'Enabled' })
                           : t({ id: 'common.disabled', defaultMessage: 'Disabled' })}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right pr-6">
                       <div className="flex items-center justify-end gap-2">
                         <Link
-                          className={className(buttonVariants({ variant: 'ghost', size: 'icon' }), 'h-8 w-8')}
+                          className={className(
+                            buttonVariants({ variant: 'ghost', size: 'icon' }),
+                            'h-8 w-8'
+                          )}
                           to={`/plugins/settings/${encodeURIComponent(plugin.name)}`}
                           title={t({ id: 'common.settings', defaultMessage: 'Settings' })}
                         >
@@ -126,14 +171,21 @@ export function InstalledPluginsPage() {
                           size="sm"
                           className="h-8 text-destructive hover:text-destructive hover:bg-destructive/10"
                           onClick={() => {
-                            if (window.confirm(t({ id: 'plugins.uninstall.confirm', defaultMessage: 'Are you sure you want to uninstall this plugin?' }))) {
+                            if (
+                              window.confirm(
+                                t({
+                                  id: 'plugins.uninstall.confirm',
+                                  defaultMessage: 'Are you sure you want to uninstall this plugin?',
+                                })
+                              )
+                            ) {
                               uninstall.mutate(plugin.name);
                             }
                           }}
                           disabled={uninstall.isPending}
                         >
-                          {uninstall.isPending 
-                            ? t({ id: 'common.processing', defaultMessage: '...' }) 
+                          {uninstall.isPending
+                            ? t({ id: 'common.processing', defaultMessage: '...' })
                             : t({ id: 'plugins.uninstall', defaultMessage: 'Uninstall' })}
                         </Button>
                       </div>
