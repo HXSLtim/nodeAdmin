@@ -26,7 +26,7 @@ describe('useMessageStore', () => {
 
   it('should reset messages and sort them by sequenceId', () => {
     useMessageStore.getState().resetMessages([mockMsg2, mockMsg1]);
-    
+
     const messages = useMessageStore.getState().messages;
     expect(messages).toHaveLength(2);
     expect(messages[0].messageId).toBe('msg-1');
@@ -44,7 +44,7 @@ describe('useMessageStore', () => {
 
   it('should update an existing message if messageId matches', () => {
     useMessageStore.getState().resetMessages([mockMsg1]);
-    
+
     const updatedMsg1 = { ...mockMsg1, content: 'updated' };
     useMessageStore.getState().upsertMessage(updatedMsg1);
 
@@ -60,7 +60,7 @@ describe('useMessageStore', () => {
     } as any;
 
     useMessageStore.getState().upsertMessage(rawMsg);
-    
+
     const message = useMessageStore.getState().messages[0];
     expect(message.messageType).toBe('text');
     expect(message.metadata).toBeNull();

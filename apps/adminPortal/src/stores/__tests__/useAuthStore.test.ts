@@ -20,7 +20,7 @@ describe('useAuthStore', () => {
   it('should set access token and persist to localStorage', () => {
     const spy = vi.spyOn(Storage.prototype, 'setItem');
     useAuthStore.getState().setAccessToken('test-token');
-    
+
     expect(useAuthStore.getState().accessToken).toBe('test-token');
     expect(useAuthStore.getState().isAuthenticated).toBe(true);
     expect(spy).toHaveBeenCalledWith('nodeadmin_auth', expect.stringContaining('test-token'));
@@ -30,7 +30,7 @@ describe('useAuthStore', () => {
     useAuthStore.getState().setTenantId('tenant-1');
     expect(useAuthStore.getState().tenantId).toBe('tenant-1');
     expect(JSON.parse(localStorage.getItem('nodeadmin_auth')!)).toMatchObject({
-      tenantId: 'tenant-1'
+      tenantId: 'tenant-1',
     });
   });
 
@@ -41,9 +41,9 @@ describe('useAuthStore', () => {
       identity: {
         userId: 'user-1',
         tenantId: 'tenant-1',
-        roles: ['admin']
+        roles: ['admin'],
       },
-      name: 'Test User'
+      name: 'Test User',
     };
 
     setAuthFromLogin(mockData);

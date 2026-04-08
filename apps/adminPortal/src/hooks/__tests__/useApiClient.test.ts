@@ -9,7 +9,7 @@ vi.mock('@/lib/apiClient', () => {
   const mockGet = vi.fn();
   const mockPost = vi.fn();
   return {
-    ApiClient: vi.fn().mockImplementation(function() {
+    ApiClient: vi.fn().mockImplementation(function () {
       return {
         get: mockGet,
         post: mockPost,
@@ -31,11 +31,11 @@ describe('useApiClient', () => {
   });
 
   it('should initialize ApiClient with correct baseUrl and token getter', () => {
-    const { result } = renderHook(() => useApiClient());
+    renderHook(() => useApiClient());
 
     expect(ApiClient).toHaveBeenCalled();
-    const callArgs = vi.mocked(ApiClient).mock.calls[0][0];
-    expect(callArgs.getAccessToken()).toBe('mock-token');
+    const callArgs = vi.mocked(ApiClient).mock.calls[0]?.[0];
+    expect(callArgs?.getAccessToken?.()).toBe('mock-token');
     expect(useAuthStore.getState).toHaveBeenCalled();
   });
 

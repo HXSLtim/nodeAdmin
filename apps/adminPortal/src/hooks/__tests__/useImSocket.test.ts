@@ -12,7 +12,7 @@ vi.mock('socket.io-client', () => {
     disconnect: vi.fn(),
     io: {
       on: vi.fn(),
-    }
+    },
   };
   return {
     io: vi.fn(() => mSocket),
@@ -44,7 +44,7 @@ describe('useImSocket', () => {
     renderHook(() => useImSocket(mockOptions));
     const mSocket = (io as any).mock.results[0].value;
 
-    const findHandler = (evt: string, emitter: any = mSocket) => 
+    const findHandler = (evt: string, emitter: any = mSocket) =>
       emitter.on.mock.calls.find((call: any) => call[0] === evt)[1];
 
     // Trigger events
