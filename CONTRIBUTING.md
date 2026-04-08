@@ -64,6 +64,13 @@ npx audit-ci --config audit-ci.jsonc
 node scripts/checkAuditAllowlistExpiry.cjs
 ```
 
+If you intentionally change the OpenAPI contract, refresh the checked-in snapshot before opening the PR:
+
+```bash
+UPDATE_OPENAPI_SNAPSHOT=1 npm run test:coreApi -- --run apps/coreApi/src/__tests__/contract/openapiSnapshot.spec.ts
+npm run test:coreApi -- --run apps/coreApi/src/__tests__/contract/openapiSnapshot.spec.ts
+```
+
 ## Coding conventions
 
 These are enforced by ESLint/Prettier and/or reviewed manually. The full reference is in [CLAUDE.md](CLAUDE.md); the most commonly-tripped rules:

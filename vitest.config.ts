@@ -6,7 +6,11 @@ export default defineConfig({
       'apps/coreApi/src/__tests__/integration/**/*.integration.test.ts',
       'apps/coreApi/src/infrastructure/database/multiTenantIsolation.test.ts',
     ],
-    include: ['apps/coreApi/src/**/*.test.ts', 'packages/*/src/**/*.test.ts'],
+    include: [
+      'apps/coreApi/src/**/*.test.ts',
+      'apps/coreApi/src/**/*.spec.ts',
+      'packages/*/src/**/*.test.ts',
+    ],
     globalSetup: ['apps/coreApi/src/__tests__/globalSetup.ts'],
   },
 });
