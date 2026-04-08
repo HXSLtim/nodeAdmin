@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/DistroCore/nodeAdmin/security/advisories/new
+    about: Please report security issues privately via GitHub Security Advisories. Do NOT open a public issue.
+  - name: Question or discussion
+    url: https://github.com/DistroCore/nodeAdmin/discussions
+    about: For design questions, usage help, or show-and-tell, use GitHub Discussions.

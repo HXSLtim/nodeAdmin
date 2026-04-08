@@ -1,0 +1,52 @@
+name: Feature request
+description: Suggest a framework-level improvement for nodeAdmin
+title: '[Feature] '
+labels: ['enhancement', 'needs-triage']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        nodeAdmin is scoped as a **framework** for building middle/back-office apps. Business-vertical features
+        (Agent services, domain-specific integrations, etc.) belong in downstream forks, not upstream.
+        Please confirm your request is framework-level before filing.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / motivation
+      description: What are you trying to do, and what is getting in the way today?
+      placeholder: 'When building a plugin that needs X, there is no way to Y without forking core.'
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: What should the framework do? If you have a rough API sketch, paste it here.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Other approaches you evaluated and why they did not work.
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Is this framework-level?
+      description: See README "Why nodeAdmin" for scope boundaries.
+      options:
+        - 'Yes — this improves DX, stability, or extensibility for all forks'
+        - "I'm not sure — please help me decide"
+        - 'No — this is specific to my business (belongs in my fork)'
+    validations:
+      required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional context
+      description: Links, prior art, related issues, willingness to contribute a PR.

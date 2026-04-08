@@ -1,0 +1,94 @@
+name: Bug report
+description: Report a reproducible defect in nodeAdmin
+title: '[Bug] '
+labels: ['bug', 'needs-triage']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug. Please fill out the sections below so we can reproduce and fix it quickly.
+
+        **Before filing:**
+        - Search existing issues — your bug may already be tracked.
+        - If this is a security vulnerability, **stop** and follow [SECURITY.md](https://github.com/DistroCore/nodeAdmin/blob/master/SECURITY.md) instead.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: A clear, one-paragraph description of the bug.
+      placeholder: 'When I do X on the conversation list, the app returns a 500 instead of the expected 404.'
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Minimal steps we can follow to see the bug ourselves.
+      placeholder: |
+        1. `npm run infra:up && npm run dev:api`
+        2. POST /api/v1/... with body `{...}`
+        3. Observe response
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Include error messages, stack traces, and relevant log snippets (scrub secrets first).
+      render: shell
+    validations:
+      required: true
+
+  - type: input
+    id: commit
+    attributes:
+      label: Commit / version
+      description: Output of `git rev-parse --short HEAD` or the tag/branch you tested.
+      placeholder: 'e.g. 4a21e1e or master@2026-04-08'
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected area
+      multiple: true
+      options:
+        - coreApi (backend)
+        - adminPortal (frontend)
+        - shared-types
+        - infra / docker-compose
+        - CI / GitHub Actions
+        - docs
+        - plugin marketplace
+        - other
+    validations:
+      required: true
+
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment
+      description: OS, Node version, Docker version, anything unusual.
+      placeholder: |
+        - OS: Ubuntu 24.04 / macOS 15 / Windows 11 + WSL2
+        - Node: 22.x
+        - Docker: 27.x
+    validations:
+      required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional context
+      description: Screenshots, traces, related issues, suspected root cause.
