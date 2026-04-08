@@ -1,0 +1,1262 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/v1/auth/register": {
+      "post": {
+        "operationId": "AuthController_register",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [],
+        "summary": "Register a new user",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "operationId": "AuthController_login",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [],
+        "summary": "Login with email and password",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "operationId": "AuthController_refresh",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [],
+        "summary": "Refresh access token",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/change-password": {
+      "post": {
+        "operationId": "AuthController_changePassword",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Change password for authenticated user",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/reset-password": {
+      "post": {
+        "operationId": "AuthController_resetPassword",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [],
+        "summary": "Reset password via email",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/dev-token": {
+      "post": {
+        "operationId": "AuthController_issueDevToken",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [],
+        "summary": "Issue a dev token (dev mode only)",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/sms/send": {
+      "post": {
+        "operationId": "AuthController_sendSms",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [],
+        "summary": "Send SMS verification code",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/login/sms": {
+      "post": {
+        "operationId": "AuthController_loginWithSms",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [],
+        "summary": "Login with SMS verification code",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/login/oauth/{provider}": {
+      "post": {
+        "operationId": "AuthController_loginWithOAuth",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [],
+        "summary": "Login with OAuth provider (github, google)",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/oauth-accounts": {
+      "get": {
+        "operationId": "AuthController_listOAuthAccounts",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List linked OAuth accounts",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/oauth-accounts/{provider}": {
+      "delete": {
+        "operationId": "AuthController_unlinkOAuthAccount",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Unlink an OAuth provider",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/health": {
+      "get": {
+        "operationId": "HealthController_getHealth",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [],
+        "summary": "Health check",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/api/v1/im/upload": {
+      "post": {
+        "operationId": "ImUploadController_upload",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Upload an image file for IM messages",
+        "tags": [
+          "im"
+        ]
+      }
+    },
+    "/api/v1/console/overview": {
+      "get": {
+        "operationId": "ConsoleController_getOverview",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get dashboard overview stats",
+        "tags": [
+          "console"
+        ]
+      }
+    },
+    "/api/v1/console/tenants": {
+      "get": {
+        "operationId": "ConsoleController_getTenants",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List tenants with role counts",
+        "tags": [
+          "console"
+        ]
+      }
+    },
+    "/api/v1/console/release-checks": {
+      "get": {
+        "operationId": "ConsoleController_getReleaseChecks",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get infrastructure release readiness checks",
+        "tags": [
+          "console"
+        ]
+      }
+    },
+    "/api/v1/console/conversations": {
+      "get": {
+        "operationId": "ConsoleController_getConversations",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List recent conversations",
+        "tags": [
+          "console"
+        ]
+      }
+    },
+    "/api/v1/console/permissions": {
+      "get": {
+        "operationId": "ConsoleController_getPermissions",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get permission map for given roles",
+        "tags": [
+          "console"
+        ]
+      }
+    },
+    "/api/v1/console/audit-logs": {
+      "get": {
+        "operationId": "ConsoleController_getAuditLogs",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Query audit logs with filtering and pagination",
+        "tags": [
+          "console"
+        ]
+      }
+    },
+    "/api/v1/console/recent-messages": {
+      "get": {
+        "operationId": "ConsoleController_getRecentMessages",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get globally recent messages for dashboard",
+        "tags": [
+          "console"
+        ]
+      }
+    },
+    "/api/v1/metrics": {
+      "get": {
+        "operationId": "MetricsController_getMetrics",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Get system metrics (CPU, memory, event loop)",
+        "tags": [
+          "metrics"
+        ]
+      }
+    },
+    "/api/v1/users": {
+      "get": {
+        "operationId": "UsersController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List users with pagination and search",
+        "tags": [
+          "users"
+        ]
+      },
+      "post": {
+        "operationId": "UsersController_create",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a new user",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/api/v1/users/{id}": {
+      "get": {
+        "operationId": "UsersController_findOne",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get user by ID",
+        "tags": [
+          "users"
+        ]
+      },
+      "patch": {
+        "operationId": "UsersController_update",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update a user",
+        "tags": [
+          "users"
+        ]
+      },
+      "delete": {
+        "operationId": "UsersController_remove",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete a user",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/api/v1/roles": {
+      "get": {
+        "operationId": "RolesController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List roles for a tenant",
+        "tags": [
+          "roles"
+        ]
+      },
+      "post": {
+        "operationId": "RolesController_create",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a new role",
+        "tags": [
+          "roles"
+        ]
+      }
+    },
+    "/api/v1/roles/{id}": {
+      "get": {
+        "operationId": "RolesController_findOne",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get role by ID",
+        "tags": [
+          "roles"
+        ]
+      },
+      "patch": {
+        "operationId": "RolesController_update",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update a role",
+        "tags": [
+          "roles"
+        ]
+      },
+      "delete": {
+        "operationId": "RolesController_remove",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete a role",
+        "tags": [
+          "roles"
+        ]
+      }
+    },
+    "/api/v1/permissions": {
+      "get": {
+        "operationId": "PermissionsController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List all permissions",
+        "tags": [
+          "permissions"
+        ]
+      }
+    },
+    "/api/v1/permissions/{module}": {
+      "get": {
+        "operationId": "PermissionsController_findByModule",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List permissions by module",
+        "tags": [
+          "permissions"
+        ]
+      }
+    },
+    "/api/v1/menus": {
+      "get": {
+        "operationId": "MenusController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List all menus",
+        "tags": [
+          "menus"
+        ]
+      },
+      "post": {
+        "operationId": "MenusController_create",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a new menu item",
+        "tags": [
+          "menus"
+        ]
+      }
+    },
+    "/api/v1/menus/role/{roleId}": {
+      "get": {
+        "operationId": "MenusController_getRoleMenus",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get menus assigned to a role",
+        "tags": [
+          "menus"
+        ]
+      },
+      "put": {
+        "operationId": "MenusController_setRoleMenus",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Set menus for a role",
+        "tags": [
+          "menus"
+        ]
+      }
+    },
+    "/api/v1/menus/user/{userId}": {
+      "get": {
+        "operationId": "MenusController_getUserMenus",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get menus visible to a user",
+        "tags": [
+          "menus"
+        ]
+      }
+    },
+    "/api/v1/menus/{id}": {
+      "get": {
+        "operationId": "MenusController_findOne",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get menu by ID",
+        "tags": [
+          "menus"
+        ]
+      },
+      "patch": {
+        "operationId": "MenusController_update",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update a menu item",
+        "tags": [
+          "menus"
+        ]
+      },
+      "delete": {
+        "operationId": "MenusController_remove",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete a menu item",
+        "tags": [
+          "menus"
+        ]
+      }
+    },
+    "/api/v1/tenants": {
+      "get": {
+        "operationId": "TenantsController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List all tenants",
+        "tags": [
+          "tenants"
+        ]
+      },
+      "post": {
+        "operationId": "TenantsController_create",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a new tenant",
+        "tags": [
+          "tenants"
+        ]
+      }
+    },
+    "/api/v1/tenants/{id}": {
+      "get": {
+        "operationId": "TenantsController_findOne",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get tenant by ID",
+        "tags": [
+          "tenants"
+        ]
+      },
+      "patch": {
+        "operationId": "TenantsController_update",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update a tenant",
+        "tags": [
+          "tenants"
+        ]
+      },
+      "delete": {
+        "operationId": "TenantsController_remove",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete a tenant",
+        "tags": [
+          "tenants"
+        ]
+      }
+    },
+    "/api/v1/modernizer/analyze": {
+      "get": {
+        "operationId": "ModernizerController_analyze",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Run code quality analysis",
+        "tags": [
+          "modernizer"
+        ]
+      }
+    },
+    "/api/v1/modernizer/docs": {
+      "get": {
+        "operationId": "ModernizerController_docs",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Generate API endpoint documentation",
+        "tags": [
+          "modernizer"
+        ]
+      }
+    },
+    "/api/v1/backlog/tasks": {
+      "get": {
+        "operationId": "TaskController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List tasks with pagination and filters",
+        "tags": [
+          "backlog"
+        ]
+      },
+      "post": {
+        "operationId": "TaskController_create",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a new task",
+        "tags": [
+          "backlog"
+        ]
+      }
+    },
+    "/api/v1/backlog/tasks/{id}": {
+      "get": {
+        "operationId": "TaskController_findOne",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get task by ID",
+        "tags": [
+          "backlog"
+        ]
+      },
+      "patch": {
+        "operationId": "TaskController_update",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update a task",
+        "tags": [
+          "backlog"
+        ]
+      },
+      "delete": {
+        "operationId": "TaskController_remove",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete a task",
+        "tags": [
+          "backlog"
+        ]
+      }
+    },
+    "/api/v1/backlog/sprints": {
+      "get": {
+        "operationId": "SprintController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List sprints with pagination and filters",
+        "tags": [
+          "backlog"
+        ]
+      },
+      "post": {
+        "operationId": "SprintController_create",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a new sprint",
+        "tags": [
+          "backlog"
+        ]
+      }
+    },
+    "/api/v1/backlog/sprints/{id}": {
+      "get": {
+        "operationId": "SprintController_findOne",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get sprint by ID",
+        "tags": [
+          "backlog"
+        ]
+      },
+      "patch": {
+        "operationId": "SprintController_update",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update a sprint",
+        "tags": [
+          "backlog"
+        ]
+      },
+      "delete": {
+        "operationId": "SprintController_remove",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete a sprint",
+        "tags": [
+          "backlog"
+        ]
+      }
+    },
+    "/api/v1/backlog/sprints/{id}/tasks": {
+      "post": {
+        "operationId": "SprintController_assignTasks",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Assign tasks to a sprint",
+        "tags": [
+          "backlog"
+        ]
+      }
+    },
+    "/api/v1/tenants/me/plugins": {
+      "get": {
+        "operationId": "PluginController_findMine",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List plugins enabled or configured for the current tenant",
+        "tags": [
+          "plugins"
+        ]
+      }
+    },
+    "/api/v1/admin/plugins": {
+      "get": {
+        "operationId": "AdminPluginController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List marketplace plugins for administrators",
+        "tags": [
+          "admin-plugins"
+        ]
+      }
+    },
+    "/api/v1/admin/plugins/{id}": {
+      "get": {
+        "operationId": "AdminPluginController_getDetails",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get plugin marketplace details",
+        "tags": [
+          "admin-plugins"
+        ]
+      },
+      "delete": {
+        "operationId": "AdminPluginController_remove",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Uninstall a marketplace plugin for the current tenant",
+        "tags": [
+          "admin-plugins"
+        ]
+      }
+    },
+    "/api/v1/admin/plugins/install": {
+      "post": {
+        "operationId": "AdminPluginController_install",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Install a marketplace plugin for the current tenant",
+        "tags": [
+          "admin-plugins"
+        ]
+      }
+    },
+    "/api/v1/admin/plugins/{id}/update": {
+      "post": {
+        "operationId": "AdminPluginController_update",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update an installed marketplace plugin",
+        "tags": [
+          "admin-plugins"
+        ]
+      }
+    },
+    "/api/v1/admin/plugins/publish": {
+      "post": {
+        "operationId": "AdminPluginController_publish",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Publish a marketplace plugin version",
+        "tags": [
+          "admin-plugins"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "nodeAdmin API",
+    "description": "Enterprise multi-tenant SaaS middleware platform API",
+    "version": "1.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http"
+      }
+    },
+    "schemas": {}
+  }
+}
