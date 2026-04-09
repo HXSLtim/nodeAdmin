@@ -6,6 +6,11 @@
 - `docs/governance/decisionLog.md`
 - `docs/delivery/roadmapPlan.md`
 
+## Governance
+- `docs/governance/docGovernance.md`
+- `docs/governance/docMaintenance.md`
+- `docs/governance/harnessGapChecklist.md`
+
 ## Delivery and Execution
 - `docs/delivery/brainstormingResults.md`
 - `docs/delivery/implementationTeamCharter.md`
@@ -34,4 +39,4 @@
 - `docs/superpowers/specs/2026-03-19-antd-pro-frontend-design.md`
 - `docs/superpowers/specs/2026-03-19-product-management-design.md`
 
-Last updated: 2026-03-28
+Last updated: 2026-04-10
