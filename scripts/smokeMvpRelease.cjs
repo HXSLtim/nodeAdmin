@@ -54,7 +54,7 @@ async function runTest(name, fn) {
     return true;
   } catch (err) {
     const elapsed = ((Date.now() - start) / 1000).toFixed(1);
-    results.push({ name, passed: false, elapsed });
+    results.push({ name, passed: false, elapsed, error: err.message });
     process.stdout.write(`  ${RED}✗ ${name}${RESET} (${elapsed}s) — ${err.message}\n`);
     return false;
   }
@@ -116,6 +116,7 @@ function checkSocketIOHandshake(host, port) {
 }
 
 async function main() {
+  const overallStart = Date.now();
   process.stdout.write(`\n${BOLD}${CYAN}═══ MVP Release Smoke Tests ═══${RESET}\n\n`);
 
   // Wait for services
@@ -126,6 +127,7 @@ async function main() {
   } catch {
     process.stdout.write(`  ${RED}✗ Backend not reachable — skipping dependent tests${RESET}\n\n`);
     printSummary();
+    printConclusion(overallStart);
     process.exit(1);
   }
 
@@ -175,6 +177,7 @@ async function main() {
     })) && allPassed;
 
   printSummary();
+  printConclusion(overallStart);
   process.exit(allPassed ? 0 : 1);
 }
 
@@ -189,6 +192,35 @@ function printSummary() {
   if (failed > 0) process.stdout.write(`, ${RED}${failed} failed${RESET}`);
   process.stdout.write('\n');
   process.stdout.write(`${BOLD}═══════════════════════════════════════${RESET}\n`);
+}
+
+function printConclusion(overallStart) {
+  const total = results.length;
+  const passed = results.filter((r) => r.passed).length;
+  const failedResults = results.filter((r) => !r.passed);
+  const failed = failedResults.length;
+  const result = failed === 0 ? 'PASS' : 'FAIL';
+  const durationSeconds = ((Date.now() - overallStart) / 1000).toFixed(1);
+  const timestamp = new Date().toISOString();
+
+  process.stdout.write('\n## CONCLUSION\n');
+  process.stdout.write(`result: ${result}\n`);
+  process.stdout.write(`total: ${total}\n`);
+  process.stdout.write(`passed: ${passed}\n`);
+  process.stdout.write(`failed: ${failed}\n`);
+  process.stdout.write(`duration_seconds: ${durationSeconds}\n`);
+  process.stdout.write(`timestamp: ${timestamp}\n`);
+
+  if (failed === 0) {
+    process.stdout.write('failures: []\n');
+    return;
+  }
+
+  process.stdout.write('failures:\n');
+  for (const failure of failedResults) {
+    process.stdout.write(`  - test_name: ${JSON.stringify(failure.name)}\n`);
+    process.stdout.write(`    error: ${JSON.stringify(failure.error || 'Unknown error')}\n`);
+  }
 }
 
 main().catch((err) => {
