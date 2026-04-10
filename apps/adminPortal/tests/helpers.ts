@@ -20,4 +20,18 @@ export async function login(page: Page) {
 
   await page.getByRole('button', { name: 'Login', exact: true }).click();
   await page.waitForURL(/\/overview/, { timeout: 15_000 });
+
+  // Wait for the main layout to be fully rendered (sidebar, header, content)
+  // This prevents race conditions when tests navigate immediately after login
+  await expect(page.getByRole('main')).toBeVisible({ timeout: 10_000 });
+}
+
+/**
+ * Navigate to a page after login, waiting for the main content area to be
+ * ready. Use this instead of `page.goto()` after `login()` to avoid races.
+ */
+export async function navigateAfterLogin(page: Page, path: string) {
+  await page.goto(path);
+  // Wait for the route's main content to render ( SPA navigation)
+  await expect(page.getByRole('main')).toBeVisible({ timeout: 10_000 });
 }

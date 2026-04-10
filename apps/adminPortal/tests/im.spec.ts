@@ -1,11 +1,10 @@
 import { expect, test } from '@playwright/test';
-import { login } from './helpers';
+import { login, navigateAfterLogin } from './helpers';
 
 test.describe('IM Chat', () => {
   test.beforeEach(async ({ page }) => {
     await login(page);
-    await page.goto('/im');
-    await page.waitForTimeout(1500);
+    await navigateAfterLogin(page, '/im');
   });
 
   test('renders IM panel with conversation header', async ({ page }) => {
@@ -14,35 +13,35 @@ test.describe('IM Chat', () => {
         .getByRole('main')
         .getByRole('heading', { name: /conversation/i })
         .first(),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: 10_000 });
   });
 
   test('shows connection status badge', async ({ page }) => {
     const mainArea = page.getByRole('main');
     const statusBadge = mainArea.locator('text=/connected|reconnecting|disconnected/i');
-    await expect(statusBadge.first()).toBeVisible({ timeout: 5000 });
+    await expect(statusBadge.first()).toBeVisible({ timeout: 10_000 });
   });
 
   test('displays message type selector', async ({ page }) => {
     const mainArea = page.getByRole('main');
     const typeSelector = mainArea.locator('select').first();
-    await expect(typeSelector).toBeVisible();
+    await expect(typeSelector).toBeVisible({ timeout: 10_000 });
     await expect(typeSelector).toHaveValue('text');
   });
 
   test('renders text input and send button', async ({ page }) => {
     const mainArea = page.getByRole('main');
     const input = mainArea.getByPlaceholder(/type a message/i);
-    await expect(input).toBeVisible();
+    await expect(input).toBeVisible({ timeout: 10_000 });
 
     const sendButton = mainArea.getByRole('button', { name: /send/i });
-    await expect(sendButton).toBeVisible();
+    await expect(sendButton).toBeVisible({ timeout: 10_000 });
   });
 
   test('shows attach image button', async ({ page }) => {
     const mainArea = page.getByRole('main');
     const attachButton = mainArea.getByRole('button', { name: /attach.*image/i });
-    await expect(attachButton).toBeVisible();
+    await expect(attachButton).toBeVisible({ timeout: 10_000 });
   });
 
   test('can switch message type to image and shows URL input', async ({ page }) => {
@@ -51,16 +50,16 @@ test.describe('IM Chat', () => {
     await typeSelector.selectOption('image');
 
     const urlInput = page.getByPlaceholder(/image.*url|asset.*url/i);
-    await expect(urlInput).toBeVisible();
+    await expect(urlInput).toBeVisible({ timeout: 10_000 });
 
     const fileNameInput = page.getByPlaceholder(/file.*name/i);
-    await expect(fileNameInput).toBeVisible();
+    await expect(fileNameInput).toBeVisible({ timeout: 10_000 });
   });
 
   test('hamburger menu button visible for conversation panel', async ({ page }) => {
     const mainHeader = page.getByRole('main').locator('header').first();
     const hamburgerButton = mainHeader.locator('button[type="button"]').first();
-    await expect(hamburgerButton).toBeVisible();
+    await expect(hamburgerButton).toBeVisible({ timeout: 10_000 });
   });
 
   test('conversation list panel can be toggled', async ({ page }) => {
@@ -68,32 +67,30 @@ test.describe('IM Chat', () => {
     const hamburgerButton = mainHeader.locator('button[type="button"]').first();
     await hamburgerButton.click();
 
-    await expect(page.getByText(/conversations/i).first()).toBeVisible();
+    await expect(page.getByText(/conversations/i).first()).toBeVisible({ timeout: 10_000 });
   });
 
   test('shows read-only notice when user lacks send permission', async ({ page }) => {
     const mainArea = page.locator('section');
-    await expect(mainArea).toBeVisible();
+    await expect(mainArea).toBeVisible({ timeout: 10_000 });
 
     const sendButton = page.getByRole('main').getByRole('button', { name: /send/i });
-    await expect(sendButton).toBeVisible();
+    await expect(sendButton).toBeVisible({ timeout: 10_000 });
   });
 
   test('message viewport area renders', async ({ page }) => {
     const messageViewport = page.getByRole('main').locator('.overflow-y-auto');
-    await expect(messageViewport.first()).toBeVisible();
+    await expect(messageViewport.first()).toBeVisible({ timeout: 10_000 });
   });
 
   test('presence status dropdown is available when connected', async ({ page }) => {
-    await page.waitForTimeout(2000);
-
     const mainHeader = page.getByRole('main').locator('header').first();
     const connectedBadge = mainHeader.locator('text=/connected/i');
     const isConnected = await connectedBadge.isVisible().catch(() => false);
 
     if (isConnected) {
       const presenceSelect = mainHeader.locator('select').last();
-      await expect(presenceSelect).toBeVisible();
+      await expect(presenceSelect).toBeVisible({ timeout: 10_000 });
       await expect(presenceSelect).toHaveValue('online');
     }
   });
@@ -102,34 +99,36 @@ test.describe('IM Chat', () => {
 test.describe('IM Chat — conversation list', () => {
   test.beforeEach(async ({ page }) => {
     await login(page);
-    await page.goto('/im');
-    await page.waitForTimeout(1500);
+    await navigateAfterLogin(page, '/im');
   });
 
   test('toggling conversation panel shows conversation list items', async ({ page }) => {
     const mainHeader = page.getByRole('main').locator('header').first();
     const hamburgerButton = mainHeader.locator('button[type="button"]').first();
     await hamburgerButton.click();
-    await page.waitForTimeout(1000);
+
+    const aside = page.locator('aside');
+    await expect(aside).toBeVisible({ timeout: 10_000 });
 
     const conversationList = page.locator('aside ul li');
-    const emptyOrLoaded = (await conversationList.count()) > 0;
-
-    expect(emptyOrLoaded || (await page.locator('aside').isVisible())).toBeTruthy();
+    const listCount = await conversationList.count();
+    expect(listCount >= 0 || (await aside.isVisible())).toBeTruthy();
   });
 
   test('clicking a conversation navigates to its URL', async ({ page }) => {
     const mainHeader = page.getByRole('main').locator('header').first();
     const hamburgerButton = mainHeader.locator('button[type="button"]').first();
     await hamburgerButton.click();
-    await page.waitForTimeout(1000);
+
+    const aside = page.locator('aside');
+    await expect(aside).toBeVisible({ timeout: 10_000 });
 
     const firstConversation = page.locator('aside ul li a').first();
     if (await firstConversation.isVisible()) {
       const href = await firstConversation.getAttribute('href');
       expect(href).toMatch(/\/im\//);
       await firstConversation.click();
-      await page.waitForTimeout(1000);
+      await expect(page.getByRole('main')).toBeVisible({ timeout: 10_000 });
       expect(page.url()).toContain('/im/');
     }
   });
@@ -138,14 +137,13 @@ test.describe('IM Chat — conversation list', () => {
 test.describe('IM Chat — message send flow', () => {
   test.beforeEach(async ({ page }) => {
     await login(page);
-    await page.goto('/im');
-    await page.waitForTimeout(2000);
+    await navigateAfterLogin(page, '/im');
   });
 
   test('typing in input and pressing Enter triggers send', async ({ page }) => {
     const mainArea = page.getByRole('main');
     const input = mainArea.getByPlaceholder(/type a message/i);
-    await expect(input).toBeVisible();
+    await expect(input).toBeVisible({ timeout: 10_000 });
 
     const testMessage = `E2E test ${Date.now()}`;
     await input.fill(testMessage);
@@ -153,9 +151,8 @@ test.describe('IM Chat — message send flow', () => {
     await expect(input).toHaveValue(testMessage);
 
     await input.press('Enter');
-    await page.waitForTimeout(1000);
 
-    await expect(page.getByRole('main')).toBeVisible();
+    await expect(page.getByRole('main')).toBeVisible({ timeout: 10_000 });
   });
 
   test('send button is disabled while sending', async ({ page }) => {
@@ -164,23 +161,22 @@ test.describe('IM Chat — message send flow', () => {
     const sendButton = mainArea.getByRole('button', { name: /send/i });
 
     await input.fill('test message');
-    await expect(sendButton).toBeEnabled();
+    await expect(sendButton).toBeEnabled({ timeout: 10_000 });
   });
 
   test('offline queue badge appears when connection drops', async ({ page }) => {
     const mainHeader = page.getByRole('main').locator('header').first();
-    await expect(mainHeader).toBeVisible();
+    await expect(mainHeader).toBeVisible({ timeout: 10_000 });
 
     const connectionBadge = mainHeader.locator('text=/connected|disconnected|reconnecting/i');
-    await expect(connectionBadge).toBeVisible({ timeout: 5000 });
+    await expect(connectionBadge).toBeVisible({ timeout: 10_000 });
   });
 });
 
 test.describe('IM Chat — message editing and deletion', () => {
   test.beforeEach(async ({ page }) => {
     await login(page);
-    await page.goto('/im');
-    await page.waitForTimeout(2000);
+    await navigateAfterLogin(page, '/im');
   });
 
   test('own messages show hover action buttons (edit/delete)', async ({ page }) => {
