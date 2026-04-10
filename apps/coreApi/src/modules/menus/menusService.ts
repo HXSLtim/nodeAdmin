@@ -200,11 +200,26 @@ export class MenusService {
     return this.buildTree(result.rows);
   }
 
+  private toMenuItem(row: MenuRow): MenuItem {
+    return {
+      id: row.id,
+      parentId: row.parent_id,
+      name: row.name,
+      path: row.path,
+      icon: row.icon,
+      sortOrder: row.sort_order,
+      permissionCode: row.permission_code,
+      isVisible: row.is_visible,
+      createdAt: row.created_at,
+      children: [],
+    };
+  }
+
   private buildTree(rows: MenuRow[]): MenuItem[] {
     const map = new Map<string, MenuItem>();
     const roots: MenuItem[] = [];
     for (const row of rows) {
-      map.set(row.id, { ...row, children: [] });
+      map.set(row.id, this.toMenuItem(row));
     }
     for (const row of rows) {
       const node = map.get(row.id)!;
@@ -219,7 +234,7 @@ export class MenusService {
 
   private sortTree(nodes: MenuItem[]): MenuItem[] {
     nodes.sort(
-      (left, right) => left.sort_order - right.sort_order || left.created_at.getTime() - right.created_at.getTime(),
+      (left, right) => left.sortOrder - right.sortOrder || left.createdAt.getTime() - right.createdAt.getTime(),
     );
 
     for (const node of nodes) {
