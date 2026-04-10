@@ -27,7 +27,14 @@ export class JwtAuthGuard implements CanActivate {
       .getRequest<{ headers: Record<string, string>; url: string; user?: AuthIdentity }>();
 
     const pathname = request.url.split('?')[0];
-    if (EXCLUDED_PATHS.some((path) => pathname === path || pathname.startsWith(path + '/'))) {
+    if (
+      EXCLUDED_PATHS.some((path) => {
+        if (pathname === path) return true;
+        // /api/v1/tenants is exact-match only — sub-routes like /tenants/me/plugins require auth
+        if (path === '/api/v1/tenants') return false;
+        return pathname.startsWith(path + '/');
+      })
+    ) {
       return true;
     }
 

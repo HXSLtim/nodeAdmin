@@ -241,7 +241,7 @@ export function PluginDetailPage() {
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Released At</span>
-                <span>{new Date(data.createdAt).toLocaleDateString()}</span>
+                <span>{data.createdAt ? new Date(data.createdAt).toLocaleDateString() : '-'}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Visibility</span>

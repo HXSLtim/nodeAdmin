@@ -103,7 +103,7 @@ export function PluginMarketplacePage() {
             <PluginCardSkeleton key={i} />
           ))}
         </div>
-      ) : data?.plugins.length === 0 ? (
+      ) : !data?.plugins?.length ? (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
           <div className="rounded-full bg-muted p-3 text-muted-foreground">
             <NavIcon name="search" />
@@ -126,7 +126,7 @@ export function PluginMarketplacePage() {
       ) : (
         <>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {data?.plugins.map((plugin) => (
+            {data?.plugins?.map((plugin) => (
               <Card key={plugin.id} className="flex flex-col transition-all hover:shadow-md">
                 <CardHeader>
                   <div className="flex items-start justify-between">

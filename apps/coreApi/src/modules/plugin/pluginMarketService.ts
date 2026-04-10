@@ -117,7 +117,7 @@ export class PluginMarketService {
     );
 
     return {
-      items: rowsResult.rows.map((row) => ({
+      plugins: rowsResult.rows.map((row) => ({
         authorName: row.author_name ?? null,
         description: row.description,
         displayName: row.display_name,
