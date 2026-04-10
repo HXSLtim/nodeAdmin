@@ -20,12 +20,39 @@ export const conversations = pgTable(
   'conversations',
   {
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    creatorId: varchar('creator_id', { length: 128 }),
     id: varchar('id', { length: 128 }).notNull(),
     tenantId: varchar('tenant_id', { length: 64 }).notNull(),
+    title: varchar('title', { length: 200 }),
+    type: varchar('type', { length: 16 }).notNull().default('dm'),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => ({
     conversationsTenantCreatedIdx: index('conversations_tenant_created_idx').on(table.tenantId, table.createdAt),
     pk: primaryKey({ columns: [table.tenantId, table.id], name: 'conversations_pk' }),
+  }),
+);
+
+export const conversationMembers = pgTable(
+  'conversation_members',
+  {
+    conversationId: varchar('conversation_id', { length: 128 }).notNull(),
+    joinedAt: timestamp('joined_at', { withTimezone: true }).defaultNow().notNull(),
+    role: varchar('role', { length: 16 }).notNull().default('member'),
+    tenantId: varchar('tenant_id', { length: 64 }).notNull(),
+    userId: varchar('user_id', { length: 128 }).notNull(),
+  },
+  (table) => ({
+    conversationMembersConversationIdx: index('conversation_members_conversation_idx').on(
+      table.tenantId,
+      table.conversationId,
+    ),
+    conversationMembersTenantUserIdx: index('conversation_members_tenant_user_idx').on(
+      table.tenantId,
+      table.userId,
+      table.joinedAt,
+    ),
+    pk: primaryKey({ columns: [table.tenantId, table.conversationId, table.userId], name: 'conversation_members_pk' }),
   }),
 );
 

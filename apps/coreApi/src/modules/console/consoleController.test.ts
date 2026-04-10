@@ -17,7 +17,7 @@ function createMockConnectionRegistry() {
 
 function createMockConversationRepository() {
   return {
-    listByTenant: vi.fn(),
+    listByMember: vi.fn(),
   };
 }
 
@@ -195,13 +195,16 @@ describe('ConsoleController', () => {
   });
 
   it('returns recent conversations for the authenticated tenant when query tenantId is omitted', async () => {
-    conversationRepository.listByTenant.mockResolvedValue([
+    conversationRepository.listByMember.mockResolvedValue([
       {
         conversationId: 'conversation-1',
         createdAt: new Date('2026-03-30T09:00:00.000Z'),
+        creatorId: 'user-1',
         lastMessageAt: new Date('2026-03-30T10:00:00.000Z'),
         tenantId: 'tenant-9',
         title: 'General',
+        type: 'group',
+        updatedAt: new Date('2026-03-30T10:00:00.000Z'),
       },
     ]);
 
@@ -212,13 +215,15 @@ describe('ConsoleController', () => {
       userId: 'user-1',
     });
 
-    expect(conversationRepository.listByTenant).toHaveBeenCalledWith('tenant-9', 50);
+    expect(conversationRepository.listByMember).toHaveBeenCalledWith('tenant-9', 'user-1', 50);
     expect(result).toEqual({
       rows: [
         {
           id: 'conversation-1',
           lastMessagePreview: '2026-03-30T10:00:00.000Z',
           name: 'General',
+          title: 'General',
+          type: 'group',
           unreadCount: 0,
         },
       ],
@@ -226,7 +231,7 @@ describe('ConsoleController', () => {
   });
 
   it('allows an explicit tenantId query for conversations', async () => {
-    conversationRepository.listByTenant.mockResolvedValue([]);
+    conversationRepository.listByMember.mockResolvedValue([]);
 
     await controller.getConversations(
       {
@@ -238,7 +243,7 @@ describe('ConsoleController', () => {
       'tenant-query',
     );
 
-    expect(conversationRepository.listByTenant).toHaveBeenCalledWith('tenant-query', 50);
+    expect(conversationRepository.listByMember).toHaveBeenCalledWith('tenant-query', 'user-1', 50);
   });
 
   it('returns the permission map for parsed role input', () => {

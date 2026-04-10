@@ -2,7 +2,7 @@ import * as React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useIntl } from 'react-intl';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import type { ImMessageType, ImPresenceStatus } from '@nodeadmin/shared-types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -24,6 +24,7 @@ import { usePermissionStore } from '@/stores/usePermissionStore';
 import { useMessageStore } from '@/stores/useMessageStore';
 import { useSocketStore } from '@/stores/useSocketStore';
 import { useUiStore } from '@/stores/useUiStore';
+import { CreateConversationDialog } from './createConversationDialog';
 import { ImagePreviewOverlay } from './imagePreviewOverlay';
 
 // --- Sub-components ---
@@ -141,6 +142,8 @@ interface TokenIssueResponse {
 interface ConversationListResponse {
   rows: Array<{
     id: string;
+    type: 'dm' | 'group';
+    title: string | null;
     lastMessagePreview: string;
     name: string;
     unreadCount: number;
@@ -186,6 +189,7 @@ function readRolesFromEnv(): string[] {
 
 export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX.Element {
   const { formatMessage: t } = useIntl();
+  const navigate = useNavigate();
   const connectionState = useSocketStore((state) => state.connectionState);
   const setConnectionState = useSocketStore((state) => state.setConnectionState);
   const messages = useMessageStore((state) => state.messages);
@@ -218,6 +222,7 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
   const [dragOver, setDragOver] = useState(false);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
 
   const messageViewportRef = useRef<HTMLDivElement | null>(null);
   const typingIdleTimerRef = useRef<number | null>(null);
@@ -829,26 +834,41 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
           <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
             {t({ id: 'im.conversations' })}
           </h3>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 w-6 p-0 hover:bg-muted"
-            onClick={() => conversationQuery.refetch()}
-          >
-            <svg
-              className={`h-3.5 w-3.5 ${conversationQuery.isFetching ? 'animate-spin' : ''}`}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+          <div className="flex items-center gap-1">
+            <Button
+              aria-label={t({ id: 'im.createConversation' })}
+              className="h-6 w-6 p-0 hover:bg-muted"
+              onClick={() => setShowCreateDialog(true)}
+              size="sm"
+              type="button"
+              variant="ghost"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
-          </Button>
+              <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path d="M12 5v14M5 12h14" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0 hover:bg-muted"
+              onClick={() => conversationQuery.refetch()}
+              type="button"
+            >
+              <svg
+                className={`h-3.5 w-3.5 ${conversationQuery.isFetching ? 'animate-spin' : ''}`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
+              </svg>
+            </Button>
+          </div>
         </div>
 
         {conversationQuery.isLoading ? (
@@ -862,37 +882,86 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
         <ul className="space-y-1 overflow-y-auto max-h-[calc(100%-5rem)]">
           {(conversationQuery.data?.rows ?? []).map((conversation) => (
             <li key={conversation.id}>
-              <NavLink
-                className={({ isActive }) =>
-                  className(
-                    'block border-l-4 py-3 px-4 transition-all hover:bg-muted/80',
-                    isActive
-                      ? 'bg-background border-primary text-primary shadow-sm font-bold'
-                      : 'bg-transparent border-transparent text-muted-foreground font-medium',
-                  )
-                }
-                to={`/im/${conversation.id}`}
-              >
-                <div className="mb-1 flex items-center justify-between gap-2">
-                  <span className="truncate text-sm">{conversation.name}</span>
-                  {conversation.unreadCount > 0 && (
-                    <Badge
-                      variant="destructive"
-                      className="h-5 min-w-5 justify-center px-1 text-[0.625rem] animate-in zoom-in"
+              {(() => {
+                const isGroup = conversation.type === 'group';
+                const conversationLabel = isGroup
+                  ? conversation.title?.trim() || t({ id: 'im.createConversation.group' })
+                  : conversation.name.trim() || t({ id: 'im.createConversation.dm' });
+
+                return (
+                  <NavLink
+                    className={({ isActive }) =>
+                      className(
+                        'block border-l-4 py-3 px-4 transition-all hover:bg-muted/80',
+                        isActive
+                          ? 'bg-background border-primary text-primary shadow-sm font-bold'
+                          : 'bg-transparent border-transparent text-muted-foreground font-medium',
+                      )
+                    }
+                    to={`/im/${conversation.id}`}
+                  >
+                    <div className="mb-1 flex items-center justify-between gap-2">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <span
+                          className={className(
+                            'flex h-6 w-6 shrink-0 items-center justify-center rounded-full border',
+                            isGroup
+                              ? 'border-primary/20 bg-primary/10 text-primary'
+                              : 'border-border bg-muted/50 text-muted-foreground',
+                          )}
+                        >
+                          {isGroup ? (
+                            <svg
+                              className="h-3.5 w-3.5"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                d="M17 21v-2a4 4 0 00-4-4H7a4 4 0 00-4 4v2m18 0v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75M13 7a4 4 0 11-8 0 4 4 0 018 0zm11 14v-2a4 4 0 00-3-3.87"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                            </svg>
+                          ) : (
+                            <svg
+                              className="h-3.5 w-3.5"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                d="M8 10h8M8 14h5m-7 7l3.5-3H19a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v13l3-2z"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                            </svg>
+                          )}
+                        </span>
+                        <span className="truncate text-sm">{conversationLabel}</span>
+                      </div>
+                      {conversation.unreadCount > 0 && (
+                        <Badge
+                          variant="destructive"
+                          className="h-5 min-w-5 justify-center px-1 text-[0.625rem] animate-in zoom-in"
+                        >
+                          {conversation.unreadCount}
+                        </Badge>
+                      )}
+                    </div>
+                    <p
+                      className={className(
+                        'truncate text-[0.6875rem] opacity-70',
+                        conversation.lastMessagePreview ? 'italic' : 'opacity-40',
+                      )}
                     >
-                      {conversation.unreadCount}
-                    </Badge>
-                  )}
-                </div>
-                <p
-                  className={className(
-                    'truncate text-[0.6875rem] opacity-70',
-                    conversation.lastMessagePreview ? 'italic' : 'opacity-40',
-                  )}
-                >
-                  {conversation.lastMessagePreview || t({ id: 'im.noMessages' })}
-                </p>
-              </NavLink>
+                      {conversation.lastMessagePreview || t({ id: 'im.noMessages' })}
+                    </p>
+                  </NavLink>
+                );
+              })()}
             </li>
           ))}
         </ul>
@@ -1376,6 +1445,16 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
             </p>
           </div>
         )}
+
+        <CreateConversationDialog
+          open={showCreateDialog}
+          onClose={() => setShowCreateDialog(false)}
+          onCreated={(id) => {
+            setShowCreateDialog(false);
+            void conversationQuery.refetch();
+            navigate(`/im/${id}`);
+          }}
+        />
       </div>
     </section>
   );

@@ -53,7 +53,7 @@ describe('PluginMarketService', () => {
       (service as unknown as { pool: typeof mockPool }).pool = mockPool;
 
       await expect(service.listMarketplacePlugins(1, 20, 'kan')).resolves.toEqual({
-        items: [
+        plugins: [
           {
             authorName: 'NodeAdmin Team',
             description: 'Board view',

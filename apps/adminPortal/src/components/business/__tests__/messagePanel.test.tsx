@@ -18,6 +18,7 @@ const mockSetUserId = vi.fn();
 const mockSetConnectionState = vi.fn();
 const mockSetConversationPanelOpen = vi.fn();
 const mockToggleConversationPanel = vi.fn();
+const mockNavigate = vi.fn();
 
 const permissionFlags = {
   canSend: true,
@@ -32,6 +33,7 @@ vi.mock('react-intl', () => ({
 
 vi.mock('react-router-dom', () => ({
   NavLink: ({ children, to }: { children: React.ReactNode; to: string }) => <a href={to}>{children}</a>,
+  useNavigate: () => mockNavigate,
 }));
 
 vi.mock('@/hooks/useApiClient', () => ({
@@ -182,9 +184,12 @@ describe('MessagePanel', () => {
       rows: [
         {
           id: 'conversation-1',
+          type: 'group',
+          title: 'General',
           lastMessagePreview: 'Latest message',
           name: 'General',
           unreadCount: 2,
+          updatedAt: '2026-04-11T00:00:00.000Z',
         },
       ],
     });

@@ -205,6 +205,84 @@
         ]
       }
     },
+    "/api/v1/im/conversations": {
+      "post": {
+        "operationId": "ImConversationController_createConversation",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a conversation or return an existing DM",
+        "tags": [
+          "im"
+        ]
+      },
+      "get": {
+        "operationId": "ImConversationController_listConversations",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List conversations for the current user",
+        "tags": [
+          "im"
+        ]
+      }
+    },
+    "/api/v1/im/conversations/search-users": {
+      "get": {
+        "operationId": "ImConversationController_searchUsers",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Search users within the current tenant for conversation creation",
+        "tags": [
+          "im"
+        ]
+      }
+    },
+    "/api/v1/im/conversations/{id}/members": {
+      "get": {
+        "operationId": "ImConversationController_listMembers",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List members of a conversation for an authorized member",
+        "tags": [
+          "im"
+        ]
+      }
+    },
     "/api/v1/im/upload": {
       "post": {
         "operationId": "ImUploadController_upload",

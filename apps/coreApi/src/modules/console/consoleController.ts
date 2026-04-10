@@ -19,6 +19,8 @@ eventLoopLagHistogram.enable();
 interface ConversationListResponse {
   id: string;
   name: string;
+  title: string | null;
+  type: 'dm' | 'group';
   lastMessagePreview: string;
   unreadCount: number;
 }
@@ -173,12 +175,14 @@ export class ConsoleController {
     @Query('tenantId') tenantId?: string,
   ): Promise<{ rows: ConversationListResponse[] }> {
     const effectiveTenantId = tenantId ?? identity.tenantId;
-    const rows = await this.conversationRepository.listByTenant(effectiveTenantId, 50);
+    const rows = await this.conversationRepository.listByMember(effectiveTenantId, identity.userId, 50);
 
     return {
       rows: rows.map((row) => ({
         id: row.conversationId,
-        name: row.title,
+        name: row.title ?? row.conversationId,
+        title: row.title,
+        type: row.type,
         lastMessagePreview: row.lastMessageAt?.toISOString() ?? '',
         unreadCount: 0,
       })),

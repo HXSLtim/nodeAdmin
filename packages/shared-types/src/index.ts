@@ -132,6 +132,36 @@ export interface AuditLogItem {
   createdAt: string;
 }
 
+// ─── IM Conversation Types ────────────────────────────────────────────
+
+export type ConversationType = 'dm' | 'group';
+
+export type ConversationMemberRole = 'admin' | 'member';
+
+export interface ConversationMember {
+  userId: string;
+  role: ConversationMemberRole;
+  joinedAt: string;
+}
+
+export interface ConversationItem {
+  id: string;
+  tenantId: string;
+  type: ConversationType;
+  title: string | null;
+  creatorId: string | null;
+  members: ConversationMember[];
+  lastMessageAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateConversationRequest {
+  type: ConversationType;
+  title?: string;
+  memberUserIds: string[];
+}
+
 // ─── Modernizer Types ──────────────────────────────────────────────
 
 export type AnalysisCategory = 'console-log' | 'todo' | 'missing-validation' | 'unused-import';
