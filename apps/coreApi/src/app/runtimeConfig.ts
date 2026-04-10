@@ -1,3 +1,5 @@
+import * as fs from 'fs';
+
 interface RuntimeConfig {
   auth: {
     accessExpiresIn: string;
@@ -74,13 +76,29 @@ interface RuntimeConfig {
   };
 }
 
-function readRequiredEnv(name: string): string {
-  const value = process.env[name];
-  if (typeof value !== 'string' || value.trim().length === 0) {
-    throw new Error(`[config] Missing required environment variable: ${name}`);
+function readSecret(name: string, fallback?: string): string {
+  const secretFile = process.env[`${name}_FILE`];
+  if (typeof secretFile === 'string' && secretFile.trim().length > 0) {
+    const fileValue = fs.readFileSync(secretFile.trim(), 'utf8').trim();
+    if (fileValue.length > 0) {
+      return fileValue;
+    }
   }
 
-  return value.trim();
+  const envValue = process.env[name];
+  if (typeof envValue === 'string' && envValue.trim().length > 0) {
+    return envValue.trim();
+  }
+
+  if (typeof fallback === 'string') {
+    return fallback;
+  }
+
+  throw new Error(`[config] Missing required environment variable: ${name}`);
+}
+
+function readRequiredEnv(name: string): string {
+  return readSecret(name);
 }
 
 function readCsvEnv(name: string): string[] {

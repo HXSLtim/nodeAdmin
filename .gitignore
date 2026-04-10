@@ -16,5 +16,8 @@ uploads/
 .gemini/
 apps/adminPortal/test-results/
 .playwright-mcp/
+.secrets/
+!.secrets/.gitkeep
+!.secrets/README.md
 *.png
 !docs/**/*.png
