@@ -27,7 +27,7 @@ test.describe('Sidebar Navigation and 404', () => {
     ];
 
     for (const item of expectedItems) {
-      await expect(sidebar.getByText(item)).toBeVisible({ timeout: 10_000 });
+      await expect(sidebar.getByText(item, { exact: true })).toBeVisible({ timeout: 10_000 });
     }
   });
 

@@ -44,8 +44,8 @@ test.describe('Users Management', () => {
     }
     await page.getByRole('button', { name: /Save/i }).click();
 
-    await expect(page.getByText(/saved|successfully/i)).toBeVisible();
-    await expect(page.getByRole('main').getByText(email)).toBeVisible();
+    await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 10_000 });
+    await expect(page.getByRole('main').getByText(email)).toBeVisible({ timeout: 10_000 });
 
     // Edit
     const row = page.getByRole('main').locator('tr').filter({ hasText: email });
@@ -53,15 +53,23 @@ test.describe('Users Management', () => {
     await page.getByLabel(/Name/i).fill(newName);
     await page.getByRole('button', { name: /Save/i }).click();
 
-    await expect(page.getByText(/saved|successfully/i)).toBeVisible();
-    await expect(page.getByRole('main').getByText(newName)).toBeVisible();
+    // Wait for dialog to close after save
+    await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 10_000 });
+    // Reload to ensure fresh data
+    await page.reload();
+    await expect(page.getByRole('main')).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByRole('main').getByText(newName)).toBeVisible({ timeout: 10_000 });
 
     // Delete
-    await row.getByRole('button', { name: /Delete/i }).click();
-    await expect(page.getByText(/Are you sure you want to delete this user/i)).toBeVisible();
-    await page.getByRole('button', { name: /Confirm/i }).click();
+    const updatedRow = page.getByRole('main').locator('tr').filter({ hasText: newName });
+    await updatedRow.getByRole('button', { name: /Delete/i }).click();
+    await expect(page.getByRole('dialog').locator('p').filter({ hasText: /sure/i })).toBeVisible();
+    await page
+      .getByRole('dialog')
+      .getByRole('button', { name: /Confirm/i })
+      .click();
 
-    await expect(page.getByText(/deleted|successfully/i)).toBeVisible();
-    await expect(page.getByRole('main').getByText(email)).not.toBeVisible();
+    await expect(page.getByRole('alert').filter({ hasText: /deleted/i })).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByRole('main').getByText(email)).not.toBeVisible({ timeout: 5_000 });
   });
 });

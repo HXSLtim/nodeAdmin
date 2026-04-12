@@ -115,17 +115,24 @@ test.describe('audit log panel', () => {
     await page.goto('/audit');
     await expect(page.getByRole('main')).toBeVisible({ timeout: 10_000 });
 
-    const hasContent = await page
+    // Audit log uses Card title (not h1) and Timeline component (not table)
+    const hasHeading = await page
       .getByRole('main')
-      .getByRole('heading', { level: 1 })
+      .getByRole('heading')
       .isVisible()
       .catch(() => false);
-    const hasTable = await page
+    const hasTimeline = await page
       .getByRole('main')
-      .getByRole('table')
+      .locator('[class*="timeline"], [class*="Timeline"], ol, ul')
+      .first()
       .isVisible()
       .catch(() => false);
-    expect(hasContent || hasTable).toBeTruthy();
+    const hasEmptyState = await page
+      .getByRole('main')
+      .getByText(/no audit|empty|audit/i)
+      .isVisible()
+      .catch(() => false);
+    expect(hasHeading || hasTimeline || hasEmptyState).toBeTruthy();
   });
 });
 

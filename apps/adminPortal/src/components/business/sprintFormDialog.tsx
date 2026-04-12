@@ -47,7 +47,15 @@ export function SprintFormDialog({ onClose, onSaved, open, sprint }: SprintFormD
       tenantId: string;
     }) => {
       if (isEdit && sprint) {
-        await apiClient.patch(`/api/v1/backlog/sprints/${sprint.id}?tenantId=${data.tenantId}`, data);
+        // For PATCH: only send fields defined in UpdateSprintDto.
+        // Strip tenantId (not in UpdateSprintDto, passed as query param instead).
+        const payload: Record<string, string> = {};
+        for (const [key, value] of Object.entries(data)) {
+          if (value !== null && value !== undefined && key !== 'tenantId') {
+            payload[key] = value;
+          }
+        }
+        await apiClient.patch(`/api/v1/backlog/sprints/${sprint.id}?tenantId=${data.tenantId}`, payload);
       } else {
         await apiClient.post('/api/v1/backlog/sprints', data);
       }

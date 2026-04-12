@@ -12,7 +12,7 @@ test.describe('Profile', () => {
     const mainArea = page.getByRole('main');
     await expect(mainArea.getByRole('heading', { name: /Account Information/i })).toBeVisible();
     await expect(mainArea.getByText(/User Name/i)).toBeVisible();
-    await expect(mainArea.getByText(/Admin/i, { exact: true })).toBeVisible();
+    await expect(mainArea.getByText('Admin', { exact: true })).toBeVisible();
   });
 
   test('shows error when passwords do not match', async ({ page }) => {

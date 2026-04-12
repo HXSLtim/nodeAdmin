@@ -24,14 +24,14 @@ export function AssignTasksDialog({ onClose, onSaved, open, sprint }: AssignTask
 
   // Fetch unassigned tasks or tasks assigned to this sprint
   const tasksQuery = useQuery({
-    queryFn: () => apiClient.get<PaginatedResponse<BacklogTask>>('/api/v1/backlog/tasks?pageSize=200'),
+    queryFn: () => apiClient.get<PaginatedResponse<BacklogTask>>('/api/v1/backlog/tasks?pageSize=100'),
     queryKey: ['backlog', 'tasks', 'all-for-assign'],
     enabled: open,
   });
 
   const assignMutation = useMutation({
     mutationFn: async (taskIds: string[]) => {
-      await apiClient.post(`/api/v1/backlog/sprints/${sprint.id}/assign`, { taskIds });
+      await apiClient.post(`/api/v1/backlog/sprints/${sprint.id}/tasks`, { taskIds });
     },
     onSuccess: () => {
       toast.success(t({ id: 'backlog.assignSuccess' }));

@@ -74,7 +74,14 @@ export function UserFormDialog({ onClose, onSaved, open, user }: UserFormDialogP
   const saveMutation = useMutation({
     mutationFn: async (data: CreateUserData | UpdateUserData) => {
       if (isEdit && user) {
-        await apiClient.patch<UserItem>(`/api/v1/users/${user.id}?tenantId=${tenantId ?? 'default'}`, data);
+        // Only send fields defined in UpdateUserDto (name, avatar, isActive, roleIds).
+        // email and password are NOT in the DTO — sending them causes 400.
+        const patchData: Record<string, unknown> = {};
+        if (data.name !== undefined) patchData.name = data.name;
+        if ('avatar' in data && data.avatar !== undefined) patchData.avatar = data.avatar;
+        if ('isActive' in data && data.isActive !== undefined) patchData.isActive = data.isActive;
+        if ('roleIds' in data && data.roleIds !== undefined) patchData.roleIds = data.roleIds;
+        await apiClient.patch<UserItem>(`/api/v1/users/${user.id}?tenantId=${tenantId ?? 'default'}`, patchData);
       } else {
         await apiClient.post<UserItem>('/api/v1/users', data);
       }

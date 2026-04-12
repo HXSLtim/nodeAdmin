@@ -49,7 +49,9 @@ export function RoleFormDialog({ onClose, onSaved, open, role }: RoleFormDialogP
   const saveMutation = useMutation({
     mutationFn: async (data: { name: string; description: string; permissionIds: string[]; tenantId: string }) => {
       if (isEdit && role) {
-        await apiClient.patch(`/api/v1/roles/${role.id}?tenantId=${data.tenantId}`, data);
+        // Strip tenantId — not in UpdateRoleDto, passed as query param instead
+        const { tenantId: _t, ...patchData } = data;
+        await apiClient.patch(`/api/v1/roles/${role.id}?tenantId=${data.tenantId}`, patchData);
       } else {
         await apiClient.post('/api/v1/roles', data);
       }
