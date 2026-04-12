@@ -173,45 +173,47 @@ export function Sidebar(): JSX.Element {
               ))}
 
         {/* Plugin Section */}
-        <div className="mt-4 border-t pt-2">
-          {!sidebarCollapsed && (
-            <div className="mb-2 px-3 text-[0.625rem] font-semibold uppercase tracking-wider text-muted-foreground">
-              {t({ id: 'nav.plugins', defaultMessage: 'Plugins' })}
-            </div>
-          )}
-          <NavLink
-            className={({ isActive }) =>
-              linkClass(isNavItemActive(location.pathname, '/plugins/marketplace') || isActive)
-            }
-            onClick={() => setMobileMenuOpen(false)}
-            to="/plugins/marketplace"
-          >
-            <NavIcon name="building" />
-            {!sidebarCollapsed ? (
-              <span className="truncate">{t({ id: 'nav.marketplace', defaultMessage: 'Marketplace' })}</span>
-            ) : (
-              <span className="absolute left-full ml-2 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-xs text-popover-foreground shadow-md group-hover:block z-50">
-                {t({ id: 'nav.marketplace', defaultMessage: 'Marketplace' })}
-              </span>
+        {permissions['plugins:view'] && (
+          <div className="mt-4 border-t pt-2">
+            {!sidebarCollapsed && (
+              <div className="mb-2 px-3 text-[0.625rem] font-semibold uppercase tracking-wider text-muted-foreground">
+                {t({ id: 'nav.plugins', defaultMessage: 'Plugins' })}
+              </div>
             )}
-          </NavLink>
-          <NavLink
-            className={({ isActive }) =>
-              linkClass(isNavItemActive(location.pathname, '/plugins/installed') || isActive)
-            }
-            onClick={() => setMobileMenuOpen(false)}
-            to="/plugins/installed"
-          >
-            <NavIcon name="plus" />
-            {!sidebarCollapsed ? (
-              <span className="truncate">{t({ id: 'nav.installed', defaultMessage: 'Installed' })}</span>
-            ) : (
-              <span className="absolute left-full ml-2 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-xs text-popover-foreground shadow-md group-hover:block z-50">
-                {t({ id: 'nav.installed', defaultMessage: 'Installed' })}
-              </span>
-            )}
-          </NavLink>
-        </div>
+            <NavLink
+              className={({ isActive }) =>
+                linkClass(isNavItemActive(location.pathname, '/plugins/marketplace') || isActive)
+              }
+              onClick={() => setMobileMenuOpen(false)}
+              to="/plugins/marketplace"
+            >
+              <NavIcon name="building" />
+              {!sidebarCollapsed ? (
+                <span className="truncate">{t({ id: 'nav.marketplace', defaultMessage: 'Marketplace' })}</span>
+              ) : (
+                <span className="absolute left-full ml-2 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-xs text-popover-foreground shadow-md group-hover:block z-50">
+                  {t({ id: 'nav.marketplace', defaultMessage: 'Marketplace' })}
+                </span>
+              )}
+            </NavLink>
+            <NavLink
+              className={({ isActive }) =>
+                linkClass(isNavItemActive(location.pathname, '/plugins/installed') || isActive)
+              }
+              onClick={() => setMobileMenuOpen(false)}
+              to="/plugins/installed"
+            >
+              <NavIcon name="plus" />
+              {!sidebarCollapsed ? (
+                <span className="truncate">{t({ id: 'nav.installed', defaultMessage: 'Installed' })}</span>
+              ) : (
+                <span className="absolute left-full ml-2 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-xs text-popover-foreground shadow-md group-hover:block z-50">
+                  {t({ id: 'nav.installed', defaultMessage: 'Installed' })}
+                </span>
+              )}
+            </NavLink>
+          </div>
+        )}
 
         {/* Dynamic Plugin Menus */}
         {plugins

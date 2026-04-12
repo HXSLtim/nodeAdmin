@@ -61,7 +61,9 @@ export function AppRoot(): JSX.Element {
                 <Route
                   element={
                     <RouteModule>
-                      <PluginMarketplacePage />
+                      <RequirePermission permission="plugins:view">
+                        <PluginMarketplacePage />
+                      </RequirePermission>
                     </RouteModule>
                   }
                   path="/plugins/marketplace"
@@ -69,7 +71,9 @@ export function AppRoot(): JSX.Element {
                 <Route
                   element={
                     <RouteModule>
-                      <PluginDetailPage />
+                      <RequirePermission permission="plugins:view">
+                        <PluginDetailPage />
+                      </RequirePermission>
                     </RouteModule>
                   }
                   path="/plugins/marketplace/:id"
@@ -77,7 +81,9 @@ export function AppRoot(): JSX.Element {
                 <Route
                   element={
                     <RouteModule>
-                      <InstalledPluginsPage />
+                      <RequirePermission permission="plugins:view">
+                        <InstalledPluginsPage />
+                      </RequirePermission>
                     </RouteModule>
                   }
                   path="/plugins/installed"
@@ -85,7 +91,9 @@ export function AppRoot(): JSX.Element {
                 <Route
                   element={
                     <RouteModule>
-                      <PluginSettingsPage />
+                      <RequirePermission permission="plugins:view">
+                        <PluginSettingsPage />
+                      </RequirePermission>
                     </RouteModule>
                   }
                   path="/plugins/settings/:id"

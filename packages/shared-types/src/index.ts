@@ -39,6 +39,7 @@ export type AppPermission =
   | 'menus:view'
   | 'modernizer:view'
   | 'overview:view'
+  | 'plugins:view'
   | 'release:view'
   | 'roles:manage'
   | 'roles:view'
