@@ -256,8 +256,12 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
       const tenantId = authTenantId;
       const userId = authUserId;
       if (!tenantId || !userId) return null;
+      // If no conversation is selected, don't create a fake config —
+      // the user must pick or create a conversation first.
+      const resolvedConversationId = conversationIdOverride?.trim();
+      if (!resolvedConversationId) return null;
       return {
-        conversationId: conversationIdOverride?.trim() || 'default',
+        conversationId: resolvedConversationId,
         tenantId,
         userId,
       };

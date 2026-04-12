@@ -193,6 +193,8 @@
   "roles.fieldDescription": "描述",
   "roles.fieldPermissions": "权限",
   "roles.saveSuccess": "角色保存成功",
+  "roles.search": "搜索角色...",
+  "roles.deleteTitle": "删除角色",
 
   "menus.title": "菜单管理",
   "menus.desc": "管理系统菜单和权限分配。",
@@ -344,6 +346,11 @@
   "audit.action.created": "已创建",
   "audit.action.updated": "已更新",
   "audit.action.deleted": "已删除",
+  "audit.action.join_conversation": "加入会话",
+  "audit.action.leave_conversation": "离开会话",
+  "audit.action.send_message": "发送消息",
+  "audit.action.delete_message": "删除消息",
+  "audit.action.edit_message": "编辑消息",
 
   "modernizer.title": "代码分析",
   "modernizer.desc": "扫描源码检测质量问题并生成 API 文档。",

@@ -193,6 +193,8 @@
   "roles.fieldDescription": "Description",
   "roles.fieldPermissions": "Permissions",
   "roles.saveSuccess": "Role saved successfully",
+  "roles.search": "Search roles...",
+  "roles.deleteTitle": "Delete Role",
 
   "menus.title": "Menu Management",
   "menus.desc": "Manage system menus and permission assignments.",
@@ -344,6 +346,11 @@
   "audit.action.created": "created",
   "audit.action.updated": "updated",
   "audit.action.deleted": "deleted",
+  "audit.action.join_conversation": "joined conversation",
+  "audit.action.leave_conversation": "left conversation",
+  "audit.action.send_message": "sent message",
+  "audit.action.delete_message": "deleted message",
+  "audit.action.edit_message": "edited message",
 
   "modernizer.title": "Code Analysis",
   "modernizer.desc": "Scan source code for quality issues and generate API documentation.",
