@@ -1,9 +1,87 @@
 import { createRequire } from 'node:module';
 import { dirname, resolve } from 'node:path';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Pool, type PoolClient } from 'pg';
 import type { PluginManifest } from '@nodeadmin/shared-types';
+import { runtimeConfig } from '../../app/runtimeConfig';
 import { validatePluginManifest } from './manifestValidator';
+
+const REMOTE_REGISTRY_CACHE_TTL_MS = 5 * 60 * 1000;
+
+interface MarketplacePluginSummary {
+  authorName: string | null;
+  description: string | null;
+  displayName: string;
+  downloadCount: number;
+  id: string;
+  isCompatible: boolean;
+  latestVersion: string;
+  minPlatformVersion: string | null;
+}
+
+interface MarketplacePluginListResponse {
+  page: number;
+  pageSize: number;
+  plugins: MarketplacePluginSummary[];
+  total: number;
+}
+
+interface MarketplacePluginVersionDetails {
+  bundleUrl: string;
+  changelog: string | null;
+  isCompatible: boolean;
+  minPlatformVersion: string | null;
+  publishedAt: string;
+  serverPackage: string;
+  version: string;
+}
+
+interface MarketplacePluginDetailsResponse {
+  authorEmail: string | null;
+  authorName: string | null;
+  description: string | null;
+  displayName: string;
+  downloadCount: number;
+  id: string;
+  isPublic: boolean;
+  latestVersion: string;
+  versions: MarketplacePluginVersionDetails[];
+}
+
+interface RemoteRegistryResponse {
+  plugins: RemoteRegistryPlugin[];
+  updated: string;
+  version: number;
+}
+
+interface RemoteRegistryPlugin {
+  author?: {
+    email?: string;
+    name?: string;
+  };
+  description?: string;
+  displayName: string;
+  id: string;
+  latestVersion: string;
+  versions: RemoteRegistryPluginVersion[];
+}
+
+interface RemoteRegistryPluginVersion {
+  bundleUrl: string;
+  changelog?: string;
+  manifest: PluginManifest;
+  minPlatformVersion?: string;
+  publishedAt: string;
+  serverPackage: string;
+  version: string;
+}
+
+interface RemoteRegistryCacheEntry {
+  data: RemoteRegistryResponse;
+  expiresAt: number;
+}
+
+let remoteRegistryCache: RemoteRegistryCacheEntry | null = null;
 
 interface PluginRegistryRow {
   author_email?: string | null;
@@ -65,6 +143,7 @@ type PluginLifecycleHandler = (context: PluginLifecycleContext) => Promise<unkno
 
 @Injectable()
 export class PluginMarketService {
+  private readonly logger = new Logger(PluginMarketService.name);
   private readonly platformVersion = '0.1.0';
   private readonly pool: Pool | null;
   private readonly requireFromRoot = createRequire(resolve(process.cwd(), 'package.json'));
@@ -116,27 +195,20 @@ export class PluginMarketService {
       [...searchParams, pageSize, offset],
     );
 
+    const total = countResult.rows[0]?.count ?? 0;
+    if (total === 0 && this.hasRemoteRegistryUrl()) {
+      return this.fetchRemoteRegistry(page, pageSize, search);
+    }
+
     return {
-      plugins: rowsResult.rows.map((row) => ({
-        authorName: row.author_name ?? null,
-        description: row.description,
-        displayName: row.display_name,
-        downloadCount: row.download_count,
-        id: row.id,
-        isCompatible: this.isVersionCompatible(
-          this.platformVersion,
-          row.min_platform_version ?? `>=${this.platformVersion}`,
-        ),
-        latestVersion: row.latest_version,
-        minPlatformVersion: row.min_platform_version ?? null,
-      })),
+      plugins: rowsResult.rows.map((row) => this.mapMarketplacePluginSummary(row)),
       page,
       pageSize,
-      total: countResult.rows[0]?.count ?? 0,
+      total,
     };
   }
 
-  async getPluginDetails(pluginId: string) {
+  async getPluginDetails(pluginId: string): Promise<MarketplacePluginDetailsResponse> {
     if (!this.pool) {
       throw new NotFoundException('Plugin not found');
     }
@@ -157,6 +229,13 @@ export class PluginMarketService {
 
     const plugin = pluginResult.rows[0];
     if (!plugin) {
+      if (this.hasRemoteRegistryUrl()) {
+        const remotePlugin = await this.findRemotePluginDetails(pluginId);
+        if (remotePlugin) {
+          return remotePlugin;
+        }
+      }
+
       throw new NotFoundException('Plugin not found');
     }
 
@@ -182,18 +261,7 @@ export class PluginMarketService {
       id: plugin.id,
       isPublic: plugin.is_public,
       latestVersion: plugin.latest_version,
-      versions: versionsResult.rows.map((row) => ({
-        bundleUrl: row.bundle_url,
-        changelog: row.changelog,
-        isCompatible: this.isVersionCompatible(
-          this.platformVersion,
-          row.min_platform_version ?? `>=${this.platformVersion}`,
-        ),
-        minPlatformVersion: row.min_platform_version,
-        publishedAt: this.toIsoString(row.published_at),
-        serverPackage: row.server_package,
-        version: row.version,
-      })),
+      versions: versionsResult.rows.map((row) => this.mapMarketplacePluginVersion(row)),
     };
   }
 
@@ -449,6 +517,280 @@ export class PluginMarketService {
     }
 
     return new Date(value).toISOString();
+  }
+
+  private createEmptyMarketplaceResponse(page: number, pageSize: number): MarketplacePluginListResponse {
+    return {
+      page,
+      pageSize,
+      plugins: [],
+      total: 0,
+    };
+  }
+
+  private mapMarketplacePluginSummary(row: {
+    author_name?: string | null;
+    description: string | null;
+    display_name: string;
+    download_count: number;
+    id: string;
+    latest_version: string;
+    min_platform_version?: string | null;
+  }): MarketplacePluginSummary {
+    const minPlatformVersion = row.min_platform_version ?? null;
+
+    return {
+      authorName: row.author_name ?? null,
+      description: row.description,
+      displayName: row.display_name,
+      downloadCount: row.download_count,
+      id: row.id,
+      isCompatible: this.isVersionCompatible(this.platformVersion, minPlatformVersion ?? `>=${this.platformVersion}`),
+      latestVersion: row.latest_version,
+      minPlatformVersion,
+    };
+  }
+
+  private mapMarketplacePluginVersion(row: PluginVersionRow): MarketplacePluginVersionDetails {
+    return {
+      bundleUrl: row.bundle_url,
+      changelog: row.changelog,
+      isCompatible: this.isVersionCompatible(
+        this.platformVersion,
+        row.min_platform_version ?? `>=${this.platformVersion}`,
+      ),
+      minPlatformVersion: row.min_platform_version,
+      publishedAt: this.toIsoString(row.published_at),
+      serverPackage: row.server_package,
+      version: row.version,
+    };
+  }
+
+  private hasRemoteRegistryUrl(): boolean {
+    return runtimeConfig.pluginRegistry.url.trim().length > 0;
+  }
+
+  private async fetchRemoteRegistry(
+    page: number,
+    pageSize: number,
+    search?: string,
+  ): Promise<MarketplacePluginListResponse> {
+    const registry = await this.getRemoteRegistry();
+    if (!registry) {
+      return this.createEmptyMarketplaceResponse(page, pageSize);
+    }
+
+    const normalizedSearch = search?.trim().toLowerCase() ?? '';
+    const filteredPlugins = registry.plugins.filter((plugin) => {
+      if (!normalizedSearch) {
+        return true;
+      }
+
+      return (
+        plugin.id.toLowerCase().includes(normalizedSearch) ||
+        plugin.displayName.toLowerCase().includes(normalizedSearch)
+      );
+    });
+
+    const offset = (page - 1) * pageSize;
+    const plugins = filteredPlugins
+      .slice(offset, offset + pageSize)
+      .map((plugin) => this.mapRemotePluginSummary(plugin));
+
+    return {
+      page,
+      pageSize,
+      plugins,
+      total: filteredPlugins.length,
+    };
+  }
+
+  private async findRemotePluginDetails(pluginId: string): Promise<MarketplacePluginDetailsResponse | null> {
+    const registry = await this.getRemoteRegistry();
+    const plugin = registry?.plugins.find((entry) => entry.id === pluginId);
+
+    if (!plugin) {
+      return null;
+    }
+
+    return this.mapRemotePluginDetails(plugin);
+  }
+
+  private async getRemoteRegistry(): Promise<RemoteRegistryResponse | null> {
+    const cachedRegistry = this.getCachedRemoteRegistry();
+    if (cachedRegistry) {
+      return cachedRegistry;
+    }
+
+    const registryUrl = runtimeConfig.pluginRegistry.url.trim();
+    if (!registryUrl) {
+      return null;
+    }
+
+    try {
+      const response = await fetch(registryUrl, { signal: AbortSignal.timeout(10000) });
+      if (!response.ok) {
+        throw new Error(`Remote registry request failed with status ${response.status}`);
+      }
+
+      const payload: unknown = await response.json();
+      const registry = this.parseRemoteRegistry(payload);
+      remoteRegistryCache = {
+        data: registry,
+        expiresAt: Date.now() + REMOTE_REGISTRY_CACHE_TTL_MS,
+      };
+
+      return registry;
+    } catch (error) {
+      remoteRegistryCache = null;
+      this.logger.warn(
+        `Failed to fetch remote plugin registry from ${registryUrl}: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      return null;
+    }
+  }
+
+  private getCachedRemoteRegistry(): RemoteRegistryResponse | null {
+    if (!remoteRegistryCache) {
+      return null;
+    }
+
+    if (remoteRegistryCache.expiresAt <= Date.now()) {
+      remoteRegistryCache = null;
+      return null;
+    }
+
+    return remoteRegistryCache.data;
+  }
+
+  private parseRemoteRegistry(payload: unknown): RemoteRegistryResponse {
+    if (!isRecord(payload) || !Array.isArray(payload.plugins)) {
+      throw new Error('Remote registry payload is invalid');
+    }
+
+    return {
+      plugins: payload.plugins.map((plugin) => this.parseRemotePlugin(plugin)),
+      updated: typeof payload.updated === 'string' ? payload.updated : '',
+      version: typeof payload.version === 'number' ? payload.version : 1,
+    };
+  }
+
+  private parseRemotePlugin(payload: unknown): RemoteRegistryPlugin {
+    if (!isRecord(payload) || typeof payload.id !== 'string' || typeof payload.displayName !== 'string') {
+      throw new Error('Remote registry plugin entry is invalid');
+    }
+
+    return {
+      author: this.parseRemoteAuthor(payload.author),
+      description: typeof payload.description === 'string' ? payload.description : undefined,
+      displayName: payload.displayName,
+      id: payload.id,
+      latestVersion: typeof payload.latestVersion === 'string' ? payload.latestVersion : '',
+      versions: Array.isArray(payload.versions)
+        ? payload.versions.map((version) => this.parseRemotePluginVersion(version))
+        : [],
+    };
+  }
+
+  private parseRemoteAuthor(payload: unknown): { email?: string; name?: string } | undefined {
+    if (!isRecord(payload)) {
+      return undefined;
+    }
+
+    return {
+      email: typeof payload.email === 'string' ? payload.email : undefined,
+      name: typeof payload.name === 'string' ? payload.name : undefined,
+    };
+  }
+
+  private parseRemotePluginVersion(payload: unknown): RemoteRegistryPluginVersion {
+    if (
+      !isRecord(payload) ||
+      typeof payload.version !== 'string' ||
+      typeof payload.bundleUrl !== 'string' ||
+      typeof payload.serverPackage !== 'string' ||
+      typeof payload.publishedAt !== 'string' ||
+      !isRecord(payload.manifest)
+    ) {
+      throw new Error('Remote registry plugin version entry is invalid');
+    }
+
+    return {
+      bundleUrl: payload.bundleUrl,
+      changelog: typeof payload.changelog === 'string' ? payload.changelog : undefined,
+      manifest: payload.manifest as unknown as PluginManifest,
+      minPlatformVersion: typeof payload.minPlatformVersion === 'string' ? payload.minPlatformVersion : undefined,
+      publishedAt: payload.publishedAt,
+      serverPackage: payload.serverPackage,
+      version: payload.version,
+    };
+  }
+
+  private mapRemotePluginSummary(plugin: RemoteRegistryPlugin): MarketplacePluginSummary {
+    const latestVersion = this.resolveRemoteLatestVersion(plugin);
+    const minPlatformVersion = this.resolveRemoteMinPlatformVersion(plugin, latestVersion?.version ?? null);
+
+    return {
+      authorName: plugin.author?.name ?? null,
+      description: plugin.description ?? null,
+      displayName: plugin.displayName,
+      downloadCount: 0,
+      id: plugin.id,
+      isCompatible: this.isVersionCompatible(this.platformVersion, minPlatformVersion ?? `>=${this.platformVersion}`),
+      latestVersion: latestVersion?.version ?? plugin.latestVersion,
+      minPlatformVersion,
+    };
+  }
+
+  private mapRemotePluginDetails(plugin: RemoteRegistryPlugin): MarketplacePluginDetailsResponse {
+    const versions = [...plugin.versions]
+      .sort((left, right) => this.compareVersions(this.parseVersion(right.version), this.parseVersion(left.version)))
+      .map((version) => {
+        const minPlatformVersion = version.minPlatformVersion ?? version.manifest.engines.nodeAdmin ?? null;
+
+        return {
+          bundleUrl: version.bundleUrl,
+          changelog: version.changelog ?? null,
+          isCompatible: this.isVersionCompatible(
+            this.platformVersion,
+            minPlatformVersion ?? `>=${this.platformVersion}`,
+          ),
+          minPlatformVersion,
+          publishedAt: this.toIsoString(version.publishedAt),
+          serverPackage: version.serverPackage,
+          version: version.version,
+        };
+      });
+
+    return {
+      authorEmail: plugin.author?.email ?? null,
+      authorName: plugin.author?.name ?? null,
+      description: plugin.description ?? null,
+      displayName: plugin.displayName,
+      downloadCount: 0,
+      id: plugin.id,
+      isPublic: true,
+      latestVersion: this.resolveRemoteLatestVersion(plugin)?.version ?? plugin.latestVersion,
+      versions,
+    };
+  }
+
+  private resolveRemoteLatestVersion(plugin: RemoteRegistryPlugin): RemoteRegistryPluginVersion | null {
+    return (
+      plugin.versions.find((version) => version.version === plugin.latestVersion) ??
+      plugin.versions
+        .slice()
+        .sort((left, right) =>
+          this.compareVersions(this.parseVersion(right.version), this.parseVersion(left.version)),
+        )[0] ??
+      null
+    );
+  }
+
+  private resolveRemoteMinPlatformVersion(plugin: RemoteRegistryPlugin, version: string | null): string | null {
+    const versionEntry = version ? plugin.versions.find((entry) => entry.version === version) : null;
+
+    return versionEntry?.minPlatformVersion ?? versionEntry?.manifest.engines.nodeAdmin ?? null;
   }
 
   private async runLifecycleHook(

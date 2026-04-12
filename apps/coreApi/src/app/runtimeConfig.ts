@@ -22,6 +22,9 @@ interface RuntimeConfig {
     maxRetry: number;
     pollIntervalMs: number;
   };
+  pluginRegistry: {
+    url: string;
+  };
   redis: {
     clusterNodes: string[];
     url: string | null;
@@ -187,6 +190,11 @@ export const runtimeConfig: RuntimeConfig = {
     enabled: readBooleanEnv('OUTBOX_PUBLISHER_ENABLED', false),
     maxRetry: readPositiveInt('OUTBOX_MAX_RETRY', 5),
     pollIntervalMs: readPositiveInt('OUTBOX_POLL_INTERVAL_MS', 2000),
+  },
+  pluginRegistry: {
+    url:
+      process.env.PLUGIN_REGISTRY_URL?.trim() ||
+      'https://raw.githubusercontent.com/DistroCore/nodeAdminPlugin/main/registry.json',
   },
   port: readPort(),
   rateLimit: {
