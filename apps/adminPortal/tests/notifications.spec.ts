@@ -98,8 +98,10 @@ test.describe('Notifications', () => {
     // Should have an unread badge
     await expect(page.getByText(/^Unread$/)).toBeVisible({ timeout: 10000 });
 
-    // Click the notification to mark as read
-    await page.locator('.divide-y > div').first().click();
+    // Click the notification to mark as read (rendered as <button> elements inside .divide-y)
+    const firstNotification = page.locator('.divide-y button').first();
+    await firstNotification.waitFor({ state: 'visible', timeout: 10_000 });
+    await firstNotification.click();
 
     // Unread badge should disappear
     await expect(page.getByText(/^Unread$/)).not.toBeVisible();

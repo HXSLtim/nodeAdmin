@@ -16,6 +16,7 @@ export interface AuditLogRecord {
 export class AuditLogService implements OnModuleDestroy {
   private readonly logger = new Logger(AuditLogService.name);
   private readonly fallbackRows: StoredAuditLog[] = [];
+  private hasWarnedAboutActiveFallback = false;
 
   constructor(@Optional() private readonly repository?: AuditLogRepository) {
     if (!this.repository) {
@@ -29,6 +30,7 @@ export class AuditLogService implements OnModuleDestroy {
 
   async record(input: AuditLogRecord): Promise<void> {
     if (!this.repository) {
+      this.warnAboutActiveFallback();
       const row: StoredAuditLog = {
         action: input.action,
         context: input.context ?? null,
@@ -63,6 +65,7 @@ export class AuditLogService implements OnModuleDestroy {
     pageSize: number,
   ): Promise<{ items: StoredAuditLog[]; total: number }> {
     if (!this.repository) {
+      this.warnAboutActiveFallback();
       const filtered = this.fallbackRows.filter((row) => {
         if (row.tenantId !== filter.tenantId) return false;
         if (filter.userId && row.userId !== filter.userId) return false;
@@ -94,5 +97,14 @@ export class AuditLogService implements OnModuleDestroy {
     const page = Math.floor(offset / Math.max(limit, 1)) + 1;
     const { items } = await this.listByFilter({ tenantId }, page, limit);
     return items;
+  }
+
+  private warnAboutActiveFallback(): void {
+    if (this.hasWarnedAboutActiveFallback) {
+      return;
+    }
+
+    this.hasWarnedAboutActiveFallback = true;
+    this.logger.warn('Audit log database unavailable — using in-memory fallback. Logs will be lost on restart.');
   }
 }

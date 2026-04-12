@@ -1,5 +1,6 @@
 import React from 'react';
 import { useIntl } from 'react-intl';
+import { logger } from '@/lib/logger';
 
 function ErrorDisplay({ onRetry }: { onRetry: () => void }): JSX.Element {
   const { formatMessage: t } = useIntl();
@@ -37,7 +38,7 @@ export class ModuleErrorBoundary extends React.Component<ModuleErrorBoundaryProp
   }
 
   override componentDidCatch(error: Error): void {
-    console.error('[ModuleErrorBoundary]', error);
+    logger.error('ModuleErrorBoundary', 'Module render error caught', error);
   }
 
   private handleReset = (): void => {

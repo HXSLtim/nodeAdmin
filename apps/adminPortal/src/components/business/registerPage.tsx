@@ -16,6 +16,10 @@ interface TenantItem {
   slug: string;
 }
 
+function resolveApiBaseUrl(): string {
+  return (import.meta.env.VITE_CORE_API_BASE_URL as string | undefined)?.trim() || '';
+}
+
 export function RegisterPage(): JSX.Element {
   const { formatMessage: t, locale } = useIntl();
   const navigate = useNavigate();
@@ -23,7 +27,7 @@ export function RegisterPage(): JSX.Element {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [tenantId, setTenantId] = useState('default');
+  const [tenantId, setTenantId] = useState('');
   const [tenants, setTenants] = useState<TenantItem[]>([]);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
@@ -33,10 +37,7 @@ export function RegisterPage(): JSX.Element {
   const setLocale = useUiStore((s) => s.setLocale);
 
   useEffect(() => {
-    const apiBaseUrl =
-      (import.meta.env.VITE_CORE_API_BASE_URL as string | undefined)?.trim() ??
-      `http://${window.location.hostname}:11451`;
-    new ApiClient({ baseUrl: apiBaseUrl })
+    new ApiClient({ baseUrl: resolveApiBaseUrl() })
       .get<TenantItem[]>('/api/v1/tenants')
       .then(setTenants)
       .catch(() => {
@@ -47,16 +48,17 @@ export function RegisterPage(): JSX.Element {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    if (!tenantId.trim()) {
+      setError('Tenant ID is required.');
+      return;
+    }
     if (password !== confirmPassword) {
       setError(t({ id: 'auth.passwordMismatch' }));
       return;
     }
     setLoading(true);
     try {
-      const apiBaseUrl =
-        (import.meta.env.VITE_CORE_API_BASE_URL as string | undefined)?.trim() ??
-        `http://${window.location.hostname}:11451`;
-      const client = new ApiClient({ baseUrl: apiBaseUrl });
+      const client = new ApiClient({ baseUrl: resolveApiBaseUrl() });
       const data = await client.post<{
         accessToken: string;
         identity: { tenantId: string; userId: string };

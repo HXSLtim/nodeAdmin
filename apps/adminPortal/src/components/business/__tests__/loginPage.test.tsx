@@ -185,6 +185,8 @@ describe('LoginPage', () => {
 
     await user.type(screen.getByLabelText('auth.email'), 'user@test.com');
     await user.type(screen.getByLabelText('auth.password'), 'password123');
+    // Tenant field starts empty (TD-13 fix) — must type a value
+    await user.type(screen.getByLabelText('auth.tenantId'), 'default');
 
     const loginButton = screen.getByRole('button', { name: 'auth.login' });
     await user.click(loginButton);

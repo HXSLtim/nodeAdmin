@@ -55,9 +55,12 @@ test.describe('Tenants Management', () => {
 
     // Wait for dialog to close first, then check for success indication
     await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 10_000 });
-    // Verify the tenant is gone from the table (most reliable check)
+    // Wait for the table data to refresh after deletion
+    await page.waitForTimeout(2000);
     await page.reload();
     await expect(page.getByRole('main')).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByRole('main').getByText(updatedName)).not.toBeVisible({ timeout: 10_000 });
+    // Wait for the table to load fresh data
+    await expect(page.getByRole('main').getByRole('table')).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByRole('main').getByText(updatedName)).not.toBeVisible({ timeout: 15_000 });
   });
 });

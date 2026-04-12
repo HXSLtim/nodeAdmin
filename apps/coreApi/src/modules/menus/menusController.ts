@@ -1,5 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Put, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { DEFAULT_TENANT_ID } from '../../app/constants';
 import { MenusService } from './menusService';
 import { CreateMenuDto } from './dto/createMenuDto';
 import { UpdateMenuDto } from './dto/updateMenuDto';
@@ -26,7 +27,7 @@ export class MenusController {
   @Get('user/:userId')
   @ApiOperation({ summary: 'Get menus visible to a user' })
   async getUserMenus(@Param('userId') userId: string, @Query('tenantId') tenantId?: string) {
-    return this.menusService.getUserMenus(tenantId ?? 'default', userId);
+    return this.menusService.getUserMenus(tenantId ?? DEFAULT_TENANT_ID, userId);
   }
 
   @Get(':id')

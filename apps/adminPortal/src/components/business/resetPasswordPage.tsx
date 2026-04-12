@@ -15,12 +15,16 @@ interface TenantItem {
   slug: string;
 }
 
+function resolveApiBaseUrl(): string {
+  return (import.meta.env.VITE_CORE_API_BASE_URL as string | undefined)?.trim() || '';
+}
+
 export function ResetPasswordPage(): JSX.Element {
   const { formatMessage: t, locale } = useIntl();
   const [email, setEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [tenantId, setTenantId] = useState('default');
+  const [tenantId, setTenantId] = useState('');
   const [tenants, setTenants] = useState<TenantItem[]>([]);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
@@ -31,10 +35,7 @@ export function ResetPasswordPage(): JSX.Element {
   const setLocale = useUiStore((s) => s.setLocale);
 
   useEffect(() => {
-    const apiBaseUrl =
-      (import.meta.env.VITE_CORE_API_BASE_URL as string | undefined)?.trim() ??
-      `http://${window.location.hostname}:11451`;
-    new ApiClient({ baseUrl: apiBaseUrl })
+    new ApiClient({ baseUrl: resolveApiBaseUrl() })
       .get<TenantItem[]>('/api/v1/tenants')
       .then(setTenants)
       .catch(() => {
@@ -47,6 +48,11 @@ export function ResetPasswordPage(): JSX.Element {
     setError('');
     setSuccess('');
 
+    if (!tenantId.trim()) {
+      setError('Tenant ID is required.');
+      return;
+    }
+
     if (newPassword !== confirmPassword) {
       setError(t({ id: 'auth.passwordMismatch' }));
       return;
@@ -54,10 +60,7 @@ export function ResetPasswordPage(): JSX.Element {
 
     setLoading(true);
     try {
-      const apiBaseUrl =
-        (import.meta.env.VITE_CORE_API_BASE_URL as string | undefined)?.trim() ??
-        `http://${window.location.hostname}:11451`;
-      const client = new ApiClient({ baseUrl: apiBaseUrl });
+      const client = new ApiClient({ baseUrl: resolveApiBaseUrl() });
       await client.post('/api/v1/auth/reset-password', { email, newPassword, tenantId });
       setSuccess(t({ id: 'auth.resetPasswordSuccess' }));
     } catch {

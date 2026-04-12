@@ -213,7 +213,13 @@ describe('MessagePanel', () => {
   });
 
   it('loads conversations and requests a dev token for the active tenant', async () => {
-    renderPanel();
+    // Must pass conversationIdOverride since BUG-1 fix: imConfig is null without a conversation
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MessagePanel conversationIdOverride="conv-1" />
+      </QueryClientProvider>,
+    );
 
     await waitFor(() => {
       expect(mockGet).toHaveBeenCalledWith('/api/v1/console/conversations?tenantId=tenant-1');

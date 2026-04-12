@@ -17,6 +17,10 @@ interface TenantItem {
   slug: string;
 }
 
+function resolveApiBaseUrl(): string {
+  return (import.meta.env.VITE_CORE_API_BASE_URL as string | undefined)?.trim() || '';
+}
+
 export function LoginPage(): JSX.Element {
   const { formatMessage: t, locale } = useIntl();
   const navigate = useNavigate();
@@ -25,7 +29,7 @@ export function LoginPage(): JSX.Element {
   const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
   const [code, setCode] = useState('');
-  const [tenantId, setTenantId] = useState('default');
+  const [tenantId, setTenantId] = useState('');
   const [tenants, setTenants] = useState<TenantItem[]>([]);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
@@ -40,28 +44,26 @@ export function LoginPage(): JSX.Element {
   const isSingleTenant = import.meta.env.VITE_SINGLE_TENANT_MODE === 'true';
 
   useEffect(() => {
-    if (isSingleTenant) return;
+    if (import.meta.env.VITE_SINGLE_TENANT_MODE === 'true') return;
 
-    const apiBaseUrl =
-      (import.meta.env.VITE_CORE_API_BASE_URL as string | undefined)?.trim() ??
-      `http://${window.location.hostname}:11451`;
-    new ApiClient({ baseUrl: apiBaseUrl })
+    new ApiClient({ baseUrl: resolveApiBaseUrl() })
       .get<TenantItem[]>('/api/v1/tenants')
       .then(setTenants)
       .catch(() => {
         /* ignore — tenant list is optional */
       });
-  }, [isSingleTenant]);
+  }, []);
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    if (!isSingleTenant && !tenantId.trim()) {
+      setError('Tenant ID is required.');
+      return;
+    }
     setLoading(true);
     try {
-      const apiBaseUrl =
-        (import.meta.env.VITE_CORE_API_BASE_URL as string | undefined)?.trim() ??
-        `http://${window.location.hostname}:11451`;
-      const client = new ApiClient({ baseUrl: apiBaseUrl });
+      const client = new ApiClient({ baseUrl: resolveApiBaseUrl() });
       const data = await client.post<{
         accessToken: string;
         identity: { tenantId: string; userId: string };
@@ -80,12 +82,13 @@ export function LoginPage(): JSX.Element {
   const handleSmsLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    if (!isSingleTenant && !tenantId.trim()) {
+      setError('Tenant ID is required.');
+      return;
+    }
     setLoading(true);
     try {
-      const apiBaseUrl =
-        (import.meta.env.VITE_CORE_API_BASE_URL as string | undefined)?.trim() ??
-        `http://${window.location.hostname}:11451`;
-      const client = new ApiClient({ baseUrl: apiBaseUrl });
+      const client = new ApiClient({ baseUrl: resolveApiBaseUrl() });
       const data = await client.post<{
         accessToken: string;
         identity: { tenantId: string; userId: string };
@@ -106,10 +109,7 @@ export function LoginPage(): JSX.Element {
     setSmsSending(true);
     setError('');
     try {
-      const apiBaseUrl =
-        (import.meta.env.VITE_CORE_API_BASE_URL as string | undefined)?.trim() ??
-        `http://${window.location.hostname}:11451`;
-      const client = new ApiClient({ baseUrl: apiBaseUrl });
+      const client = new ApiClient({ baseUrl: resolveApiBaseUrl() });
       await client.post('/api/v1/auth/sms/send', { phone });
       setSmsSent(true);
       setTimeout(() => setSmsSent(false), 3000);
@@ -121,10 +121,7 @@ export function LoginPage(): JSX.Element {
   };
 
   const handleOAuthLogin = (provider: 'github' | 'google') => {
-    const apiBaseUrl =
-      (import.meta.env.VITE_CORE_API_BASE_URL as string | undefined)?.trim() ??
-      `http://${window.location.hostname}:11451`;
-    window.open(`${apiBaseUrl}/api/v1/auth/login/oauth/${provider}`, '_self');
+    window.open(`${resolveApiBaseUrl()}/api/v1/auth/login/oauth/${provider}`, '_self');
   };
 
   const toggleLocale = () => setLocale((locale === 'zh' ? 'en' : 'zh') as AppLocale);
@@ -170,6 +167,7 @@ export function LoginPage(): JSX.Element {
               loginType === 'email' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'
             }`}
             onClick={() => setLoginType('email')}
+            type="button"
           >
             {t({ id: 'auth.email' })}
           </button>
@@ -178,6 +176,7 @@ export function LoginPage(): JSX.Element {
               loginType === 'sms' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'
             }`}
             onClick={() => setLoginType('sms')}
+            type="button"
           >
             {t({ id: 'auth.sms' })}
           </button>

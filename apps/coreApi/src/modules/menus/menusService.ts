@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { randomUUID } from 'node:crypto';
 import { Pool } from 'pg';
 
 export interface MenuItem {
@@ -68,7 +69,7 @@ export class MenusService {
     isVisible?: boolean;
   }) {
     if (!this.pool) throw new Error('Database not available');
-    const id = `menu-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const id = `menu-${randomUUID()}`;
     await this.pool.query(
       'INSERT INTO menus (id, parent_id, name, path, icon, sort_order, permission_code, is_visible) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
       [

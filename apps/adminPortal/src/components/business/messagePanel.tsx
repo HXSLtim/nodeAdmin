@@ -355,7 +355,7 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
       return envSocketUrl;
     }
 
-    return `http://${window.location.hostname}:11451`;
+    return '';
   }, []);
 
   useEffect(() => {
@@ -370,6 +370,10 @@ export function MessagePanel({ conversationIdOverride }: MessagePanelProps): JSX
     if (envAccessToken) {
       setAccessToken(envAccessToken);
       setBootError(null);
+      return;
+    }
+
+    if (import.meta.env.MODE === 'production') {
       return;
     }
 

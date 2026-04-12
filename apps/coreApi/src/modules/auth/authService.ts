@@ -377,7 +377,7 @@ export class AuthService {
 
     // In production, send SMS via provider (Twilio, Alibaba Cloud SMS, etc.)
     // For dev/testing, the code is returned in the DB row
-    this.logger.log(`SMS code generated for ${phone}: ${code}`);
+    this.logger.log(`SMS code generated for ${phone}`);
 
     return { success: true };
   }
