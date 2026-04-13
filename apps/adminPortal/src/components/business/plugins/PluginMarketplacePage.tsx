@@ -43,6 +43,7 @@ export function PluginMarketplacePage() {
   const { data, isLoading, error, refetch } = useMarketplace(page, pageSize, search);
   const { install } = usePluginManagement();
   const plugins = usePluginStore((s) => s.plugins);
+  const canManage = usePermissionStore((s) => s.hasPermission('plugins:manage'));
 
   const isInstalled = (pluginId: string) => {
     return plugins.some((p) => p.name === pluginId || p.manifest?.id === pluginId);
@@ -164,10 +165,10 @@ export function PluginMarketplacePage() {
                   >
                     {t({ id: 'plugins.view_details', defaultMessage: 'View Details' })}
                   </Link>
-                  {!isInstalled(plugin.id) && (
+                  {!isInstalled(plugin.id) && canManage && (
                     <Button
                       className="flex-1"
-                      onClick={() => install.mutate({ pluginId: plugin.id })}
+                      onClick={() => install.mutate({ pluginId: plugin.id, version: plugin.latestVersion })}
                       disabled={install.isPending}
                     >
                       {install.isPending && (

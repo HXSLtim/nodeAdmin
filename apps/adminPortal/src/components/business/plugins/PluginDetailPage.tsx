@@ -2,6 +2,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useIntl } from 'react-intl';
 import { usePluginDetail, usePluginManagement } from '@/hooks/useMarketplace';
 import { usePluginStore } from '@/stores/usePluginStore';
+import { usePermissionStore } from '@/stores/usePermissionStore';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -69,11 +70,13 @@ export function PluginDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { formatMessage: t } = useIntl();
   const { data, isLoading, error, refetch } = usePluginDetail(id || '');
-  const { install, uninstall } = usePluginManagement();
+  const { install, uninstall, update } = usePluginManagement();
   const plugins = usePluginStore((s) => s.plugins);
+  const canManage = usePermissionStore((s) => s.hasPermission('plugins:manage'));
 
   const installedPlugin = plugins.find((p) => p.name === id || p.manifest?.id === id);
   const isInstalled = !!installedPlugin;
+  const hasUpdate = isInstalled && installedPlugin.installedVersion && data && data.latestVersion !== installedPlugin.installedVersion;
 
   if (isLoading) return <DetailSkeleton />;
 
@@ -135,29 +138,49 @@ export function PluginDetailPage() {
                     {t({ id: 'plugins.status.installed_v', defaultMessage: 'Installed' })} v
                     {installedPlugin.installedVersion || 'unknown'}
                   </Badge>
-                  <Button
-                    variant="outline"
-                    className="border-destructive text-destructive hover:bg-destructive/10"
-                    onClick={() => {
-                      if (window.confirm(t({ id: 'plugins.uninstall.confirm', defaultMessage: 'Are you sure?' }))) {
-                        uninstall.mutate(data.id);
-                      }
-                    }}
-                    disabled={uninstall.isPending}
-                  >
-                    {uninstall.isPending && (
-                      <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                    )}
-                    {t({ id: 'plugins.uninstall', defaultMessage: 'Uninstall' })}
-                  </Button>
+                  {hasUpdate && canManage && (
+                    <Button
+                      variant="default"
+                      className="bg-amber-600 hover:bg-amber-700 text-white"
+                      onClick={() => update.mutate({ id: data.id, version: data.latestVersion })}
+                      disabled={update.isPending}
+                    >
+                      {update.isPending && (
+                        <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                      )}
+                      {t(
+                        { id: 'plugins.update_to', defaultMessage: 'Update to v{version}' },
+                        { version: data.latestVersion },
+                      )}
+                    </Button>
+                  )}
+                  {canManage && (
+                    <Button
+                      variant="outline"
+                      className="border-destructive text-destructive hover:bg-destructive/10"
+                      onClick={() => {
+                        if (window.confirm(t({ id: 'plugins.uninstall.confirm', defaultMessage: 'Are you sure?' }))) {
+                          uninstall.mutate(data.id);
+                        }
+                      }}
+                      disabled={uninstall.isPending}
+                    >
+                      {uninstall.isPending && (
+                        <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                      )}
+                      {t({ id: 'plugins.uninstall', defaultMessage: 'Uninstall' })}
+                    </Button>
+                  )}
                 </>
               ) : (
-                <Button size="lg" onClick={() => install.mutate({ pluginId: data.id })} disabled={install.isPending}>
-                  {install.isPending && (
-                    <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                  )}
-                  {t({ id: 'plugins.install', defaultMessage: 'Install Now' })}
-                </Button>
+                canManage && (
+                  <Button size="lg" onClick={() => install.mutate({ pluginId: data.id, version: data.latestVersion })} disabled={install.isPending}>
+                    {install.isPending && (
+                      <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                    )}
+                    {t({ id: 'plugins.install', defaultMessage: 'Install Now' })}
+                  </Button>
+                )
               )}
             </div>
           </div>
@@ -200,17 +223,34 @@ export function PluginDetailPage() {
                         {new Date(v.publishedAt).toLocaleDateString()}
                       </TableCell>
                       <TableCell className="text-right pr-6">
-                        {!isInstalled && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => install.mutate({ pluginId: data.id, version: v.version })}
-                          >
-                            {t(
-                              { id: 'plugins.install_v', defaultMessage: 'Install v{version}' },
-                              { version: v.version },
-                            )}
-                          </Button>
+                        {canManage && (
+                          !isInstalled ? (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => install.mutate({ pluginId: data.id, version: v.version })}
+                            >
+                              {t(
+                                { id: 'plugins.install_v', defaultMessage: 'Install v{version}' },
+                                { version: v.version },
+                              )}
+                            </Button>
+                          ) : (
+                            installedPlugin.installedVersion !== v.version && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                                onClick={() => update.mutate({ id: data.id, version: v.version })}
+                                disabled={update.isPending}
+                              >
+                                {t(
+                                  { id: 'plugins.update_v', defaultMessage: 'Update to v{version}' },
+                                  { version: v.version },
+                                )}
+                              </Button>
+                            )
+                          )
                         )}
                       </TableCell>
                     </TableRow>
