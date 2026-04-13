@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { FormField } from '@/components/ui/formField';
 import { Select } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useToast } from '@/components/ui/toast';
 import { useApiClient } from '@/hooks/useApiClient';
 import { MenuItem } from '@nodeadmin/shared-types';
 
@@ -59,6 +60,7 @@ function getInitialValues(menu: MenuItem | undefined, parentId: string | undefin
 export function MenuFormDialog({ onClose, onSaved, open, menu, parentId, menus }: MenuFormDialogProps): JSX.Element {
   const { formatMessage: t } = useIntl();
   const apiClient = useApiClient();
+  const toast = useToast();
   const isEdit = menu !== undefined;
   const isChildMode = parentId !== undefined;
 
@@ -81,7 +83,14 @@ export function MenuFormDialog({ onClose, onSaved, open, menu, parentId, menus }
       }
     },
     onSuccess: () => {
+      toast.success(t({ id: 'menus.saveSuccess', defaultMessage: 'Menu saved successfully' }));
       onSaved();
+    },
+    onError: (error: Error) => {
+      toast.error(
+        t({ id: 'menus.saveFailed', defaultMessage: 'Failed to save menu' }),
+        error.message || t({ id: 'common.error.unknown' }),
+      );
     },
   });
 

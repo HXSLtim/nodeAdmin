@@ -107,9 +107,12 @@ export function useImSocket(options: UseImSocketOptions): {
         token: accessToken,
       },
       reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 500,
-      transports: ['websocket'],
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      randomizationFactor: 0.5,
+      timeout: 20000,
+      transports: ['polling', 'websocket'],
     });
     socketRef.current = socket;
 

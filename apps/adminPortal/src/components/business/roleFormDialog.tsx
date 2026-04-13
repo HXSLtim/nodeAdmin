@@ -6,6 +6,7 @@ import { Dialog } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { FormField } from '@/components/ui/formField';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/toast';
 import { useApiClient } from '@/hooks/useApiClient';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { className } from '@/lib/className';
@@ -28,6 +29,7 @@ interface RoleFormDialogProps {
 export function RoleFormDialog({ onClose, onSaved, open, role }: RoleFormDialogProps): JSX.Element {
   const { formatMessage: t } = useIntl();
   const apiClient = useApiClient();
+  const toast = useToast();
   const tenantId = useAuthStore((s) => s.tenantId);
 
   const [name, setName] = useState(role?.name ?? '');
@@ -50,15 +52,26 @@ export function RoleFormDialog({ onClose, onSaved, open, role }: RoleFormDialogP
     mutationFn: async (data: { name: string; description: string; permissionIds: string[]; tenantId: string }) => {
       if (isEdit && role) {
         // Strip tenantId — not in UpdateRoleDto, passed as query param instead
-        const { tenantId: _t, ...patchData } = data;
-        await apiClient.patch(`/api/v1/roles/${role.id}?tenantId=${data.tenantId}`, patchData);
+        const { name, description, permissionIds } = data;
+        await apiClient.patch(`/api/v1/roles/${role.id}?tenantId=${data.tenantId}`, {
+          name,
+          description,
+          permissionIds,
+        });
       } else {
         await apiClient.post('/api/v1/roles', data);
       }
     },
     onSuccess: () => {
+      toast.success(t({ id: 'roles.saveSuccess', defaultMessage: 'Role saved successfully' }));
       onSaved();
       handleClose();
+    },
+    onError: (error: Error) => {
+      toast.error(
+        t({ id: 'roles.saveFailed', defaultMessage: 'Failed to save role' }),
+        error.message || t({ id: 'common.error.unknown' }),
+      );
     },
   });
 

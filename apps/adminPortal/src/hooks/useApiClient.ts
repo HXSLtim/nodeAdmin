@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { ApiClient } from '@/lib/apiClient';
-import { useAuthStore } from '@/stores/useAuthStore';
+import { useAuthStore, setTokens, clearAuthStore } from '@/stores/useAuthStore';
 
 export function useApiClient(): ApiClient {
   const apiBaseUrl = useMemo(() => {
@@ -11,6 +11,9 @@ export function useApiClient(): ApiClient {
     return new ApiClient({
       baseUrl: apiBaseUrl,
       getAccessToken: () => useAuthStore.getState().accessToken,
+      getRefreshToken: () => useAuthStore.getState().refreshToken,
+      onTokenRefreshed: (accessToken, refreshToken) => setTokens(accessToken, refreshToken),
+      onLogout: () => clearAuthStore(),
     });
   }, [apiBaseUrl]);
 }

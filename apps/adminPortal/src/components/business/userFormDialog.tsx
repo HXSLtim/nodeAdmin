@@ -5,6 +5,7 @@ import { Dialog } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { FormField } from '@/components/ui/formField';
+import { useToast } from '@/components/ui/toast';
 import { useApiClient } from '@/hooks/useApiClient';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { className } from '@/lib/className';
@@ -37,6 +38,7 @@ interface UpdateUserData {
 export function UserFormDialog({ onClose, onSaved, open, user }: UserFormDialogProps): JSX.Element {
   const { formatMessage: t } = useIntl();
   const apiClient = useApiClient();
+  const toast = useToast();
   const tenantId = useAuthStore((s) => s.tenantId);
   const isEdit = user !== undefined;
 
@@ -86,7 +88,16 @@ export function UserFormDialog({ onClose, onSaved, open, user }: UserFormDialogP
         await apiClient.post<UserItem>('/api/v1/users', data);
       }
     },
-    onSuccess: handleSaveSuccess,
+    onSuccess: () => {
+      toast.success(t({ id: 'users.saveSuccess', defaultMessage: 'User saved successfully' }));
+      handleSaveSuccess();
+    },
+    onError: (error: Error) => {
+      toast.error(
+        t({ id: 'users.saveFailed', defaultMessage: 'Failed to save user' }),
+        error.message || t({ id: 'common.error.unknown' }),
+      );
+    },
   });
 
   const handleSubmit = (e: React.FormEvent) => {

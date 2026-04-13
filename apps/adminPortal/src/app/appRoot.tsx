@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes, useParams } from 'react-router-dom';
+import { useEffect } from 'react';
 import { LoginPage } from '@/components/business/loginPage';
 import { OAuthCallbackPage } from '@/components/business/oauthCallbackPage';
 import { ResetPasswordPage } from '@/components/business/resetPasswordPage';
@@ -23,6 +24,8 @@ import { PluginDetailPage } from '@/components/business/plugins/PluginDetailPage
 import { InstalledPluginsPage } from '@/components/business/plugins/InstalledPluginsPage';
 import { PluginSettingsPage } from '@/components/business/plugins/PluginSettingsPage';
 import { usePluginStore } from '@/stores/usePluginStore';
+import { useAuthStore } from '@/stores/useAuthStore';
+import { usePermissionStore } from '@/stores/usePermissionStore';
 import { PluginView } from './pluginView';
 import { AppLayout } from './layout/appLayout';
 import { AuthGuard } from './authGuard';
@@ -40,6 +43,12 @@ function RouteModule({ children }: { children: JSX.Element }): JSX.Element {
 
 export function AppRoot(): JSX.Element {
   const plugins = usePluginStore((s) => s.plugins);
+  const userRoles = useAuthStore((s) => s.userRoles);
+  const setPermissionsFromRoles = usePermissionStore((s) => s.setPermissionsFromRoles);
+
+  useEffect(() => {
+    setPermissionsFromRoles(userRoles);
+  }, [userRoles, setPermissionsFromRoles]);
 
   return (
     <Routes>
@@ -71,7 +80,7 @@ export function AppRoot(): JSX.Element {
                 <Route
                   element={
                     <RouteModule>
-                      <RequirePermission permission="plugins:view">
+                      <RequirePermission permission="plugins:manage">
                         <PluginDetailPage />
                       </RequirePermission>
                     </RouteModule>
@@ -91,7 +100,7 @@ export function AppRoot(): JSX.Element {
                 <Route
                   element={
                     <RouteModule>
-                      <RequirePermission permission="plugins:view">
+                      <RequirePermission permission="plugins:manage">
                         <PluginSettingsPage />
                       </RequirePermission>
                     </RouteModule>

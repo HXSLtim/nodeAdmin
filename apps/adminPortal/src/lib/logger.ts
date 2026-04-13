@@ -24,19 +24,16 @@ function log(level: LogLevel, context: string, message: string, data?: unknown):
   const output = `[${entry.level.toUpperCase()}] [${entry.context}] ${entry.message}`;
 
   if (level === 'error') {
-    // eslint-disable-next-line no-console
     console.error(output, data ?? '');
     return;
   }
 
   if (level === 'warn') {
-    // eslint-disable-next-line no-console
     console.warn(output, data ?? '');
     return;
   }
 
-  // eslint-disable-next-line no-console
-  console.log(output, data ?? '');
+  console.info(output, data ?? '');
 }
 
 export const logger = {

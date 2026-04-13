@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { FormField } from '@/components/ui/formField';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/toast';
 import { useApiClient } from '@/hooks/useApiClient';
 
 interface TenantFormDialogProps {
@@ -19,6 +20,7 @@ interface TenantFormDialogProps {
 export function TenantFormDialog({ onClose, onSaved, open, tenant }: TenantFormDialogProps): JSX.Element {
   const { formatMessage: t } = useIntl();
   const apiClient = useApiClient();
+  const toast = useToast();
 
   const [name, setName] = useState(tenant?.name ?? '');
   const [isActive, setIsActive] = useState(Boolean(tenant?.is_active ?? true));
@@ -41,8 +43,15 @@ export function TenantFormDialog({ onClose, onSaved, open, tenant }: TenantFormD
       }
     },
     onSuccess: () => {
+      toast.success(t({ id: 'tenant.saveSuccess', defaultMessage: 'Tenant saved successfully' }));
       onSaved();
       handleClose();
+    },
+    onError: (error: Error) => {
+      toast.error(
+        t({ id: 'tenant.saveFailed', defaultMessage: 'Failed to save tenant' }),
+        error.message || t({ id: 'common.error.unknown' }),
+      );
     },
   });
 

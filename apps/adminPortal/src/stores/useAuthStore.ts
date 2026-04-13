@@ -84,6 +84,16 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 }));
 
+export function setTokens(accessToken: string, refreshToken: string): void {
+  const state: Partial<AuthState> = {
+    accessToken,
+    refreshToken,
+    isAuthenticated: true,
+  };
+  useAuthStore.setState(state);
+  persistAuth({ ...useAuthStore.getState(), ...state });
+}
+
 /** Matches the actual API response shape: { identity, accessToken, refreshToken, tokenType } */
 export function setAuthFromLogin(data: {
   accessToken: string;
