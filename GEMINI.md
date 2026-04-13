@@ -123,3 +123,56 @@ Run these from the repository root:
 - **Always** follow the established directory and naming conventions.
 - **Always** consider multi-tenant isolation and the outbox pattern when modifying data-related logic.
 - **Refer** to `CLAUDE.md` and `AGENTS.md` for tool-specific guidance.
+
+## 多 Agent 协作协议（强制）
+
+你正在 tmux `ai-workbench` session 的 pane `ai-workbench:1.3` 中运行。
+
+### Pane 布局
+
+| Pane               | AI           | 职责                 |
+| ------------------ | ------------ | -------------------- |
+| `ai-workbench:1.1` | Claude       | 规划、协调、架构审查 |
+| `ai-workbench:1.2` | Codex        | 后端实现、接口、测试 |
+| `ai-workbench:1.3` | Gemini（你） | 前端实现、代码库分析 |
+
+### tmux 通讯规则
+
+当你收到包含路由头的协作消息（如 `[Claude][to:Gemini][task:T-XXX][msg:M-XXX][P1][task] ...`），**必须通过 tmux 回发到发送方的 pane**，不能只在本地对话中回复。
+
+**核心规则：本地 CLI 输出 ≠ 已回复对方。只有通过 tmux 发回对方 pane 才算真正回复。**
+
+#### 回复流程
+
+1. 解析路由头中的 `to:`，确认消息是发给自己的
+2. 立即用脚本发一个短 `ack` 回给发送方
+3. 处理完任务后，再补发 `answer` / `done` / `blocked`
+
+#### 发送脚本
+
+```bash
+# 回复 Claude（发到 Claude 的 pane）
+~/.claude/skills/tmux-ai-collab/scripts/sendTmuxAiMessage.sh \
+  --to claude \
+  --message "[Gemini][to:Claude][task:T-XXX][msg:M-XXX][inReplyTo:M-XXX][P1][answer] 回复内容"
+
+# 自动生成并发送 ack（推荐，从原始消息自动解析路由头）
+~/.claude/skills/tmux-ai-collab/scripts/autoAckTmuxAiMessage.sh \
+  --as gemini \
+  --message "粘贴收到的原始消息"
+```
+
+#### 消息格式
+
+```
+[发送方][to:接收方][task:T-XXX][msg:M-XXX][优先级][消息类型]
+正文内容
+```
+
+- 优先级：P0（阻塞/破坏性）/ P1（核心协作）/ P2（非阻塞）
+- 消息类型：task / question / answer / update / blocked / done / review / handoff
+- 回复时加 `[inReplyTo:M-XXX]`
+
+#### 完整协议
+
+详细规则见 skill 文件：`~/.gemini/skills/tmux-ai-collab/SKILL.md`

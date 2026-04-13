@@ -122,11 +122,52 @@ docs/              ← 项目文档
 
 ### 角色与职责
 
-| Agent                    | Pane  | 职责                              | 禁止                          |
-| ------------------------ | ----- | --------------------------------- | ----------------------------- |
-| **Claude (Claude Code)** | `0.0` | 协调、规划、E2E 测试、文档、CI/CD | —                             |
-| **Codex**                | `0.1` | 后端开发、后端测试、基础设施      | ❌ 前端代码                   |
-| **Gemini**               | `0.2` | **前端 UI/UX only**               | ❌ 后端、❌ 测试、❌ 基础设施 |
+| Agent                    | Pane               | 职责                              | 禁止                          |
+| ------------------------ | ------------------ | --------------------------------- | ----------------------------- |
+| **Claude (Claude Code)** | `ai-workbench:1.1` | 协调、规划、E2E 测试、文档、CI/CD | —                             |
+| **Codex**                | `ai-workbench:1.2` | 后端开发、后端测试、基础设施      | ❌ 前端代码                   |
+| **Gemini**               | `ai-workbench:1.3` | **前端 UI/UX only**               | ❌ 后端、❌ 测试、❌ 基础设施 |
+
+### tmux 通讯协议（强制）
+
+你正在 tmux pane 中运行。当你收到包含路由头的协作消息（如 `[Claude][to:Codex][task:T-XXX][msg:M-XXX][P1][task] ...`），**必须通过 tmux 回发到发送方的 pane**，不能只在本地对话中回复。
+
+**核心规则：本地 CLI 输出 ≠ 已回复对方。只有通过 tmux 发回对方 pane 才算真正回复。**
+
+#### 回复流程
+
+1. 解析路由头中的 `to:`，确认消息是发给自己的
+2. 立即用脚本发一个短 `ack` 回给发送方
+3. 处理完任务后，再补发 `answer` / `done` / `blocked`
+
+#### 发送脚本
+
+```bash
+# 回复 Claude（发到 Claude 的 pane）
+~/.claude/skills/tmux-ai-collab/scripts/sendTmuxAiMessage.sh \
+  --to claude \
+  --message "[Codex][to:Claude][task:T-XXX][msg:M-XXX][inReplyTo:M-XXX][P1][answer] 回复内容"
+
+# 自动生成并发送 ack（推荐，从原始消息自动解析路由头）
+~/.claude/skills/tmux-ai-collab/scripts/autoAckTmuxAiMessage.sh \
+  --as codex \
+  --message "粘贴收到的原始消息"
+```
+
+#### 消息格式
+
+```
+[发送方][to:接收方][task:T-XXX][msg:M-XXX][优先级][消息类型]
+正文内容
+```
+
+- 优先级：P0（阻塞/破坏性）/ P1（核心协作）/ P2（非阻塞）
+- 消息类型：task / question / answer / update / blocked / done / review / handoff
+- 回复时加 `[inReplyTo:M-XXX]`
+
+#### 完整协议
+
+详细规则见 skill 文件：`~/.codex/skills/tmux-ai-collab/SKILL.md`
 
 ## 相关文档
 
