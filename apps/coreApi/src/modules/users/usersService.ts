@@ -1,20 +1,16 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { hash } from 'bcryptjs';
 import { Pool } from 'pg';
+import { DatabaseService } from '../../infrastructure/database/databaseService';
 
 @Injectable()
 export class UsersService {
   private readonly logger = new Logger(UsersService.name);
   private readonly pool: Pool | null;
 
-  constructor() {
-    const databaseUrl = process.env.DATABASE_URL?.trim();
-    if (!databaseUrl) {
-      this.pool = null;
-    } else {
-      this.pool = new Pool({ connectionString: databaseUrl, max: 10 });
-    }
+  constructor(@Inject(DatabaseService) databaseService: DatabaseService = new DatabaseService()) {
+    this.pool = (databaseService.drizzle?.$client as Pool | undefined) ?? null;
   }
 
   async list(tenantId: string, page = 1, pageSize = 20, search?: string) {
@@ -64,7 +60,7 @@ export class UsersService {
   }
 
   async create(tenantId: string, email: string, password: string, name?: string, roleIds?: string[]) {
-    if (!this.pool) throw new Error('Database not available');
+    if (!this.pool) throw new ServiceUnavailableException('Database not available');
     const userId = randomUUID();
     const passwordHash = await hash(password, 12);
 
@@ -99,7 +95,7 @@ export class UsersService {
     userId: string,
     data: { name?: string; avatar?: string; isActive?: boolean; roleIds?: string[] },
   ) {
-    if (!this.pool) throw new Error('Database not available');
+    if (!this.pool) throw new ServiceUnavailableException('Database not available');
 
     const client = await this.pool.connect();
     try {
@@ -150,7 +146,7 @@ export class UsersService {
   }
 
   async remove(tenantId: string, userId: string) {
-    if (!this.pool) throw new Error('Database not available');
+    if (!this.pool) throw new ServiceUnavailableException('Database not available');
     const client = await this.pool.connect();
     try {
       await client.query('BEGIN');

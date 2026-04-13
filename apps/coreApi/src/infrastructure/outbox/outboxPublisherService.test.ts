@@ -147,7 +147,7 @@ describe('OutboxPublisherService', () => {
     await service.onModuleDestroy();
 
     expect(producer.disconnect).toHaveBeenCalledWith();
-    expect(pool.end).toHaveBeenCalledWith();
+    expect(pool.end).not.toHaveBeenCalled();
   });
 
   it('increments retry_count when Kafka is unavailable but max retry is not reached', async () => {

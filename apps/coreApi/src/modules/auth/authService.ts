@@ -1,10 +1,11 @@
-import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import { Inject, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { compare, hash } from 'bcryptjs';
 import { sign, verify } from 'jsonwebtoken';
 import type { StringValue } from 'ms';
 import { Pool } from 'pg';
 import { runtimeConfig } from '../../app/runtimeConfig';
+import { DatabaseService } from '../../infrastructure/database/databaseService';
 import type { AuthPrincipal } from '../../infrastructure/tenant/authPrincipal';
 import { AuthIdentity } from './authIdentity';
 interface AccessTokenClaims {
@@ -51,13 +52,11 @@ export class AuthService {
   private readonly logger = new Logger(AuthService.name);
   private readonly pool: Pool | null;
 
-  constructor() {
-    const databaseUrl = process.env.DATABASE_URL?.trim();
-    if (!databaseUrl) {
+  constructor(@Inject(DatabaseService) databaseService: DatabaseService = new DatabaseService()) {
+    this.pool = (databaseService.drizzle?.$client as Pool | undefined) ?? null;
+    if (!this.pool) {
       this.pool = null;
       this.logger.warn('DATABASE_URL is not set. Database auth is disabled.');
-    } else {
-      this.pool = new Pool({ connectionString: databaseUrl, max: 10 });
     }
   }
 
@@ -321,7 +320,7 @@ export class AuthService {
 
     const result = await this.pool.query<{ id: string; is_active: number }>(
       'SELECT id, is_active FROM users WHERE tenant_id = $1 AND email = $2',
-      [email, tenantId],
+      [tenantId, email],
     );
 
     const user = result.rows[0];

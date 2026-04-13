@@ -1,18 +1,14 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { Pool } from 'pg';
+import { DatabaseService } from '../../infrastructure/database/databaseService';
 
 @Injectable()
 export class BacklogService {
   private readonly pool: Pool | null;
 
-  constructor() {
-    const databaseUrl = process.env.DATABASE_URL?.trim();
-    if (!databaseUrl) {
-      this.pool = null;
-    } else {
-      this.pool = new Pool({ connectionString: databaseUrl, max: 10 });
-    }
+  constructor(@Inject(DatabaseService) databaseService: DatabaseService = new DatabaseService()) {
+    this.pool = (databaseService.drizzle?.$client as Pool | undefined) ?? null;
   }
 
   // ─── Tasks ────────────────────────────────────────────────────────
@@ -91,7 +87,7 @@ export class BacklogService {
       createdBy?: string;
     },
   ) {
-    if (!this.pool) throw new Error('Database not available');
+    if (!this.pool) throw new ServiceUnavailableException('Database not available');
     const taskId = randomUUID();
     const client = await this.pool.connect();
     try {
@@ -134,7 +130,7 @@ export class BacklogService {
       sprintId?: string;
     },
   ) {
-    if (!this.pool) throw new Error('Database not available');
+    if (!this.pool) throw new ServiceUnavailableException('Database not available');
     const client = await this.pool.connect();
     try {
       await client.query('BEGIN');
@@ -189,7 +185,7 @@ export class BacklogService {
   }
 
   async removeTask(tenantId: string, taskId: string) {
-    if (!this.pool) throw new Error('Database not available');
+    if (!this.pool) throw new ServiceUnavailableException('Database not available');
     const client = await this.pool.connect();
     try {
       await client.query('BEGIN');
@@ -273,7 +269,7 @@ export class BacklogService {
       endDate?: string;
     },
   ) {
-    if (!this.pool) throw new Error('Database not available');
+    if (!this.pool) throw new ServiceUnavailableException('Database not available');
     const sprintId = randomUUID();
     const client = await this.pool.connect();
     try {
@@ -313,7 +309,7 @@ export class BacklogService {
       endDate?: string;
     },
   ) {
-    if (!this.pool) throw new Error('Database not available');
+    if (!this.pool) throw new ServiceUnavailableException('Database not available');
     const client = await this.pool.connect();
     try {
       await client.query('BEGIN');
@@ -364,7 +360,7 @@ export class BacklogService {
   }
 
   async removeSprint(tenantId: string, sprintId: string) {
-    if (!this.pool) throw new Error('Database not available');
+    if (!this.pool) throw new ServiceUnavailableException('Database not available');
     const client = await this.pool.connect();
     try {
       await client.query('BEGIN');
@@ -386,7 +382,7 @@ export class BacklogService {
   // ─── Sprint → Task Assignment ─────────────────────────────────────
 
   async assignTasksToSprint(tenantId: string, sprintId: string, taskIds: string[]) {
-    if (!this.pool) throw new Error('Database not available');
+    if (!this.pool) throw new ServiceUnavailableException('Database not available');
     await this.findSprintById(tenantId, sprintId);
 
     const client = await this.pool.connect();

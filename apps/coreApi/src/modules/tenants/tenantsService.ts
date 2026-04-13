@@ -1,6 +1,7 @@
-import { Injectable, Logger, NotFoundException, ConflictException } from '@nestjs/common';
+import { ConflictException, Inject, Injectable, Logger, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { Pool } from 'pg';
+import { DatabaseService } from '../../infrastructure/database/databaseService';
 
 export interface TenantRecord {
   id: string;
@@ -18,13 +19,8 @@ export class TenantsService {
   private readonly logger = new Logger(TenantsService.name);
   private readonly pool: Pool | null;
 
-  constructor() {
-    const databaseUrl = process.env.DATABASE_URL?.trim();
-    if (!databaseUrl) {
-      this.pool = null;
-    } else {
-      this.pool = new Pool({ connectionString: databaseUrl, max: 10 });
-    }
+  constructor(@Inject(DatabaseService) databaseService: DatabaseService = new DatabaseService()) {
+    this.pool = (databaseService.drizzle?.$client as Pool | undefined) ?? null;
   }
 
   async list(): Promise<TenantRecord[]> {
@@ -46,7 +42,7 @@ export class TenantsService {
   }
 
   async create(data: { name: string; slug: string; logo?: string; isActive?: boolean }) {
-    if (!this.pool) throw new Error('Database not available');
+    if (!this.pool) throw new ServiceUnavailableException('Database not available');
 
     const existing = await this.pool.query('SELECT id FROM tenants WHERE slug = $1', [data.slug]);
     if (existing.rows.length > 0) throw new ConflictException('Tenant slug already exists');
@@ -60,7 +56,7 @@ export class TenantsService {
   }
 
   async update(id: string, data: { name?: string; logo?: string; isActive?: boolean }) {
-    if (!this.pool) throw new Error('Database not available');
+    if (!this.pool) throw new ServiceUnavailableException('Database not available');
 
     const sets: string[] = [];
     const params: unknown[] = [];
@@ -92,7 +88,7 @@ export class TenantsService {
   }
 
   async remove(id: string) {
-    if (!this.pool) throw new Error('Database not available');
+    if (!this.pool) throw new ServiceUnavailableException('Database not available');
     if (id === 'default') throw new ConflictException('Cannot delete the default tenant');
 
     const client = await this.pool.connect();

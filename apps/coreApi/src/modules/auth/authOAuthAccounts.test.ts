@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { setupTestEnv } from '../../__tests__/helpers';
-import type { AuthService } from './authService';
+import { AuthService } from './authService';
 
 setupTestEnv();
 
@@ -31,10 +31,6 @@ function createMockPool(queryResults: MockQueryResult[] = []) {
 }
 
 describe('AuthService — OAuth Account Management', () => {
-  beforeEach(() => {
-    vi.resetModules();
-  });
-
   describe('listOAuthAccounts', () => {
     it('should return linked OAuth accounts for a user', async () => {
       const { pool, mockQuery } = createMockPool();
@@ -45,7 +41,6 @@ describe('AuthService — OAuth Account Management', () => {
         ],
       });
 
-      const { AuthService } = await import('./authService');
       const service = new AuthService() as AuthServiceWithPool;
       service.pool = pool;
 
@@ -61,7 +56,6 @@ describe('AuthService — OAuth Account Management', () => {
       const { pool, mockQuery } = createMockPool();
       mockQuery.mockResolvedValueOnce({ rows: [] });
 
-      const { AuthService } = await import('./authService');
       const service = new AuthService() as AuthServiceWithPool;
       service.pool = pool;
 
@@ -70,7 +64,6 @@ describe('AuthService — OAuth Account Management', () => {
     });
 
     it('should throw if database is not available', async () => {
-      const { AuthService } = await import('./authService');
       const service = new AuthService() as AuthServiceWithPool;
       service.pool = null;
 
@@ -83,7 +76,6 @@ describe('AuthService — OAuth Account Management', () => {
       const { pool, mockQuery } = createMockPool();
       mockQuery.mockResolvedValueOnce({ rowCount: 1 });
 
-      const { AuthService } = await import('./authService');
       const service = new AuthService() as AuthServiceWithPool;
       service.pool = pool;
 
@@ -99,7 +91,6 @@ describe('AuthService — OAuth Account Management', () => {
       const { pool, mockQuery } = createMockPool();
       mockQuery.mockResolvedValueOnce({ rowCount: 0 });
 
-      const { AuthService } = await import('./authService');
       const service = new AuthService() as AuthServiceWithPool;
       service.pool = pool;
 
@@ -107,7 +98,6 @@ describe('AuthService — OAuth Account Management', () => {
     });
 
     it('should throw if database is not available', async () => {
-      const { AuthService } = await import('./authService');
       const service = new AuthService() as AuthServiceWithPool;
       service.pool = null;
 

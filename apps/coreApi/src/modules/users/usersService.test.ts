@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ServiceUnavailableException } from '@nestjs/common';
 import { setupTestEnv, createMockPool, createMockClient } from '../../__tests__/helpers';
 import type { MockPool, QueryResult } from '../../__tests__/helpers';
 
@@ -128,7 +129,9 @@ describe('UsersService', () => {
 
   describe('create', () => {
     it('should throw when pool is null', async () => {
-      await expect(service.create('t-1', 'a@b.com', 'pass', 'Name')).rejects.toThrow('Database not available');
+      await expect(service.create('t-1', 'a@b.com', 'pass', 'Name')).rejects.toBeInstanceOf(
+        ServiceUnavailableException,
+      );
     });
 
     it('should create user with transaction and return user', async () => {
@@ -184,7 +187,7 @@ describe('UsersService', () => {
 
   describe('update', () => {
     it('should throw when pool is null', async () => {
-      await expect(service.update('t-1', 'u-1', { name: 'New' })).rejects.toThrow('Database not available');
+      await expect(service.update('t-1', 'u-1', { name: 'New' })).rejects.toBeInstanceOf(ServiceUnavailableException);
     });
 
     it('should update fields and commit transaction', async () => {
@@ -212,7 +215,7 @@ describe('UsersService', () => {
 
   describe('remove', () => {
     it('should throw when pool is null', async () => {
-      await expect(service.remove('t-1', 'u-1')).rejects.toThrow('Database not available');
+      await expect(service.remove('t-1', 'u-1')).rejects.toBeInstanceOf(ServiceUnavailableException);
     });
 
     it('should delete user within transaction', async () => {

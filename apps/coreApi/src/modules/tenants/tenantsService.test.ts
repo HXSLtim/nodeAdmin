@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { NotFoundException } from '@nestjs/common';
+import { NotFoundException, ServiceUnavailableException } from '@nestjs/common';
 import { setupTestEnv, createMockPool, createMockClient } from '../../__tests__/helpers';
 import type { MockPool } from '../../__tests__/helpers';
 
@@ -70,7 +70,7 @@ describe('TenantsService', () => {
 
   describe('create', () => {
     it('should throw when pool is null', async () => {
-      await expect(service.create({ name: 'T', slug: 't' })).rejects.toThrow('Database not available');
+      await expect(service.create({ name: 'T', slug: 't' })).rejects.toBeInstanceOf(ServiceUnavailableException);
     });
 
     it('should throw ConflictException for duplicate slug', async () => {
@@ -125,7 +125,7 @@ describe('TenantsService', () => {
 
   describe('update', () => {
     it('should throw when pool is null', async () => {
-      await expect(service.update('t-1', { name: 'X' })).rejects.toThrow('Database not available');
+      await expect(service.update('t-1', { name: 'X' })).rejects.toBeInstanceOf(ServiceUnavailableException);
     });
 
     it('should return tenant unchanged when no fields provided', async () => {
@@ -190,7 +190,7 @@ describe('TenantsService', () => {
 
   describe('remove', () => {
     it('should throw when pool is null', async () => {
-      await expect(service.remove('t-1')).rejects.toThrow('Database not available');
+      await expect(service.remove('t-1')).rejects.toBeInstanceOf(ServiceUnavailableException);
     });
 
     it('should throw ConflictException for default tenant', async () => {

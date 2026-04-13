@@ -1,25 +1,39 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createMockClient, createMockPool, setupTestEnv, type MockPool } from '../../__tests__/helpers';
+import { AuthService } from './authService';
 
 setupTestEnv();
 
-import { AuthService } from './authService';
+type AuthServiceWithPool = AuthService & { pool: MockPool };
+type AuthServiceWithExchange = AuthServiceWithPool & {
+  exchangeOAuthCode: (
+    provider: string,
+    code: string,
+  ) => Promise<{ providerId: string; email: string | null; name: string | null } | null>;
+};
 
 describe('AuthService OAuth Login', () => {
-  let service: AuthService;
+  let service: AuthServiceWithExchange;
 
   beforeEach(() => {
-    service = new AuthService();
+    vi.restoreAllMocks();
+    service = new AuthService() as AuthServiceWithExchange;
   });
 
   it('should create/link oauth account and return tokens for new OAuth user', async () => {
+    vi.spyOn(service, 'exchangeOAuthCode').mockResolvedValue({
+      email: 'octocat@example.com',
+      name: 'Octo Cat',
+      providerId: '12345',
+    });
+
     const mockClient = createMockClient([]);
     const mockPool = createMockPool([
       { rows: [], rowCount: 0 },
       { rows: [{ name: 'viewer' }], rowCount: 1 },
     ]);
     mockPool.connect = vi.fn(async () => mockClient);
-    (service as unknown as { pool: MockPool }).pool = mockPool;
+    service.pool = mockPool;
 
     const result = await service.loginWithOAuth('github', 'new-user-code', 'tenant-1');
 
@@ -44,7 +58,7 @@ describe('AuthService OAuth Login', () => {
       },
       { rows: [{ name: 'admin' }], rowCount: 1 },
     ]);
-    (service as unknown as { pool: MockPool }).pool = mockPool;
+    service.pool = mockPool;
 
     const result = await service.loginWithOAuth('google', 'existing-user-code', 'tenant-1');
 
@@ -56,15 +70,17 @@ describe('AuthService OAuth Login', () => {
 
   it('should reject invalid provider (only github and google)', async () => {
     const mockPool = createMockPool();
-    (service as unknown as { pool: MockPool }).pool = mockPool;
+    service.pool = mockPool;
 
     await expect(service.loginWithOAuth('wechat', 'oauth-code', 'tenant-1')).rejects.toThrow(/provider/i);
     expect(mockPool.query).not.toHaveBeenCalled();
   });
 
   it('should reject if OAuth code exchange fails', async () => {
+    vi.spyOn(service, 'exchangeOAuthCode').mockResolvedValue(null);
+
     const mockPool = createMockPool();
-    (service as unknown as { pool: MockPool }).pool = mockPool;
+    service.pool = mockPool;
 
     await expect(service.loginWithOAuth('github', 'fail-exchange', 'tenant-1')).rejects.toThrow(/exchange/i);
     expect(mockPool.query).not.toHaveBeenCalled();

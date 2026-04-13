@@ -1,7 +1,8 @@
-import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { Pool, PoolClient } from 'pg';
 import { runtimeConfig } from '../../app/runtimeConfig';
+import { DatabaseService } from './databaseService';
 import {
   AppendResult,
   InMemoryMessageStore,
@@ -26,36 +27,20 @@ type MessageRow = {
 };
 
 @Injectable()
-export class ImMessageRepository implements OnModuleDestroy {
+export class ImMessageRepository {
   private readonly logger = new Logger(ImMessageRepository.name);
 
-  private readonly databaseUrl = process.env.DATABASE_URL?.trim();
   private readonly pool: Pool | null;
 
-  constructor(private readonly inMemoryStore: InMemoryMessageStore) {
-    if (!this.databaseUrl) {
+  constructor(
+    @Inject(InMemoryMessageStore) private readonly inMemoryStore: InMemoryMessageStore,
+    @Inject(DatabaseService) databaseService: DatabaseService = new DatabaseService(),
+  ) {
+    this.pool = (databaseService.drizzle?.$client as Pool | undefined) ?? null;
+    if (!this.pool) {
       this.pool = null;
       this.logger.warn('DATABASE_URL is not set. IM repository will use in-memory storage.');
-      return;
     }
-
-    this.pool = new Pool({
-      connectionString: this.databaseUrl,
-      max: 500,
-      min: 50,
-      idleTimeoutMillis: runtimeConfig.database.idleTimeoutMillis,
-      connectionTimeoutMillis: runtimeConfig.database.connectionTimeoutMillis,
-      maxUses: 7500,
-      allowExitOnIdle: false,
-    });
-  }
-
-  async onModuleDestroy(): Promise<void> {
-    if (!this.pool) {
-      return;
-    }
-
-    await this.pool.end();
   }
 
   async append(message: PendingMessage): Promise<AppendResult> {

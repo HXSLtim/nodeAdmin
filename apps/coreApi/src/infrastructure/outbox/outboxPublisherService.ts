@@ -1,7 +1,8 @@
-import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { Kafka, Producer } from 'kafkajs';
 import { Pool, type PoolClient } from 'pg';
 import { runtimeConfig } from '../../app/runtimeConfig';
+import { DatabaseService } from '../database/databaseService';
 
 interface OutboxRow {
   aggregate_id: string;
@@ -20,16 +21,19 @@ export class OutboxPublisherService implements OnModuleInit, OnModuleDestroy {
 
   private intervalHandle: NodeJS.Timeout | null = null;
   private isPublishing = false;
-  private pool: Pool | null = null;
+  private readonly pool: Pool | null;
   private producer: Producer | null = null;
+
+  constructor(@Inject(DatabaseService) databaseService: DatabaseService = new DatabaseService()) {
+    this.pool = (databaseService.drizzle?.$client as Pool | undefined) ?? null;
+  }
 
   async onModuleInit(): Promise<void> {
     if (!runtimeConfig.outbox.enabled) {
       return;
     }
 
-    const databaseUrl = process.env.DATABASE_URL?.trim();
-    if (!databaseUrl) {
+    if (!this.pool) {
       this.logger.warn('Outbox publisher enabled but DATABASE_URL is missing.');
       return;
     }
@@ -40,13 +44,6 @@ export class OutboxPublisherService implements OnModuleInit, OnModuleDestroy {
     }
 
     try {
-      this.pool = new Pool({
-        connectionString: databaseUrl,
-        max: 10,
-        connectionTimeoutMillis: runtimeConfig.database.connectionTimeoutMillis,
-        idleTimeoutMillis: runtimeConfig.database.idleTimeoutMillis,
-      });
-
       const kafka = new Kafka({
         brokers: runtimeConfig.kafka.brokers,
         clientId: runtimeConfig.kafka.clientId,
@@ -73,10 +70,6 @@ export class OutboxPublisherService implements OnModuleInit, OnModuleDestroy {
         await this.producer.disconnect().catch(() => {});
         this.producer = null;
       }
-      if (this.pool) {
-        await this.pool.end().catch(() => {});
-        this.pool = null;
-      }
     }
   }
 
@@ -89,15 +82,6 @@ export class OutboxPublisherService implements OnModuleInit, OnModuleDestroy {
     if (this.producer) {
       await this.producer.disconnect();
       this.producer = null;
-    }
-
-    if (this.pool) {
-      try {
-        await this.pool.end();
-      } catch {
-        // Pool may already be closed during shutdown
-      }
-      this.pool = null;
     }
   }
 

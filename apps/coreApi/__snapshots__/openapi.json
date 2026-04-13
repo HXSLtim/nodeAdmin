@@ -149,6 +149,22 @@
         ]
       }
     },
+    "/api/v1/auth/github/callback": {
+      "get": {
+        "operationId": "AuthController_githubCallback",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [],
+        "summary": "GitHub OAuth callback (browser redirect)",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
     "/api/v1/auth/oauth-accounts": {
       "get": {
         "operationId": "AuthController_listOAuthAccounts",
@@ -1293,6 +1309,46 @@
           }
         ],
         "summary": "Update an installed marketplace plugin",
+        "tags": [
+          "admin-plugins"
+        ]
+      }
+    },
+    "/api/v1/admin/plugins/{id}/config": {
+      "patch": {
+        "operationId": "AdminPluginController_updateConfig",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update tenant plugin configuration",
+        "tags": [
+          "admin-plugins"
+        ]
+      }
+    },
+    "/api/v1/admin/plugins/{id}/toggle": {
+      "patch": {
+        "operationId": "AdminPluginController_toggle",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Toggle tenant plugin enabled state",
         "tags": [
           "admin-plugins"
         ]
